@@ -1,0 +1,1679 @@
+<!DOCTYPE html>
+<html lang="vi" class="light">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Marketing CRM - SaaS Workspace</title>
+    <link rel="shortcut icon" href="crm (1).png" type="image/x-icon">
+
+    <!-- Fonts & Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+
+    <!-- Libraries -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <!-- Mammoth.js for reading .docx files -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.4.21/mammoth.browser.min.js"></script>
+
+    <!-- Tailwind Config for Theme Customization -->
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Plus Jakarta Sans', 'sans-serif'] },
+                    colors: {
+                        primary: 'var(--color-primary)',
+                        'primary-light': 'var(--color-primary-light)',
+                        surface: 'var(--color-surface)',
+                        'surface-dark': 'var(--color-surface-dark)',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        :root {
+            --color-primary: #6366f1;
+            --color-primary-light: #818cf8;
+            --color-surface: rgba(255, 255, 255, 0.8);
+            --color-surface-dark: rgba(30, 41, 59, 0.8);
+            --radius-sm: 8px;
+            --radius-md: 16px;
+            --transition-smooth: all 0.3s ease;
+        }
+
+        /* Glassmorphism Classes */
+        .glass {
+            background: var(--color-surface);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .dark .glass {
+            background: var(--color-surface-dark);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            transition: background-color 0.3s, color 0.3s;
+            overflow-x: hidden;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        .dark ::-webkit-scrollbar-thumb { background: #475569; }
+
+        /* Icons */
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+
+        /* Cat Animations */
+        @keyframes tailWag { 0% { transform: rotate(0deg); } 50% { transform: rotate(15deg); } 100% { transform: rotate(0deg); } }
+        .wag-normal { animation: tailWag 1s infinite ease-in-out; }
+        .wag-fast { animation: tailWag 0.3s infinite ease-in-out; }
+        .cat-eye-container { transition: transform 0.1s ease-out; }
+
+        /* Toast Animation */
+        @keyframes slideInRight { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        .toast-enter { animation: slideInRight 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
+
+        /* ==========================================
+           GOOGLE TRANSLATE CUSTOM UI & OVERRIDES
+           ========================================== */
+        
+        .lang-selector {
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--color-surface);
+            border: 1px solid rgba(156, 163, 175, 0.2);
+            padding: 6px 12px;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            z-index: 50;
+        }
+
+        .dark .lang-selector {
+            background: var(--color-surface-dark);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .lang-dropdown {
+            position: absolute;
+            top: calc(100% + 10px);
+            right: 0;
+            background: #ffffff;
+            border: 1px solid rgba(156, 163, 175, 0.2);
+            border-radius: var(--radius-md);
+            padding: 8px;
+            display: none;
+            flex-direction: column;
+            gap: 4px;
+            min-width: 140px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        .dark .lang-dropdown {
+            background: #1e293b;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        .lang-selector:hover .lang-dropdown {
+            display: flex;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .lang-option {
+            padding: 8px 12px;
+            border-radius: var(--radius-sm);
+            transition: var(--transition-smooth);
+            color: #374151;
+        }
+        .dark .lang-option { color: #f3f4f6; }
+
+        .lang-option:hover {
+            background: rgba(99, 102, 241, 0.1);
+            color: var(--color-primary);
+        }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Ẩn triệt để widget, banner và popup mặc định của Google Translate */
+        #google_translate_element { display: none !important; }
+        .goog-te-banner-frame { display: none !important; }
+        .skiptranslate iframe { display: none !important; }
+        body { top: 0px !important; }
+        
+        /* Ẩn tooltip popup và highlight text của Google */
+        #goog-gt-tt, .goog-te-balloon-frame { display: none !important; }
+        .goog-text-highlight { background-color: transparent !important; box-shadow: none !important; }
+        .VIpgJd-ZVi9od-ORHb-OEVmcd { display: none !important; }
+
+        /* Template Preview Content styling */
+        .template-content-preview h1, .template-content-preview h2, .template-content-preview h3 { font-weight: bold; margin-bottom: 0.5rem; }
+        .template-content-preview p { margin-bottom: 0.5rem; }
+        .template-content-preview strong { font-weight: bold; }
+        .template-content-preview em { font-style: italic; }
+        .template-content-preview table { width: 100%; border-collapse: collapse; margin-bottom: 1rem; }
+        .template-content-preview td, .template-content-preview th { border: 1px solid #000; padding: 4px; }
+        
+        /* Make history view read-only strictly */
+        .history-readonly { pointer-events: none; user-select: none; }
+    </style>
+</head>
+
+<body class="bg-gray-50 text-gray-900 dark:bg-slate-900 dark:text-gray-100 h-screen w-screen flex overflow-hidden">
+
+    <!-- Hidden Google Translate Element -->
+    <div id="google_translate_element"></div>
+
+    <!-- ========================================== -->
+    <!-- 1. LOGIN SCREEN (THE CAT)                  -->
+    <!-- ========================================== -->
+    <div id="login-screen" class="fixed inset-0 z-[100] flex items-center justify-center bg-[#f8f6f2] dark:bg-slate-950 transition-opacity duration-500">
+        <div class="absolute top-1/4 -left-20 w-64 h-64 bg-primary/10 backdrop-blur-3xl rounded-full pointer-events-none"></div>
+        <div class="absolute bottom-1/4 -right-20 w-80 h-80 bg-blue-400/10 rounded-full blur-[80px] pointer-events-none"></div>
+
+        <div class="relative w-full max-w-md px-6">
+            <!-- The Cat -->
+            <div class="relative z-10 flex flex-col items-center mb-[-2rem]" id="cat-container">
+                <div class="relative w-48 h-44 bg-white dark:bg-slate-800 rounded-[4rem] shadow-sm flex items-center justify-center border border-gray-100 dark:border-slate-700">
+                    <div class="absolute -top-4 left-6 w-12 h-12 bg-white dark:bg-slate-800 border border-gray-100 dark:border-slate-700 rounded-tr-[2rem] rotate-[-15deg]"></div>
+                    <div class="absolute -top-4 right-6 w-12 h-12 bg-white dark:bg-slate-800 border border-gray-100 dark:border-slate-700 rounded-tl-[2rem] rotate-[15deg]"></div>
+                    <div class="flex gap-8 mt-4 relative z-20">
+                        <div class="w-8 h-10 bg-gray-100 dark:bg-slate-900 rounded-full border-2 border-gray-200 dark:border-slate-700 shadow-inner flex items-center justify-center overflow-hidden">
+                            <div class="w-5 h-5 bg-gray-800 dark:bg-gray-200 rounded-full cat-eye-container relative" id="left-pupil"><div class="absolute top-1 left-1 w-1.5 h-1.5 bg-white rounded-full"></div></div>
+                        </div>
+                        <div class="w-8 h-10 bg-gray-100 dark:bg-slate-900 rounded-full border-2 border-gray-200 dark:border-slate-700 shadow-inner flex items-center justify-center overflow-hidden">
+                            <div class="w-5 h-5 bg-gray-800 dark:bg-gray-200 rounded-full cat-eye-container relative" id="right-pupil"><div class="absolute top-1 left-1 w-1.5 h-1.5 bg-white rounded-full"></div></div>
+                        </div>
+                        <div class="absolute inset-0 flex justify-between items-center translate-y-24 transition-all duration-500 opacity-0 z-30" id="paws">
+                            <div class="w-12 h-12 bg-gray-200 dark:bg-slate-700 rounded-full shadow-md border-t-4 border-gray-300 dark:border-slate-600"></div>
+                            <div class="w-12 h-12 bg-gray-200 dark:bg-slate-700 rounded-full shadow-md border-t-4 border-gray-300 dark:border-slate-600"></div>
+                        </div>
+                    </div>
+                    <div class="absolute bottom-10 flex flex-col items-center z-20">
+                        <div class="w-3 h-2 bg-pink-400 rounded-full mb-0.5"></div>
+                        <div class="w-4 h-2 border-b-2 border-gray-600 dark:border-gray-400 rounded-full transition-all duration-300" id="mouth"></div>
+                    </div>
+                </div>
+                <div class="w-56 h-32 bg-white dark:bg-slate-800 rounded-full -mt-10 shadow-sm relative overflow-hidden border border-gray-100 dark:border-slate-700"></div>
+                <div class="absolute -right-4 bottom-12 w-16 h-8 bg-white dark:bg-slate-800 border border-gray-100 dark:border-slate-700 rounded-full origin-left wag-normal shadow-sm" id="tail"></div>
+            </div>
+
+            <!-- Login Form -->
+            <div class="bg-white dark:bg-slate-800 rounded-2xl p-8 shadow-2xl relative z-20 border border-gray-100 dark:border-slate-700">
+                <div class="mb-6 text-center">
+                    <h1 class="text-2xl font-bold tracking-tight" id="auth-title">Chào mừng trở lại!</h1>
+                    <p class="text-sm text-gray-500 dark:text-gray-400 mt-1" id="auth-subtitle">Đăng nhập vào hệ thống CRM</p>
+                </div>
+
+                <form id="loginForm" class="space-y-5">
+                    <div>
+                        <label class="block text-sm font-semibold mb-1">Email</label>
+                        <input type="email" id="email" required class="w-full px-4 py-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all" placeholder="name@company.com">
+                    </div>
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <label class="block text-sm font-semibold">Mật khẩu</label>
+                            <button type="button" onclick="resetPassword()" class="text-xs text-primary hover:underline">Quên mật khẩu?</button>
+                        </div>
+                        <input type="password" id="password" required class="w-full px-4 py-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all" placeholder="••••••••">
+                    </div>
+
+                    <button type="submit" id="auth-btn" class="w-full py-3 bg-primary text-white font-bold rounded-xl shadow-lg hover:opacity-90 transition-all flex items-center justify-center gap-2">
+                        <span>Đăng nhập</span>
+                        <span class="material-symbols-outlined text-sm">arrow_forward</span>
+                    </button>
+                </form>
+
+                <div class="mt-6 text-center border-t border-gray-100 dark:border-slate-700 pt-4">
+                    <p class="text-sm text-gray-500">
+                        Chưa có tài khoản?
+                        <button onclick="toggleAuthMode()" id="toggle-auth-btn" class="text-primary font-bold hover:underline">Đăng ký ngay</button>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- 2. MAIN APP LAYOUT (Hidden default)        -->
+    <!-- ========================================== -->
+    <div id="app-screen" class="flex w-full h-full hidden opacity-0 transition-opacity duration-500">
+
+        <!-- Sidebar Navigation -->
+        <aside class="w-64 glass border-r flex flex-col transition-all duration-300 z-20 shrink-0" id="sidebar">
+            <div class="h-16 flex items-center px-6 border-b border-gray-200/50 dark:border-slate-700/50">
+                <div class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-white font-bold text-xl mr-3 shadow-lg shadow-primary/30">M</div>
+                <span class="font-bold text-lg tracking-tight">MarkeCRM</span>
+            </div>
+
+            <div class="flex-1 overflow-y-auto py-4 px-3 space-y-1">
+                <p class="px-3 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 mt-4">Menu Chính</p>
+                <button onclick="navigate('dashboard')" class="nav-btn w-full flex items-center px-3 py-2.5 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-primary/10 hover:text-primary transition-colors active-nav" data-target="dashboard">
+                    <span class="material-symbols-outlined mr-3 text-lg">space_dashboard</span> Tổng quan
+                </button>
+                <button onclick="navigate('customers')" class="nav-btn w-full flex items-center px-3 py-2.5 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-primary/10 hover:text-primary transition-colors" data-target="customers">
+                    <span class="material-symbols-outlined mr-3 text-lg">group</span> Khách hàng
+                </button>
+                <button onclick="navigate('services')" class="nav-btn w-full flex items-center px-3 py-2.5 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-primary/10 hover:text-primary transition-colors" data-target="services">
+                    <span class="material-symbols-outlined mr-3 text-lg">design_services</span> Dịch vụ
+                </button>
+
+                <p class="px-3 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 mt-6">Nghiệp vụ</p>
+                <button onclick="navigate('quotes')" class="nav-btn w-full flex items-center px-3 py-2.5 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-primary/10 hover:text-primary transition-colors" data-target="quotes">
+                    <span class="material-symbols-outlined mr-3 text-lg">request_quote</span> Báo giá & Hợp đồng
+                </button>
+                <button onclick="navigate('history')" class="nav-btn w-full flex items-center px-3 py-2.5 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-primary/10 hover:text-primary transition-colors" data-target="history">
+                    <span class="material-symbols-outlined mr-3 text-lg">history</span> Lịch sử xuất tài liệu
+                </button>
+
+                <p class="px-3 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 mt-6">Cài đặt</p>
+                <button onclick="navigate('settings')" class="nav-btn w-full flex items-center px-3 py-2.5 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-primary/10 hover:text-primary transition-colors" data-target="settings">
+                    <span class="material-symbols-outlined mr-3 text-lg">settings</span> Hệ thống & Tài khoản
+                </button>
+            </div>
+
+            <div class="p-4 border-t border-gray-200/50 dark:border-slate-700/50">
+                <div class="flex items-center gap-3 bg-gray-100/50 dark:bg-slate-800/50 p-3 rounded-xl border border-gray-200 dark:border-slate-700">
+                    <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-primary to-purple-500 flex items-center justify-center text-white font-bold" id="user-avatar">A</div>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-sm font-bold truncate" id="user-name-display">Đang tải...</p>
+                        <p class="text-xs text-gray-500 truncate" id="user-email-display">email</p>
+                    </div>
+                    <button onclick="logout()" title="Đăng xuất" class="text-gray-400 hover:text-red-500 transition-colors">
+                        <span class="material-symbols-outlined">logout</span>
+                    </button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="flex-1 flex flex-col min-w-0 bg-gray-50/50 dark:bg-slate-900/50 relative">
+
+            <!-- Top Header -->
+            <header class="h-16 glass border-b px-6 flex items-center justify-between z-10">
+                <div class="flex items-center gap-4">
+                    <h2 class="text-xl font-bold tracking-tight capitalize" id="page-title">Tổng quan</h2>
+                </div>
+                <div class="flex items-center gap-4">
+                    
+                    <!-- Modern Language Selector -->
+                    <div class="lang-selector">
+                        <span class="material-symbols-outlined text-[18px]">language</span>
+                        <span id="currentLang">VN</span>
+                        <div class="lang-dropdown">
+                            <div class="lang-option" onclick="changeLanguage('vi', 'VN')">Tiếng Việt (VN)</div>
+                            <div class="lang-option" onclick="changeLanguage('en', 'EN')">English (EN)</div>
+                            <div class="lang-option" onclick="changeLanguage('zh-CN', 'CN')">中文 (CN)</div>
+                            <div class="lang-option" onclick="changeLanguage('ja', 'JP')">日本語 (JP)</div>
+                            <div class="lang-option" onclick="changeLanguage('ko', 'KR')">한국어 (KR)</div>
+                        </div>
+                    </div>
+
+                    <button onclick="toggleTheme()" class="w-9 h-9 rounded-full flex items-center justify-center bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors">
+                        <span class="material-symbols-outlined text-gray-600 dark:text-gray-300" id="theme-icon">dark_mode</span>
+                    </button>
+                </div>
+            </header>
+
+            <!-- Page Contents -->
+            <div class="flex-1 overflow-auto p-6">
+                <div class="max-w-6xl mx-auto space-y-6">
+
+                    <!-- VIEW: DASHBOARD -->
+                    <section id="view-dashboard" class="page-view animate-fade-in block">
+                        <!-- Stats Cards -->
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+                            <div class="glass p-6 rounded-2xl shadow-sm hover:shadow-md transition-shadow">
+                                <div class="flex justify-between items-start">
+                                    <div>
+                                        <p class="text-sm text-gray-500 font-medium">Tổng Khách Hàng</p>
+                                        <h3 class="text-3xl font-bold mt-1" id="stat-customers">0</h3>
+                                    </div>
+                                    <div class="p-3 bg-blue-100 dark:bg-blue-900/30 text-blue-600 rounded-xl"><span class="material-symbols-outlined">group</span></div>
+                                </div>
+                            </div>
+                            <div class="glass p-6 rounded-2xl shadow-sm hover:shadow-md transition-shadow">
+                                <div class="flex justify-between items-start">
+                                    <div>
+                                        <p class="text-sm text-gray-500 font-medium">Tổng Dịch Vụ</p>
+                                        <h3 class="text-3xl font-bold mt-1" id="stat-services">0</h3>
+                                    </div>
+                                    <div class="p-3 bg-purple-100 dark:bg-purple-900/30 text-purple-600 rounded-xl"><span class="material-symbols-outlined">design_services</span></div>
+                                </div>
+                            </div>
+                            <div class="glass p-6 rounded-2xl shadow-sm hover:shadow-md transition-shadow">
+                                <div class="flex justify-between items-start">
+                                    <div>
+                                        <p class="text-sm text-gray-500 font-medium">Mẫu Hợp Đồng</p>
+                                        <h3 class="text-3xl font-bold mt-1" id="stat-templates">0</h3>
+                                    </div>
+                                    <div class="p-3 bg-green-100 dark:bg-green-900/30 text-green-600 rounded-xl"><span class="material-symbols-outlined">description</span></div>
+                                </div>
+                            </div>
+                            <div class="glass p-6 rounded-2xl shadow-sm hover:shadow-md transition-shadow border-l-4 border-l-yellow-500">
+                                <div class="flex justify-between items-start">
+                                    <div>
+                                        <p class="text-sm text-gray-500 font-medium">Lịch sử xuất</p>
+                                        <h3 class="text-3xl font-bold mt-1" id="stat-history">0</h3>
+                                    </div>
+                                    <div class="p-3 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 rounded-xl"><span class="material-symbols-outlined">history</span></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="glass p-6 rounded-2xl shadow-sm">
+                            <h3 class="font-bold mb-4">Thống kê hoạt động (Demo)</h3>
+                            <div class="h-64 w-full"><canvas id="mainChart"></canvas></div>
+                        </div>
+                    </section>
+
+                    <!-- VIEW: CUSTOMERS -->
+                    <section id="view-customers" class="page-view animate-fade-in hidden">
+                        <div class="glass rounded-2xl shadow-sm overflow-hidden flex flex-col h-[calc(100vh-140px)]">
+                            <div class="p-4 border-b border-gray-200 dark:border-slate-700 flex justify-between items-center bg-white/50 dark:bg-slate-800/50">
+                                <input type="text" id="search-customer" placeholder="Tìm kiếm khách hàng..." class="px-4 py-2 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg text-sm w-64 focus:ring-2 focus:ring-primary outline-none">
+                                <button onclick="openModal('customer-modal')" class="bg-primary text-white px-4 py-2 rounded-lg text-sm font-bold shadow-md hover:opacity-90 flex items-center gap-2">
+                                    <span class="material-symbols-outlined text-sm">add</span> Thêm KH
+                                </button>
+                            </div>
+                            <div class="flex-1 overflow-auto p-4">
+                                <table class="w-full text-left border-collapse">
+                                    <thead>
+                                        <tr class="text-xs text-gray-500 uppercase border-b border-gray-200 dark:border-slate-700">
+                                            <th class="pb-3 font-semibold">Khách hàng</th>
+                                            <th class="pb-3 font-semibold">Liên hệ</th>
+                                            <th class="pb-3 font-semibold">Nguồn</th>
+                                            <th class="pb-3 font-semibold">Ghi chú</th>
+                                            <th class="pb-3 font-semibold text-right">Hành động</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="customers-list" class="text-sm divide-y divide-gray-100 dark:divide-slate-800/50">
+                                        <!-- Rendered via JS -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- VIEW: SERVICES -->
+                    <section id="view-services" class="page-view animate-fade-in hidden">
+                        <div class="glass rounded-2xl shadow-sm overflow-hidden flex flex-col h-[calc(100vh-140px)]">
+                            <div class="p-4 border-b border-gray-200 dark:border-slate-700 flex justify-end bg-white/50 dark:bg-slate-800/50">
+                                <button onclick="openModal('service-modal')" class="bg-primary text-white px-4 py-2 rounded-lg text-sm font-bold shadow-md hover:opacity-90 flex items-center gap-2">
+                                    <span class="material-symbols-outlined text-sm">add</span> Thêm Dịch Vụ
+                                </button>
+                            </div>
+                            <div class="flex-1 overflow-auto p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="services-grid">
+                                <!-- Rendered via JS -->
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- VIEW: QUOTES & CONTRACTS -->
+                    <section id="view-quotes" class="page-view animate-fade-in hidden">
+                        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[calc(100vh-140px)]">
+                            <!-- Builder Panel -->
+                            <div class="glass p-5 rounded-2xl shadow-sm flex flex-col lg:col-span-1 border border-gray-200 dark:border-slate-700 overflow-hidden">
+                                <div class="flex items-center justify-between mb-4">
+                                    <h3 class="font-bold flex items-center gap-2"><span class="material-symbols-outlined text-primary">edit_document</span> Soạn Thảo</h3>
+                                </div>
+                                
+                                <!-- Tabs -->
+                                <div class="flex bg-gray-100 dark:bg-slate-800 rounded-lg p-1 mb-4 shrink-0">
+                                    <button onclick="switchQuoteTab('standard')" id="tab-standard" class="flex-1 py-1.5 text-sm font-semibold rounded-md bg-white shadow text-primary transition-all">Báo giá cơ bản</button>
+                                    <button onclick="switchQuoteTab('template')" id="tab-template" class="flex-1 py-1.5 text-sm font-semibold rounded-md text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-all">Từ Mẫu Hợp Đồng</button>
+                                </div>
+
+                                <div class="flex-1 overflow-y-auto pr-2 space-y-4">
+                                    
+                                    <!-- TAB 1: Báo giá cơ bản -->
+                                    <div id="panel-standard" class="space-y-4">
+                                        <div>
+                                            <label class="block text-xs font-semibold text-gray-500 mb-1">Chọn Khách Hàng</label>
+                                            <select id="quote-customer" class="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-primary outline-none">
+                                                <option value="">-- Chọn --</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs font-semibold text-gray-500 mb-1">Chọn Dịch Vụ</label>
+                                            <div id="quote-services-list" class="space-y-2 max-h-48 overflow-y-auto p-2 bg-gray-50 dark:bg-slate-800/50 rounded-lg border border-gray-200 dark:border-slate-700"></div>
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs font-semibold text-gray-500 mb-1">VAT (%)</label>
+                                            <input type="number" id="quote-vat" value="10" class="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg text-sm outline-none">
+                                        </div>
+                                        <button onclick="generateStandardQuote()" class="w-full bg-slate-800 dark:bg-white text-white dark:text-slate-900 py-2.5 rounded-lg font-bold shadow-md hover:scale-[1.02] transition-transform">
+                                            Tạo bản xem trước
+                                        </button>
+                                    </div>
+
+                                    <!-- TAB 2: Từ Mẫu Hợp Đồng -->
+                                    <div id="panel-template" class="space-y-4 hidden">
+                                        <div>
+                                            <div class="flex justify-between items-center mb-1">
+                                                <label class="block text-xs font-semibold text-gray-500">Chọn Mẫu Đã Lưu</label>
+                                                <div class="flex gap-3">
+                                                    <button onclick="openModal('template-manage-modal')" class="text-xs text-blue-500 font-medium hover:underline flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">format_list_bulleted</span> Quản lý</button>
+                                                    <button onclick="openModal('template-upload-modal')" class="text-xs text-primary font-medium hover:underline flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">upload_file</span> Tải lên</button>
+                                                </div>
+                                            </div>
+                                            <select id="template-selector" onchange="loadSelectedTemplate()" class="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-primary outline-none">
+                                                <option value="">-- Chọn Mẫu Word --</option>
+                                            </select>
+                                        </div>
+
+                                        <!-- Dynamic Fields Container -->
+                                        <div id="dynamic-fields-container" class="space-y-3 bg-primary/5 p-3 rounded-lg border border-primary/20 hidden">
+                                            <p class="text-xs font-bold text-primary mb-2">Điền thông tin còn thiếu:</p>
+                                            <div id="dynamic-inputs-list" class="space-y-2">
+                                                <!-- Inputs generated here -->
+                                            </div>
+                                            <button onclick="updateTemplatePreview()" class="w-full mt-3 bg-primary text-white py-2 rounded-lg font-bold shadow-md hover:opacity-90 text-sm">
+                                                Cập nhật xem trước
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Preview Panel -->
+                            <div class="glass rounded-2xl shadow-sm lg:col-span-2 border border-gray-200 dark:border-slate-700 flex flex-col bg-gray-200 dark:bg-slate-800">
+                                <div class="p-3 border-b border-gray-300 dark:border-slate-700 flex justify-between items-center bg-white/50 dark:bg-slate-900/50">
+                                    <span class="text-sm font-semibold">Văn bản xem trước (A4)</span>
+                                    <button onclick="exportPDF()" class="bg-red-500 text-white px-3 py-1.5 rounded text-xs font-bold shadow-sm hover:bg-red-600 flex items-center gap-1">
+                                        <span class="material-symbols-outlined text-sm">picture_as_pdf</span> Lưu & Xuất PDF
+                                    </button>
+                                </div>
+                                <div class="flex-1 overflow-auto p-4 flex justify-center">
+                                    <!-- Document Area -->
+                                    <div id="document-preview-area" class="bg-white text-black w-full max-w-[210mm] min-h-[297mm] shadow-lg p-10 font-serif text-[14px] outline-none template-content-preview">
+                                        <div class="text-center text-gray-400 mt-20 italic" id="empty-preview-msg">Vui lòng chọn tạo báo giá cơ bản hoặc chọn mẫu hợp đồng ở cột bên trái.</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- VIEW: HISTORY -->
+                    <section id="view-history" class="page-view animate-fade-in hidden">
+                        <div class="glass rounded-2xl shadow-sm overflow-hidden flex flex-col h-[calc(100vh-140px)]">
+                            <div class="p-4 border-b border-gray-200 dark:border-slate-700 flex justify-between items-center bg-white/50 dark:bg-slate-800/50">
+                                <h3 class="font-bold text-lg flex items-center gap-2"><span class="material-symbols-outlined text-primary">history</span> Lịch sử xuất văn bản</h3>
+                                <div class="text-sm text-gray-500">Hiển thị các hợp đồng/báo giá đã xuất ra PDF</div>
+                            </div>
+                            <div class="flex-1 overflow-auto p-4">
+                                <table class="w-full text-left border-collapse">
+                                    <thead>
+                                        <tr class="text-xs text-gray-500 uppercase border-b border-gray-200 dark:border-slate-700">
+                                            <th class="pb-3 font-semibold w-16 text-center">STT</th>
+                                            <th class="pb-3 font-semibold">Tên Hợp Đồng / Báo Giá</th>
+                                            <th class="pb-3 font-semibold">Thời gian xuất</th>
+                                            <th class="pb-3 font-semibold text-center">Xem lại</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="history-list" class="text-sm divide-y divide-gray-100 dark:divide-slate-800/50">
+                                        <!-- Rendered via JS -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- VIEW: SETTINGS -->
+                    <section id="view-settings" class="page-view animate-fade-in hidden">
+                        <div class="max-w-2xl mx-auto glass p-8 rounded-2xl shadow-sm border border-gray-200 dark:border-slate-700 space-y-8">
+                            
+                            <!-- Profile Section -->
+                            <div>
+                                <h3 class="text-xl font-bold mb-4 flex items-center gap-2"><span class="material-symbols-outlined text-primary">person</span> Cập Nhật Tài Khoản</h3>
+                                <div class="bg-white dark:bg-slate-800 p-6 rounded-xl border border-gray-100 dark:border-slate-700 shadow-sm space-y-4">
+                                    <div>
+                                        <label class="block text-sm font-semibold mb-1">Email đăng nhập</label>
+                                        <input type="email" id="profile-email" disabled class="w-full px-4 py-2 bg-gray-100 dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg text-gray-500 cursor-not-allowed">
+                                        <p class="text-xs text-gray-400 mt-1">Email không thể thay đổi sau khi đăng ký.</p>
+                                    </div>
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label class="block text-sm font-semibold mb-1">Username (Tên hiển thị) *</label>
+                                            <input type="text" id="profile-username" required class="w-full px-4 py-2 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary outline-none">
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-semibold mb-1">Họ và tên (Fullname)</label>
+                                            <input type="text" id="profile-fullname" class="w-full px-4 py-2 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary outline-none">
+                                        </div>
+                                    </div>
+                                    <div class="pt-2">
+                                        <label class="block text-sm font-semibold mb-1 text-red-500">Mật khẩu mới</label>
+                                        <input type="password" id="profile-password" placeholder="Bỏ trống nếu không muốn đổi mật khẩu" class="w-full px-4 py-2 bg-gray-50 dark:bg-slate-900 border border-red-200 dark:border-red-900/30 rounded-lg focus:ring-2 focus:ring-red-500 outline-none">
+                                    </div>
+                                    <div class="pt-4 flex justify-end">
+                                        <button id="btn-update-profile" onclick="updateProfileData()" class="bg-primary text-white px-6 py-2.5 rounded-lg font-bold shadow-md hover:opacity-90 transition-all">Lưu Thay Đổi</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Theme Section -->
+                            <div>
+                                <h3 class="text-xl font-bold mb-4 flex items-center gap-2"><span class="material-symbols-outlined text-primary">palette</span> Tùy Biến Giao Diện</h3>
+                                <div class="bg-white dark:bg-slate-800 p-6 rounded-xl border border-gray-100 dark:border-slate-700 shadow-sm space-y-6">
+                                    <div>
+                                        <label class="block font-semibold mb-2">Màu Chủ Đạo (Primary Color)</label>
+                                        <div class="flex items-center gap-4">
+                                            <input type="color" id="color-picker" value="#6366f1" class="w-12 h-12 rounded cursor-pointer border-none bg-transparent">
+                                            <div class="flex-1 text-sm text-gray-500">Chọn màu sắc thể hiện thương hiệu của bạn. Sẽ được lưu vào trình duyệt.</div>
+                                        </div>
+                                    </div>
+                                    <div class="pt-4 border-t border-gray-200 dark:border-slate-700 flex justify-end gap-3">
+                                        <button onclick="resetThemeColor()" class="px-4 py-2 text-gray-500 hover:text-gray-800 dark:hover:text-white font-medium transition-colors">Về mặc định</button>
+                                        <button onclick="applyThemeColor()" class="bg-primary text-white px-6 py-2 rounded-lg font-bold shadow-md hover:opacity-90">Áp Dụng Màu</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </section>
+
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- MODALS & TOASTS                            -->
+    <!-- ========================================== -->
+
+    <!-- Modal: Customer -->
+    <div id="customer-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm hidden opacity-0 transition-opacity">
+        <div class="bg-white dark:bg-slate-900 w-full max-w-md rounded-2xl shadow-2xl border border-gray-200 dark:border-slate-700 transform scale-95 transition-transform" id="customer-modal-content">
+            <div class="p-5 border-b border-gray-200 dark:border-slate-800 flex justify-between items-center">
+                <h3 class="font-bold text-lg" id="customer-modal-title">Thêm Khách Hàng</h3>
+                <button onclick="closeModal('customer-modal')" class="text-gray-400 hover:text-red-500"><span class="material-symbols-outlined">close</span></button>
+            </div>
+            <form id="customer-form" class="p-5 space-y-4">
+                <input type="hidden" id="cus-id">
+                <div>
+                    <label class="block text-xs font-semibold text-gray-500 mb-1">Tên khách hàng/Công ty *</label>
+                    <input type="text" id="cus-name" required class="w-full px-3 py-2 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg text-sm outline-none focus:border-primary">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-500 mb-1">Số điện thoại *</label>
+                        <input type="text" id="cus-phone" required class="w-full px-3 py-2 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg text-sm outline-none focus:border-primary">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-500 mb-1">Nguồn (Facebook, Google...)</label>
+                        <input type="text" id="cus-source" class="w-full px-3 py-2 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg text-sm outline-none focus:border-primary">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-500 mb-1">Email</label>
+                    <input type="email" id="cus-email" class="w-full px-3 py-2 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg text-sm outline-none focus:border-primary">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-500 mb-1">Ghi chú yêu cầu</label>
+                    <textarea id="cus-note" rows="2" class="w-full px-3 py-2 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg text-sm outline-none focus:border-primary"></textarea>
+                </div>
+                <div class="pt-2 flex justify-end gap-2">
+                    <button type="button" onclick="closeModal('customer-modal')" class="px-4 py-2 text-sm font-medium bg-gray-100 dark:bg-slate-800 rounded-lg hover:bg-gray-200 dark:hover:bg-slate-700">Hủy</button>
+                    <button type="submit" class="px-4 py-2 text-sm font-bold text-white bg-primary rounded-lg shadow-md hover:opacity-90">Lưu lại</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Service -->
+    <div id="service-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm hidden opacity-0 transition-opacity">
+        <div class="bg-white dark:bg-slate-900 w-full max-w-md rounded-2xl shadow-2xl border border-gray-200 dark:border-slate-700 transform scale-95 transition-transform" id="service-modal-content">
+            <div class="p-5 border-b border-gray-200 dark:border-slate-800 flex justify-between items-center">
+                <h3 class="font-bold text-lg" id="service-modal-title">Thêm Dịch Vụ</h3>
+                <button onclick="closeModal('service-modal')" class="text-gray-400 hover:text-red-500"><span class="material-symbols-outlined">close</span></button>
+            </div>
+            <form id="service-form" class="p-5 space-y-4">
+                <input type="hidden" id="srv-id">
+                <div>
+                    <label class="block text-xs font-semibold text-gray-500 mb-1">Tên Dịch Vụ (VD: Thiết kế Web) *</label>
+                    <input type="text" id="srv-name" required class="w-full px-3 py-2 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg text-sm outline-none focus:border-primary">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-500 mb-1">Giá (VNĐ) *</label>
+                    <input type="number" id="srv-price" required class="w-full px-3 py-2 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg text-sm outline-none focus:border-primary">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-500 mb-1">Mô tả chi tiết</label>
+                    <textarea id="srv-desc" rows="3" class="w-full px-3 py-2 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg text-sm outline-none focus:border-primary"></textarea>
+                </div>
+                <div class="pt-2 flex justify-end gap-2">
+                    <button type="button" onclick="closeModal('service-modal')" class="px-4 py-2 text-sm font-medium bg-gray-100 dark:bg-slate-800 rounded-lg hover:bg-gray-200 dark:hover:bg-slate-700">Hủy</button>
+                    <button type="submit" class="px-4 py-2 text-sm font-bold text-white bg-primary rounded-lg shadow-md hover:opacity-90">Lưu lại</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Template Upload -->
+    <div id="template-upload-modal" class="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm hidden opacity-0 transition-opacity">
+        <div class="bg-white dark:bg-slate-900 w-full max-w-lg rounded-2xl shadow-2xl border border-gray-200 dark:border-slate-700 transform scale-95 transition-transform" id="template-upload-modal-content">
+            <div class="p-5 border-b border-gray-200 dark:border-slate-800 flex justify-between items-center">
+                <h3 class="font-bold text-lg">Tải Mẫu Hợp Đồng (.docx)</h3>
+                <button onclick="closeModal('template-upload-modal')" class="text-gray-400 hover:text-red-500"><span class="material-symbols-outlined">close</span></button>
+            </div>
+            <div class="p-5 space-y-4">
+                <div class="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg text-sm text-blue-700 dark:text-blue-300">
+                    <strong>Hướng dẫn:</strong> Hệ thống giờ đây có thể tự động nhận diện các <strong>đường chấm chấm (.....)</strong>, <strong>dấu ba chấm (……)</strong> hoặc <strong>dấu gạch dưới (___)</strong> trong file Word của bạn thành các ô trống để nhập liệu mà không cần phải gõ cú pháp gì thêm!
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold mb-1">Tên lưu gợi nhớ *</label>
+                    <input type="text" id="tpl-name" placeholder="VD: Hợp đồng thiết kế web chuẩn" class="w-full px-3 py-2 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg text-sm outline-none focus:border-primary">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold mb-1">Chọn file Word (.docx)</label>
+                    <input type="file" id="tpl-file" accept=".docx" class="w-full block text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20 cursor-pointer">
+                </div>
+                
+                <div id="tpl-extract-status" class="hidden mt-4 p-3 border rounded-lg bg-gray-50 dark:bg-slate-800 border-gray-200 dark:border-slate-700">
+                    <p class="text-sm font-semibold mb-2 text-green-600 flex items-center gap-1"><span class="material-symbols-outlined text-[18px]">check_circle</span> Phân tích thành công. Các trường tìm thấy:</p>
+                    <div id="tpl-detected-fields" class="flex flex-wrap gap-2"></div>
+                </div>
+
+                <div class="pt-4 flex justify-end gap-2 border-t border-gray-200 dark:border-slate-700">
+                    <button type="button" onclick="closeModal('template-upload-modal')" class="px-4 py-2 text-sm font-medium bg-gray-100 dark:bg-slate-800 rounded-lg hover:bg-gray-200 dark:hover:bg-slate-700">Hủy</button>
+                    <button type="button" onclick="processAndSaveTemplate()" id="btn-save-tpl" class="px-4 py-2 text-sm font-bold text-white bg-primary rounded-lg shadow-md hover:opacity-90">Lưu Mẫu</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Manage Templates -->
+    <div id="template-manage-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm hidden opacity-0 transition-opacity">
+        <div class="bg-white dark:bg-slate-900 w-full max-w-2xl rounded-2xl shadow-2xl border border-gray-200 dark:border-slate-700 transform scale-95 transition-transform flex flex-col max-h-[80vh]" id="template-manage-modal-content">
+            <div class="p-5 border-b border-gray-200 dark:border-slate-800 flex justify-between items-center shrink-0">
+                <h3 class="font-bold text-lg">Quản lý Mẫu Hợp Đồng</h3>
+                <button onclick="closeModal('template-manage-modal')" class="text-gray-400 hover:text-red-500"><span class="material-symbols-outlined">close</span></button>
+            </div>
+            <div class="p-5 overflow-y-auto flex-1">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="text-xs text-gray-500 uppercase border-b border-gray-200 dark:border-slate-700">
+                            <th class="pb-3 font-semibold">Tên mẫu hợp đồng</th>
+                            <th class="pb-3 font-semibold">Số lượng ô cần điền</th>
+                            <th class="pb-3 font-semibold text-right">Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody id="templates-list" class="text-sm divide-y divide-gray-100 dark:divide-slate-800/50">
+                        <!-- Rendered via JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Edit Template Name -->
+    <div id="template-edit-modal" class="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm hidden opacity-0 transition-opacity">
+        <div class="bg-white dark:bg-slate-900 w-full max-w-sm rounded-2xl shadow-2xl border border-gray-200 dark:border-slate-700 transform scale-95 transition-transform" id="template-edit-modal-content">
+            <div class="p-4 border-b border-gray-200 dark:border-slate-800 flex justify-between items-center">
+                <h3 class="font-bold text-base">Sửa Tên Mẫu</h3>
+                <button onclick="closeModal('template-edit-modal')" class="text-gray-400 hover:text-red-500"><span class="material-symbols-outlined">close</span></button>
+            </div>
+            <form id="template-edit-form" class="p-4 space-y-4">
+                <input type="hidden" id="edit-tpl-id">
+                <div>
+                    <label class="block text-sm font-semibold mb-1">Tên mẫu mới</label>
+                    <input type="text" id="edit-tpl-name" required class="w-full px-3 py-2 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg text-sm outline-none focus:border-primary">
+                </div>
+                <div class="flex justify-end gap-2">
+                    <button type="button" onclick="closeModal('template-edit-modal')" class="px-4 py-2 text-sm font-medium bg-gray-100 dark:bg-slate-800 rounded-lg">Hủy</button>
+                    <button type="submit" class="px-4 py-2 text-sm font-bold text-white bg-primary rounded-lg shadow-md">Lưu</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: History Viewer -->
+    <div id="history-view-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm hidden opacity-0 transition-opacity">
+        <div class="bg-gray-200 dark:bg-slate-800 w-full max-w-4xl h-[95vh] rounded-2xl shadow-2xl border border-gray-300 dark:border-slate-700 transform scale-95 transition-transform flex flex-col" id="history-view-modal-content">
+            <div class="p-4 border-b border-gray-300 dark:border-slate-700 flex justify-between items-center bg-white dark:bg-slate-900 rounded-t-2xl shrink-0">
+                <div class="flex items-center gap-3">
+                    <span class="material-symbols-outlined text-primary">visibility</span>
+                    <div>
+                        <h3 class="font-bold text-base leading-tight" id="history-doc-title">Bản xem trước tài liệu</h3>
+                        <p class="text-xs text-gray-500" id="history-doc-time">Thời gian xuất: ...</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3">
+                    <button onclick="reExportHistoryPDF()" class="bg-red-500 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-md hover:bg-red-600 flex items-center gap-2">
+                        <span class="material-symbols-outlined text-sm">download</span> Tải lại PDF
+                    </button>
+                    <button onclick="closeModal('history-view-modal')" class="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 dark:bg-slate-800 text-gray-500 hover:text-red-500 hover:bg-gray-200 transition-colors"><span class="material-symbols-outlined">close</span></button>
+                </div>
+            </div>
+            
+            <div class="flex-1 overflow-auto p-6 flex justify-center bg-gray-300 dark:bg-slate-800">
+                <!-- Wrapper for Read Only Document -->
+                <div class="bg-white text-black w-[210mm] min-h-[297mm] shadow-2xl p-10 font-serif text-[14px] template-content-preview history-readonly relative">
+                    <!-- Watermark for read-only status -->
+                    <div class="absolute inset-0 flex items-center justify-center pointer-events-none opacity-[0.03] z-0 overflow-hidden">
+                        <span class="text-[150px] font-bold rotate-[-45deg] whitespace-nowrap">CHỈ XEM</span>
+                    </div>
+                    <!-- Actual HTML Content loaded here -->
+                    <div id="history-doc-content" class="relative z-10"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toast-container" class="fixed bottom-5 right-5 z-[100] flex flex-col gap-2"></div>
+
+    <!-- ========================================== -->
+    <!-- FIREBASE & CORE LOGIC SCRIPT               -->
+    <!-- ========================================== -->
+    
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, onAuthStateChanged, signOut, updateProfile, updatePassword } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getFirestore, collection, doc, setDoc, getDoc, onSnapshot, addDoc, updateDoc, deleteDoc, query } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        // --- CẤU HÌNH FIREBASE ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyBqdX8HpUSP_atbFPQEDur_lQsjMI3TPXo",
+            authDomain: "crm-neo-wave.firebaseapp.com",
+            databaseURL: "https://crm-neo-wave-default-rtdb.firebaseio.com",
+            projectId: "crm-neo-wave",
+            storageBucket: "crm-neo-wave.firebasestorage.app",
+            messagingSenderId: "221144536693",
+            appId: "1:221144536693:web:09a81e9abc09afd81b4a3c"
+        };
+
+        const app_id = typeof __app_id !== 'undefined' ? __app_id : 'demo-marketing-crm-v3';
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // --- GLOBAL STATE ---
+        window.currentUser = null;
+        let customersData = [];
+        let servicesData = [];
+        let templatesData = [];
+        let historyData = [];
+        let currentEditingTemplateHtml = "";
+        let unsubscribeCustomers = null;
+        let unsubscribeServices = null;
+        let unsubscribeTemplates = null;
+        let unsubscribeHistory = null;
+        let isLoginMode = true; 
+
+        const getCollectionPath = (name) => collection(db, 'artifacts', app_id, 'public', 'data', name);
+
+        // ==========================================
+        // UI HELPERS & ANIMATIONS
+        // ==========================================
+        window.showToast = (msg, type = 'success') => {
+            const toast = document.createElement('div');
+            toast.className = `toast-enter p-4 rounded-xl shadow-lg flex items-center gap-3 text-white max-w-sm ${type === 'success' ? 'bg-green-600' : type === 'error' ? 'bg-red-600' : 'bg-blue-600'}`;
+            toast.innerHTML = `<span class="material-symbols-outlined">${type === 'success' ? 'check_circle' : type === 'error' ? 'error' : 'info'}</span><span class="text-sm font-medium">${msg}</span>`;
+            document.getElementById('toast-container').appendChild(toast);
+            setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 300); }, 3000);
+        };
+
+        window.formatCurrency = (num) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(num);
+        
+        window.formatDate = (timestamp) => {
+            if (!timestamp) return '...';
+            const date = timestamp.seconds ? new Date(timestamp.seconds * 1000) : new Date(timestamp);
+            return date.toLocaleString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+        };
+
+        // ==========================================
+        // LOGIN FORM LOGIC
+        // ==========================================
+        const usernameInput = document.getElementById('email');
+        const passwordInput = document.getElementById('password');
+        const tail = document.getElementById('tail');
+        const paws = document.getElementById('paws');
+        const leftPupil = document.getElementById('left-pupil');
+        const rightPupil = document.getElementById('right-pupil');
+        const mouth = document.getElementById('mouth');
+
+        document.addEventListener('mousemove', (e) => {
+            if (document.activeElement === passwordInput) return;
+            const mouseX = e.clientX, mouseY = e.clientY;
+            [leftPupil, rightPupil].forEach(pupil => {
+                const rect = pupil.getBoundingClientRect();
+                const centerX = rect.left + rect.width / 2;
+                const centerY = rect.top + rect.height / 2;
+                const angle = Math.atan2(mouseY - centerY, mouseX - centerX);
+                const distance = Math.min(6, Math.hypot(mouseX - centerX, mouseY - centerY) / 50);
+                pupil.style.transform = `translate(${Math.cos(angle) * distance}px, ${Math.sin(angle) * distance}px)`;
+            });
+        });
+
+        usernameInput.addEventListener('input', () => { tail.classList.toggle('wag-fast', usernameInput.value.length > 0); tail.classList.toggle('wag-normal', usernameInput.value.length === 0); });
+        passwordInput.addEventListener('focus', () => { paws.style.opacity = '1'; paws.style.transform = 'translateY(-60px)'; leftPupil.style.transform = 'scale(0)'; rightPupil.style.transform = 'scale(0)'; mouth.style.width = '10px'; });
+        passwordInput.addEventListener('blur', () => { paws.style.opacity = '0'; paws.style.transform = 'translateY(24px)'; leftPupil.style.transform = 'scale(1)'; rightPupil.style.transform = 'scale(1)'; mouth.style.width = '16px'; });
+
+        window.toggleAuthMode = () => {
+            isLoginMode = !isLoginMode;
+            document.getElementById('auth-title').innerText = isLoginMode ? 'Chào mừng trở lại!' : 'Tạo tài khoản mới';
+            document.getElementById('auth-subtitle').innerText = isLoginMode ? 'Đăng nhập vào hệ thống CRM' : 'Đăng ký tài khoản không gian làm việc';
+            document.getElementById('auth-btn').innerHTML = isLoginMode ? '<span>Đăng nhập</span><span class="material-symbols-outlined text-sm">arrow_forward</span>' : '<span>Đăng ký</span><span class="material-symbols-outlined text-sm">person_add</span>';
+            document.getElementById('toggle-auth-btn').innerText = isLoginMode ? 'Đăng ký ngay' : 'Đăng nhập';
+        };
+
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = usernameInput.value;
+            const password = passwordInput.value;
+            const btn = document.getElementById('auth-btn');
+            btn.disabled = true; btn.style.opacity = '0.7';
+
+            try {
+                if (isLoginMode) {
+                    await signInWithEmailAndPassword(auth, email, password);
+                    catReact(true);
+                } else {
+                    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                    await updateProfile(userCredential.user, { displayName: email.split('@')[0] });
+                    catReact(true);
+                    showToast('Đăng ký thành công!');
+                }
+            } catch (error) {
+                catReact(false);
+                showToast(error.message.includes('invalid-credential') ? 'Sai mật khẩu hoặc email!' : 'Lỗi xác thực: ' + error.message, 'error');
+            } finally { btn.disabled = false; btn.style.opacity = '1'; }
+        });
+
+        window.resetPassword = async () => {
+            const email = usernameInput.value;
+            if (!email) return showToast('Vui lòng nhập email vào ô trên để reset', 'error');
+            try { await sendPasswordResetEmail(auth, email); showToast('Đã gửi link reset vào email của bạn!'); } 
+            catch (e) { showToast('Lỗi gửi email reset', 'error'); }
+        };
+
+        window.logout = async () => { if (confirm('Bạn có chắc muốn đăng xuất?')) await signOut(auth); };
+
+        function catReact(isSuccess) {
+            if (isSuccess) { mouth.style.height = '12px'; mouth.style.borderRadius = '0 0 20px 20px'; mouth.style.borderBottomWidth = '4px'; } 
+            else {
+                mouth.style.borderRadius = '20px 20px 0 0'; mouth.style.borderBottom = 'none'; mouth.style.borderTop = '2px solid #b31b25';
+                document.getElementById('loginForm').classList.add('animate-bounce');
+                setTimeout(() => document.getElementById('loginForm').classList.remove('animate-bounce'), 500);
+                setTimeout(() => { mouth.style.borderRadius = '0 0 20px 20px'; mouth.style.borderTop = 'none'; mouth.style.borderBottom = '2px solid var(--color-surface-dark)'; }, 2000);
+            }
+        }
+
+        onAuthStateChanged(auth, async (user) => {
+            const loginScreen = document.getElementById('login-screen');
+            const appScreen = document.getElementById('app-screen');
+
+            if (user) {
+                window.currentUser = user;
+                
+                // Fetch user doc from Firestore for Fullname
+                let fullname = '';
+                try {
+                    const userRef = doc(db, 'artifacts', app_id, 'public', 'data', 'users', user.uid);
+                    const userSnap = await getDoc(userRef);
+                    if (userSnap.exists()) {
+                        fullname = userSnap.data().fullname || '';
+                    }
+                } catch(e) { console.log('Mock rule applied'); }
+
+                const dName = user.displayName || user.email.split('@')[0];
+                
+                // Update UI Sidebar
+                document.getElementById('user-name-display').innerText = dName;
+                document.getElementById('user-email-display').innerText = user.email;
+                document.getElementById('user-avatar').innerText = dName.charAt(0).toUpperCase();
+                
+                // Fill Settings Form
+                document.getElementById('profile-email').value = user.email;
+                document.getElementById('profile-username').value = dName;
+                document.getElementById('profile-fullname').value = fullname;
+                document.getElementById('profile-password').value = ''; // clear input
+
+                loginScreen.classList.add('opacity-0');
+                setTimeout(() => {
+                    loginScreen.classList.add('hidden');
+                    appScreen.classList.remove('hidden');
+                    setTimeout(() => appScreen.classList.remove('opacity-0'), 50);
+                    initAppLogic();
+                }, 500);
+            } else {
+                window.currentUser = null;
+                if (unsubscribeCustomers) unsubscribeCustomers();
+                if (unsubscribeServices) unsubscribeServices();
+                if (unsubscribeTemplates) unsubscribeTemplates();
+                if (unsubscribeHistory) unsubscribeHistory();
+
+                appScreen.classList.add('opacity-0');
+                setTimeout(() => {
+                    appScreen.classList.add('hidden');
+                    loginScreen.classList.remove('hidden');
+                    setTimeout(() => loginScreen.classList.remove('opacity-0'), 50);
+                }, 500);
+            }
+        });
+
+        // Update Profile Logic
+        window.updateProfileData = async () => {
+            const username = document.getElementById('profile-username').value.trim();
+            const fullname = document.getElementById('profile-fullname').value.trim();
+            const newPassword = document.getElementById('profile-password').value;
+
+            if(!username) return showToast('Username không được để trống', 'error');
+
+            const btn = document.getElementById('btn-update-profile');
+            btn.innerHTML = '<span class="material-symbols-outlined animate-spin mr-2">refresh</span> Đang xử lý...'; 
+            btn.disabled = true;
+
+            try {
+                // 1. Update DisplayName
+                await updateProfile(auth.currentUser, { displayName: username });
+
+                // 2. Save Fullname to Firestore
+                const userRef = doc(db, 'artifacts', app_id, 'public', 'data', 'users', auth.currentUser.uid);
+                await setDoc(userRef, { username, fullname, updatedAt: new Date() }, { merge: true });
+
+                // 3. Update Password if provided
+                if (newPassword) {
+                    await updatePassword(auth.currentUser, newPassword);
+                    document.getElementById('profile-password').value = '';
+                    showToast('Đã cập nhật mật khẩu mới!');
+                }
+
+                // Update Sidebar
+                document.getElementById('user-name-display').innerText = username;
+                document.getElementById('user-avatar').innerText = username.charAt(0).toUpperCase();
+                
+                showToast('Đã cập nhật thông tin thành công!');
+            } catch(e) { 
+                if (e.code === 'auth/requires-recent-login') {
+                    showToast('Phiên đăng nhập đã cũ! Vui lòng đăng xuất và đăng nhập lại để đổi mật khẩu.', 'error');
+                } else {
+                    showToast('Lỗi cập nhật: ' + e.message, 'error'); 
+                }
+            } finally {
+                btn.innerHTML = 'Lưu Thay Đổi'; 
+                btn.disabled = false;
+            }
+        };
+
+        // ==========================================
+        // APP NAVIGATION & INIT
+        // ==========================================
+        const views = ['dashboard', 'customers', 'services', 'quotes', 'history', 'settings'];
+        window.navigate = (target) => {
+            views.forEach(v => document.getElementById(`view-${v}`).classList.add('hidden'));
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('bg-primary/10', 'text-primary');
+                if (btn.dataset.target === target) btn.classList.add('bg-primary/10', 'text-primary');
+            });
+            document.getElementById(`view-${target}`).classList.remove('hidden');
+
+            const titles = { dashboard: 'Tổng quan', customers: 'Quản lý Khách hàng', services: 'Dịch vụ', quotes: 'Báo giá & Hợp đồng', history: 'Lịch sử xuất', settings: 'Cài đặt hệ thống' };
+            document.getElementById('page-title').innerText = titles[target];
+        };
+
+        function initAppLogic() {
+            fetchCustomers();
+            fetchServices();
+            fetchTemplates();
+            fetchHistory();
+            initChart();
+        }
+
+        // ==========================================
+        // MODAL MANAGEMENT
+        // ==========================================
+        window.openModal = (id, data = null) => {
+            const modal = document.getElementById(id);
+            const content = document.getElementById(`${id}-content`);
+            modal.classList.remove('hidden');
+            setTimeout(() => { modal.classList.remove('opacity-0'); content.classList.remove('scale-95'); }, 10);
+
+            if (id === 'customer-modal') {
+                document.getElementById('customer-modal-title').innerText = data ? 'Sửa Khách Hàng' : 'Thêm Khách Hàng';
+                ['id','name','phone','email','source','note'].forEach(k => document.getElementById(`cus-${k}`).value = data ? (data[k]||'') : '');
+            } else if (id === 'service-modal') {
+                document.getElementById('service-modal-title').innerText = data ? 'Sửa Dịch Vụ' : 'Thêm Dịch Vụ';
+                ['id','name','price','desc'].forEach(k => document.getElementById(`srv-${k}`).value = data ? (data[k]||'') : '');
+            } else if (id === 'template-upload-modal') {
+                document.getElementById('tpl-name').value = '';
+                document.getElementById('tpl-file').value = '';
+                document.getElementById('tpl-extract-status').classList.add('hidden');
+                document.getElementById('tpl-detected-fields').innerHTML = '';
+                window.tempExtractedHtml = null;
+                window.tempExtractedFields = [];
+            }
+        };
+
+        window.closeModal = (id) => {
+            const modal = document.getElementById(id);
+            const content = document.getElementById(`${id}-content`);
+            modal.classList.add('opacity-0'); content.classList.add('scale-95');
+            setTimeout(() => modal.classList.add('hidden'), 300);
+        };
+
+        // ==========================================
+        // CRUD: CUSTOMERS & SERVICES 
+        // ==========================================
+        function fetchCustomers() {
+            unsubscribeCustomers = onSnapshot(query(getCollectionPath('customers')), (snapshot) => {
+                customersData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                renderCustomers();
+                updateDashboardStats();
+            });
+        }
+
+        window.renderCustomers = (filter = '') => {
+            const tbody = document.getElementById('customers-list');
+            tbody.innerHTML = '';
+            const filtered = customersData.filter(c => c.name.toLowerCase().includes(filter.toLowerCase()) || c.phone.includes(filter));
+
+            if (filtered.length === 0) return tbody.innerHTML = `<tr><td colspan="5" class="py-6 text-center text-gray-500">Chưa có dữ liệu</td></tr>`;
+
+            filtered.forEach(cus => {
+                tbody.innerHTML += `
+                    <tr class="hover:bg-gray-50/50 dark:hover:bg-slate-800/30 transition-colors border-b border-gray-100 dark:border-slate-800/50 last:border-0">
+                        <td class="py-3 font-semibold text-primary">${cus.name}</td>
+                        <td class="py-3"><div class="text-xs font-mono">${cus.phone}</div><div class="text-[11px] text-gray-500">${cus.email || ''}</div></td>
+                        <td class="py-3 text-xs"><span class="px-2 py-1 bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 rounded-md">${cus.source || 'N/A'}</span></td>
+                        <td class="py-3 text-xs text-gray-500 max-w-[150px] truncate" title="${cus.note}">${cus.note || ''}</td>
+                        <td class="py-3 text-right">
+                            <button onclick='editCustomer(${JSON.stringify(cus).replace(/'/g, "&#39;")})' class="p-1 text-gray-400 hover:text-primary mr-1" title="Sửa"><span class="material-symbols-outlined text-sm">edit</span></button>
+                            <button onclick="deleteCustomer('${cus.id}')" class="p-1 text-gray-400 hover:text-red-500" title="Xóa"><span class="material-symbols-outlined text-sm">delete</span></button>
+                        </td>
+                    </tr>
+                `;
+            });
+            document.getElementById('quote-customer').innerHTML = '<option value="">-- Chọn Khách Hàng --</option>' + customersData.map(c => `<option value="${c.id}">${c.name} - ${c.phone}</option>`).join('');
+        };
+
+        document.getElementById('search-customer').addEventListener('input', (e) => renderCustomers(e.target.value));
+
+        document.getElementById('customer-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('cus-id').value;
+            const data = {
+                name: document.getElementById('cus-name').value, phone: document.getElementById('cus-phone').value,
+                email: document.getElementById('cus-email').value, source: document.getElementById('cus-source').value, note: document.getElementById('cus-note').value
+            };
+            try {
+                if (id) await updateDoc(doc(db, 'artifacts', app_id, 'public', 'data', 'customers', id), data);
+                else await addDoc(getCollectionPath('customers'), { ...data, createdAt: new Date() });
+                showToast(id ? 'Cập nhật thành công' : 'Thêm thành công');
+                closeModal('customer-modal');
+            } catch (error) { showToast('Lỗi: ' + error.message, 'error'); }
+        });
+
+        window.editCustomer = (data) => openModal('customer-modal', data);
+        window.deleteCustomer = async (id) => {
+            if (confirm('Bạn có chắc chắn muốn xóa khách hàng này?')) {
+                try { await deleteDoc(doc(db, 'artifacts', app_id, 'public', 'data', 'customers', id)); showToast('Đã xóa'); }
+                catch (error) { showToast('Lỗi', 'error'); }
+            }
+        };
+
+        function fetchServices() {
+            unsubscribeServices = onSnapshot(query(getCollectionPath('services')), (snapshot) => {
+                servicesData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                renderServices();
+                document.getElementById('quote-services-list').innerHTML = servicesData.map(srv => `
+                    <label class="flex items-center gap-3 p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded cursor-pointer">
+                        <input type="checkbox" class="quote-srv-cb form-checkbox h-4 w-4 text-primary rounded border-gray-300" value="${srv.id}" data-name="${srv.name}" data-price="${srv.price}">
+                        <div class="flex-1"><div class="text-sm font-semibold">${srv.name}</div><div class="text-xs text-gray-500">${formatCurrency(srv.price)}</div></div>
+                    </label>
+                `).join('');
+                updateDashboardStats();
+            });
+        }
+
+        function renderServices() {
+            const grid = document.getElementById('services-grid');
+            grid.innerHTML = servicesData.length === 0 ? `<div class="col-span-full text-center py-10 text-gray-500">Chưa có dữ liệu</div>` : servicesData.map(srv => `
+                <div class="bg-white dark:bg-slate-800 p-5 rounded-xl border border-gray-100 dark:border-slate-700 shadow-sm relative overflow-hidden group">
+                    <div class="absolute top-0 left-0 w-1 h-full bg-primary opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                    <div class="flex justify-between items-start mb-2">
+                        <h4 class="font-bold text-lg leading-tight pr-4">${srv.name}</h4>
+                    </div>
+                    <p class="text-xl font-extrabold text-primary mb-3">${formatCurrency(srv.price)}</p>
+                    <p class="text-xs text-gray-500 line-clamp-2 mb-4 h-8">${srv.desc || ''}</p>
+                    <div class="flex gap-2">
+                        <button onclick='editService(${JSON.stringify(srv).replace(/'/g, "&#39;")})' class="w-8 h-8 rounded-lg bg-gray-100 dark:bg-slate-700 flex items-center justify-center hover:text-primary transition-colors"><span class="material-symbols-outlined text-sm">edit</span></button>
+                        <button onclick="deleteService('${srv.id}')" class="w-8 h-8 rounded-lg bg-gray-100 dark:bg-slate-700 flex items-center justify-center hover:text-red-500 transition-colors"><span class="material-symbols-outlined text-sm">delete</span></button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        document.getElementById('service-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('srv-id').value;
+            const data = { name: document.getElementById('srv-name').value, price: Number(document.getElementById('srv-price').value), desc: document.getElementById('srv-desc').value };
+            try {
+                if (id) await updateDoc(doc(db, 'artifacts', app_id, 'public', 'data', 'services', id), data);
+                else await addDoc(getCollectionPath('services'), data);
+                showToast('Lưu dịch vụ thành công'); closeModal('service-modal');
+            } catch (error) { showToast('Lỗi', 'error'); }
+        });
+
+        window.editService = (data) => openModal('service-modal', data);
+        window.deleteService = async (id) => {
+            if (confirm('Xóa dịch vụ này?')) try { await deleteDoc(doc(db, 'artifacts', app_id, 'public', 'data', 'services', id)); } catch (e) { showToast('Lỗi', 'error'); }
+        };
+
+        // ==========================================
+        // TEMPLATE WORD UPLOAD & PARSING & MANAGEMENT
+        // ==========================================
+        function fetchTemplates() {
+            unsubscribeTemplates = onSnapshot(query(getCollectionPath('templates')), (snapshot) => {
+                templatesData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                
+                const selector = document.getElementById('template-selector');
+                const currentSelection = selector.value;
+                selector.innerHTML = '<option value="">-- Chọn Mẫu Word --</option>' + 
+                    templatesData.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
+                
+                // Keep the selection if it still exists
+                if(templatesData.find(t => t.id === currentSelection)) {
+                    selector.value = currentSelection;
+                }
+
+                if (document.getElementById('templates-list')) {
+                    renderTemplatesList();
+                }
+                
+                updateDashboardStats();
+            });
+        }
+
+        window.renderTemplatesList = () => {
+            const tbody = document.getElementById('templates-list');
+            tbody.innerHTML = '';
+            
+            if (templatesData.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="3" class="py-6 text-center text-gray-500">Chưa có mẫu nào được lưu</td></tr>`;
+                return;
+            }
+
+            templatesData.forEach(tpl => {
+                tbody.innerHTML += `
+                    <tr class="hover:bg-gray-50/50 dark:hover:bg-slate-800/30 transition-colors border-b border-gray-100 dark:border-slate-800/50 last:border-0">
+                        <td class="py-3 font-semibold text-primary">${tpl.name}</td>
+                        <td class="py-3 text-xs text-gray-500">${tpl.fields ? tpl.fields.length : 0} trường trống</td>
+                        <td class="py-3 text-right">
+                            <button onclick="selectTemplateToView('${tpl.id}')" class="p-1 text-gray-400 hover:text-green-500 mr-1" title="Xem & Sử dụng"><span class="material-symbols-outlined text-sm">visibility</span></button>
+                            <button onclick='editTemplate(${JSON.stringify(tpl).replace(/'/g, "&#39;")})' class="p-1 text-gray-400 hover:text-primary mr-1" title="Sửa tên"><span class="material-symbols-outlined text-sm">edit</span></button>
+                            <button onclick="deleteTemplate('${tpl.id}')" class="p-1 text-gray-400 hover:text-red-500" title="Xóa"><span class="material-symbols-outlined text-sm">delete</span></button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        window.selectTemplateToView = (id) => {
+            closeModal('template-manage-modal');
+            const selector = document.getElementById('template-selector');
+            selector.value = id;
+            loadSelectedTemplate();
+        };
+
+        window.editTemplate = (tpl) => {
+            document.getElementById('edit-tpl-id').value = tpl.id;
+            document.getElementById('edit-tpl-name').value = tpl.name;
+            openModal('template-edit-modal');
+        };
+
+        document.getElementById('template-edit-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('edit-tpl-id').value;
+            const newName = document.getElementById('edit-tpl-name').value.trim();
+            if (newName) {
+                try {
+                    await updateDoc(doc(db, 'artifacts', app_id, 'public', 'data', 'templates', id), { name: newName });
+                    showToast('Đã cập nhật tên mẫu hợp đồng');
+                    closeModal('template-edit-modal');
+                } catch (err) {
+                    showToast('Lỗi cập nhật: ' + err.message, 'error');
+                }
+            }
+        });
+
+        window.deleteTemplate = async (id) => {
+            if (confirm('Bạn có chắc chắn muốn xóa vĩnh viễn mẫu hợp đồng này?')) {
+                try {
+                    await deleteDoc(doc(db, 'artifacts', app_id, 'public', 'data', 'templates', id));
+                    showToast('Đã xóa mẫu hợp đồng thành công');
+                    
+                    // Clear preview if deleted template was currently selected
+                    if (document.getElementById('template-selector').value === id) {
+                        document.getElementById('template-selector').value = '';
+                        loadSelectedTemplate();
+                    }
+                } catch (err) {
+                    showToast('Lỗi xóa: ' + err.message, 'error');
+                }
+            }
+        };
+
+
+        // Handle File Selection to Extract Text & Fields
+        document.getElementById('tpl-file').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(loadEvent) {
+                const arrayBuffer = loadEvent.target.result;
+                
+                // Use mammoth.js to convert docx to HTML
+                mammoth.convertToHtml({arrayBuffer: arrayBuffer})
+                    .then(function(result) {
+                        let html = result.value; 
+
+                        // Bắt các chuỗi: 3 dấu chấm trở lên (.....), 2 dấu ba chấm trở lên (……), hoặc 3 gạch dưới trở lên (_____)
+                        let blankCounter = 1;
+                        const blankRegex = /(\.{3,}|…{2,}|_{3,})/g;
+                        html = html.replace(blankRegex, function() {
+                            return `{{Trống_${blankCounter++}}}`;
+                        });
+
+                        window.tempExtractedHtml = html;
+                        
+                        const regex = /\{\{([^}]+)\}\}/g;
+                        const fieldsFound = new Set();
+                        let match;
+                        while ((match = regex.exec(html)) !== null) {
+                            fieldsFound.add(match[1].trim());
+                        }
+
+                        window.tempExtractedFields = Array.from(fieldsFound);
+
+                        const statusDiv = document.getElementById('tpl-extract-status');
+                        const fieldsDiv = document.getElementById('tpl-detected-fields');
+                        statusDiv.classList.remove('hidden');
+                        
+                        if(window.tempExtractedFields.length > 0) {
+                            fieldsDiv.innerHTML = window.tempExtractedFields.map(f => `<span class="px-2 py-1 bg-green-100 text-green-700 rounded text-[11px] font-mono">{{${f}}}</span>`).join('');
+                        } else {
+                            fieldsDiv.innerHTML = `<span class="text-sm text-gray-500">Không tìm thấy trường nào. File sẽ được dùng làm mẫu tĩnh.</span>`;
+                        }
+
+                    })
+                    .catch(function(err) {
+                        showToast("Lỗi đọc file Word. Hãy chắc chắn đó là file .docx hợp lệ.", "error");
+                        console.error(err);
+                    });
+            };
+            reader.readAsArrayBuffer(file);
+        });
+
+        window.processAndSaveTemplate = async () => {
+            const name = document.getElementById('tpl-name').value.trim();
+            if(!name) return showToast('Vui lòng nhập tên mẫu', 'error');
+            if(!window.tempExtractedHtml) return showToast('Vui lòng chọn file Word hợp lệ', 'error');
+
+            const btn = document.getElementById('btn-save-tpl');
+            btn.disabled = true; btn.innerHTML = 'Đang lưu...';
+
+            try {
+                await addDoc(getCollectionPath('templates'), {
+                    name: name,
+                    htmlContent: window.tempExtractedHtml,
+                    fields: window.tempExtractedFields,
+                    createdAt: new Date()
+                });
+                showToast('Đã lưu mẫu hợp đồng!');
+                closeModal('template-upload-modal');
+            } catch (e) {
+                showToast('Lỗi lưu mẫu: ' + e.message, 'error');
+            } finally {
+                btn.disabled = false; btn.innerHTML = 'Lưu Mẫu';
+            }
+        };
+
+        // ==========================================
+        // QUOTATIONS & TEMPLATE LOGIC
+        // ==========================================
+        window.switchQuoteTab = (tab) => {
+            document.getElementById('panel-standard').classList.add('hidden');
+            document.getElementById('panel-template').classList.add('hidden');
+            document.getElementById('tab-standard').classList.remove('bg-white', 'shadow', 'text-primary');
+            document.getElementById('tab-standard').classList.add('text-gray-500');
+            document.getElementById('tab-template').classList.remove('bg-white', 'shadow', 'text-primary');
+            document.getElementById('tab-template').classList.add('text-gray-500');
+            
+            document.getElementById(`panel-${tab}`).classList.remove('hidden');
+            document.getElementById(`tab-${tab}`).classList.remove('text-gray-500');
+            document.getElementById(`tab-${tab}`).classList.add('bg-white', 'shadow', 'text-primary');
+
+            // Reset preview
+            document.getElementById('document-preview-area').innerHTML = '<div class="text-center text-gray-400 mt-20 italic" id="empty-preview-msg">Vui lòng chọn tạo báo giá cơ bản hoặc chọn mẫu hợp đồng ở cột bên trái.</div>';
+        };
+
+        // --- Standard Quote Logic ---
+        window.generateStandardQuote = () => {
+            const cusId = document.getElementById('quote-customer').value;
+            if (!cusId) return showToast('Vui lòng chọn khách hàng', 'error');
+            const customer = customersData.find(c => c.id === cusId);
+            const checkboxes = document.querySelectorAll('.quote-srv-cb:checked');
+            if (checkboxes.length === 0) return showToast('Vui lòng chọn dịch vụ', 'error');
+
+            const vatPercent = Number(document.getElementById('quote-vat').value) || 0;
+            let subtotal = 0;
+            let rowsHtml = '';
+            
+            checkboxes.forEach((cb, index) => {
+                const price = Number(cb.dataset.price); subtotal += price;
+                rowsHtml += `<tr><td style="border:1px solid #000; padding:4px; text-align:center">${index + 1}</td><td style="border:1px solid #000; padding:4px;">${cb.dataset.name}</td><td style="border:1px solid #000; padding:4px; text-align:right">${price.toLocaleString('vi-VN')}</td></tr>`;
+            });
+            const vatAmount = subtotal * (vatPercent / 100); const total = subtotal + vatAmount;
+
+            const html = `
+                <div class="text-center mb-8 border-b-2 border-black pb-4">
+                    <h1 class="text-2xl font-bold uppercase tracking-widest">Báo Giá Dịch Vụ Marketing</h1>
+                    <p class="text-gray-600 mt-1">Ngày: ${new Date().toLocaleDateString('vi-VN')}</p>
+                </div>
+                <div class="mb-6">
+                    <p><strong>Kính gửi:</strong> ${customer.name}</p>
+                    <p><strong>Số điện thoại:</strong> ${customer.phone}</p>
+                    <p><strong>Email:</strong> ${customer.email || '.......................'}</p>
+                </div>
+                <p class="mb-4">Chúng tôi hân hạnh gửi tới Quý khách hàng bảng báo giá chi tiết:</p>
+                <table style="width:100%; border-collapse:collapse; margin-bottom:24px;">
+                    <tr style="background:#f3f4f6"><th style="border:1px solid #000; padding:4px;">STT</th><th style="border:1px solid #000; padding:4px;">Nội dung</th><th style="border:1px solid #000; padding:4px; text-align:right">Thành tiền (VNĐ)</th></tr>
+                    ${rowsHtml}
+                </table>
+                <div class="flex justify-end mb-8"><div class="w-64 text-right">
+                    <p>Cộng tiền: <strong>${subtotal.toLocaleString('vi-VN')} đ</strong></p>
+                    <p>VAT (${vatPercent}%): <strong>${vatAmount.toLocaleString('vi-VN')} đ</strong></p>
+                    <p class="border-t border-black pt-1 mt-1 text-lg">Tổng cộng: <strong class="text-red-600">${total.toLocaleString('vi-VN')} đ</strong></p>
+                </div></div>
+                <div class="grid grid-cols-2 text-center mt-16">
+                    <div><strong>Đại diện Khách hàng</strong><p class="text-xs text-gray-500">(Ký, ghi rõ họ tên)</p></div>
+                    <div><strong>Đại diện Công ty</strong><p class="text-xs text-gray-500">(Ký, đóng dấu)</p></div>
+                </div>
+            `;
+            document.getElementById('document-preview-area').innerHTML = html;
+        };
+
+        // --- Dynamic Template Logic ---
+        window.loadSelectedTemplate = () => {
+            const tplId = document.getElementById('template-selector').value;
+            const container = document.getElementById('dynamic-fields-container');
+            const inputsList = document.getElementById('dynamic-inputs-list');
+            
+            if (!tplId) {
+                container.classList.add('hidden');
+                document.getElementById('document-preview-area').innerHTML = '<div class="text-center text-gray-400 mt-20 italic" id="empty-preview-msg">Vui lòng chọn tạo báo giá cơ bản hoặc chọn mẫu hợp đồng ở cột bên trái.</div>';
+                return;
+            }
+
+            const template = templatesData.find(t => t.id === tplId);
+            currentEditingTemplateHtml = template.htmlContent;
+            
+            inputsList.innerHTML = '';
+            
+            if (template.fields && template.fields.length > 0) {
+                container.classList.remove('hidden');
+                template.fields.forEach(field => {
+                    const labelName = field.replace('_', ' ');
+                    inputsList.innerHTML += `
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-600 mb-1">${labelName}</label>
+                            <input type="text" data-field="${field}" class="dynamic-tpl-input w-full px-2 py-1.5 bg-white border border-gray-300 rounded text-sm outline-none focus:border-primary" placeholder="Nhập nội dung...">
+                        </div>
+                    `;
+                });
+            } else {
+                container.classList.add('hidden');
+            }
+
+            updateTemplatePreview(); 
+        };
+
+        window.updateTemplatePreview = () => {
+            let html = currentEditingTemplateHtml;
+            const inputs = document.querySelectorAll('.dynamic-tpl-input');
+            
+            inputs.forEach(input => {
+                const fieldName = input.dataset.field;
+                const val = input.value || `<span style="background-color: #fee2e2; color: #dc2626; padding: 0 4px; border-radius: 4px; border: 1px dashed #f87171;">[Chưa điền: ${fieldName.replace('_',' ')}]</span>`;
+                const regex = new RegExp(`\\{\\{\\s*${fieldName}\\s*\\}\\}`, 'g');
+                html = html.replace(regex, val);
+            });
+
+            document.getElementById('document-preview-area').innerHTML = html;
+        };
+
+        // ==========================================
+        // EXPORT & HISTORY LOGIC
+        // ==========================================
+        
+        function fetchHistory() {
+            unsubscribeHistory = onSnapshot(query(getCollectionPath('export_history')), (snapshot) => {
+                // Fetch all history data, sort in memory (Client-side) to avoid requiring compound indexes
+                historyData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                historyData.sort((a, b) => {
+                    const t1 = a.createdAt ? (a.createdAt.seconds || a.createdAt) : 0;
+                    const t2 = b.createdAt ? (b.createdAt.seconds || b.createdAt) : 0;
+                    return t2 - t1; // Descending
+                });
+                renderHistory();
+                updateDashboardStats();
+            });
+        }
+
+        function renderHistory() {
+            const tbody = document.getElementById('history-list');
+            tbody.innerHTML = '';
+            
+            if (historyData.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" class="py-6 text-center text-gray-500">Chưa có lịch sử xuất tài liệu nào</td></tr>`;
+                return;
+            }
+
+            historyData.forEach((item, index) => {
+                tbody.innerHTML += `
+                    <tr class="hover:bg-gray-50/50 dark:hover:bg-slate-800/30 transition-colors border-b border-gray-100 dark:border-slate-800/50 last:border-0">
+                        <td class="py-3 text-center font-mono text-gray-500">${index + 1}</td>
+                        <td class="py-3 font-semibold text-primary">${item.name}</td>
+                        <td class="py-3 text-xs text-gray-500">${formatDate(item.createdAt)}</td>
+                        <td class="py-3 text-center">
+                            <button onclick="viewHistoricalDoc('${item.id}')" class="p-1.5 bg-blue-100 dark:bg-blue-900/40 text-blue-600 rounded hover:bg-blue-200 dark:hover:bg-blue-800/60 transition-colors" title="Xem lại file PDF">
+                                <span class="material-symbols-outlined text-base">visibility</span>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        window.exportPDF = async () => {
+            const element = document.getElementById('document-preview-area');
+            
+            // Prevent exporting empty state
+            if (element.querySelector('#empty-preview-msg')) {
+                return showToast('Vui lòng tạo nội dung trước khi xuất PDF', 'error');
+            }
+
+            // --- Determine Document Name for History ---
+            let docName = "Tài liệu chưa đặt tên";
+            const isStandardTab = !document.getElementById('panel-standard').classList.contains('hidden');
+            
+            if (isStandardTab) {
+                const cusSelect = document.getElementById('quote-customer');
+                const cusName = cusSelect.options[cusSelect.selectedIndex]?.text || 'Khách hàng';
+                docName = `Báo giá - ${cusName.split(' - ')[0]}`;
+            } else {
+                const tplSelect = document.getElementById('template-selector');
+                const tplName = tplSelect.options[tplSelect.selectedIndex]?.text || 'Mẫu hợp đồng';
+                docName = `Hợp đồng - ${tplName}`;
+            }
+
+            // Get Current HTML content for archiving
+            const htmlContentToSave = element.innerHTML;
+
+            const opt = {
+                margin: 10,
+                filename: `${docName}_${new Date().getTime()}.pdf`,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2, useCORS: true },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+
+            const btn = document.querySelector('button[onclick="exportPDF()"]');
+            const oldText = btn.innerHTML;
+            btn.innerHTML = `Đang tạo...`;
+
+            html2pdf().set(opt).from(element).save().then(async () => {
+                btn.innerHTML = oldText;
+                
+                // Save to History Firebase
+                try {
+                    await addDoc(getCollectionPath('export_history'), {
+                        name: docName,
+                        htmlContent: htmlContentToSave,
+                        createdAt: new Date()
+                    });
+                    showToast('Đã xuất PDF và lưu vào Lịch sử!');
+                } catch (e) {
+                    console.error("Lỗi lưu lịch sử", e);
+                    showToast('Xuất PDF thành công nhưng lỗi lưu lịch sử', 'error');
+                }
+            });
+        };
+
+        // Current Viewing History Doc
+        window.viewHistoricalDoc = (historyId) => {
+            const item = historyData.find(h => h.id === historyId);
+            if (!item) return;
+
+            document.getElementById('history-doc-title').innerText = item.name;
+            document.getElementById('history-doc-time').innerText = `Thời gian xuất: ${formatDate(item.createdAt)}`;
+            document.getElementById('history-doc-content').innerHTML = item.htmlContent;
+            
+            openModal('history-view-modal');
+        };
+
+        window.reExportHistoryPDF = () => {
+            const element = document.getElementById('history-doc-content'); // specifically target content wrapper
+            const title = document.getElementById('history-doc-title').innerText;
+            
+            const opt = {
+                margin: 10,
+                filename: `${title}_ReExport.pdf`,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2, useCORS: true },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+
+            html2pdf().set(opt).from(element).save().then(() => {
+                showToast('Đã tải lại file PDF thành công!');
+            });
+        };
+
+
+        // ==========================================
+        // DASHBOARD & CUSTOMIZATION
+        // ==========================================
+        function updateDashboardStats() {
+            document.getElementById('stat-customers').innerText = customersData.length;
+            document.getElementById('stat-services').innerText = servicesData.length;
+            document.getElementById('stat-templates').innerText = templatesData.length;
+            
+            if (document.getElementById('stat-history')) {
+                document.getElementById('stat-history').innerText = historyData.length;
+            }
+        }
+
+        let myChart = null;
+        function initChart() {
+            if (myChart) myChart.destroy();
+            const ctx = document.getElementById('mainChart').getContext('2d');
+            const isDark = document.documentElement.classList.contains('dark');
+            const textColor = isDark ? '#cbd5e1' : '#64748b';
+            const primaryColor = getComputedStyle(document.documentElement).getPropertyValue('--color-primary').trim();
+
+            myChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['T1', 'T2', 'T3', 'T4', 'T5', 'T6'],
+                    datasets: [{ label: 'Tương tác', data: [12, 19, 15, 25, 22, 30], borderColor: primaryColor, tension: 0.4, fill: true, backgroundColor: primaryColor + '20' }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { color: textColor } }, x: { ticks: { color: textColor } } } }
+            });
+        }
+
+        window.toggleTheme = () => {
+            document.documentElement.classList.toggle('dark');
+            const isDark = document.documentElement.classList.contains('dark');
+            localStorage.setItem('crm_theme', isDark ? 'dark' : 'light');
+            document.getElementById('theme-icon').innerText = isDark ? 'light_mode' : 'dark_mode';
+            if (myChart) initChart();
+        };
+
+        if (localStorage.getItem('crm_theme') === 'dark' || (!('crm_theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark'); document.getElementById('theme-icon').innerText = 'light_mode';
+        }
+
+        const savedColor = localStorage.getItem('crm_primary_color');
+        if (savedColor) { document.documentElement.style.setProperty('--color-primary', savedColor); document.getElementById('color-picker').value = savedColor; }
+
+        window.applyThemeColor = () => {
+            const color = document.getElementById('color-picker').value;
+            document.documentElement.style.setProperty('--color-primary', color);
+            localStorage.setItem('crm_primary_color', color);
+            if (myChart) initChart(); showToast('Đã áp dụng màu chủ đạo mới');
+        };
+
+        window.resetThemeColor = () => {
+            document.documentElement.style.setProperty('--color-primary', '#6366f1');
+            document.getElementById('color-picker').value = '#6366f1';
+            localStorage.removeItem('crm_primary_color');
+            if (myChart) initChart(); showToast('Đã khôi phục màu mặc định');
+        };
+
+        // Start Scripts for Translate
+        const gScript2 = document.createElement('script');
+        gScript2.src = "//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit";
+        document.body.appendChild(gScript2);
+
+        window.googleTranslateElementInit = function() {
+            new google.translate.TranslateElement({
+                pageLanguage: 'vi',
+                includedLanguages: 'vi,en,zh-CN,ja,ko',
+                autoDisplay: false
+            }, 'google_translate_element');
+        };
+
+        window.changeLanguage = function(langCode, displayName) {
+            document.getElementById('currentLang').innerText = displayName;
+            const selectField = document.querySelector(".goog-te-combo");
+            if (selectField) {
+                selectField.value = langCode;
+                selectField.dispatchEvent(new Event('change'));
+            } else {
+                setTimeout(() => window.changeLanguage(langCode, displayName), 500);
+            }
+        };
+
+    </script>
+</body>
+</html>
