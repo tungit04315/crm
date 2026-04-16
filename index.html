@@ -274,6 +274,10 @@
                 <button onclick="navigate('services')" class="nav-btn w-full flex items-center px-3 py-2.5 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-primary/10 hover:text-primary transition-colors" data-target="services">
                     <span class="material-symbols-outlined mr-3 text-lg">design_services</span> Dịch vụ
                 </button>
+                <!-- Nút Tính năng Website -->
+                <button onclick="navigate('webfeatures')" class="nav-btn w-full flex items-center px-3 py-2.5 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-primary/10 hover:text-primary transition-colors" data-target="webfeatures">
+                    <span class="material-symbols-outlined mr-3 text-lg">web</span> Tính năng Website
+                </button>
 
                 <p class="px-3 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 mt-6">Nghiệp vụ</p>
                 <button onclick="navigate('quotes')" class="nav-btn w-full flex items-center px-3 py-2.5 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-primary/10 hover:text-primary transition-colors" data-target="quotes">
@@ -339,41 +343,50 @@
                     <!-- VIEW: DASHBOARD -->
                     <section id="view-dashboard" class="page-view animate-fade-in block">
                         <!-- Stats Cards -->
-                        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-                            <div class="glass p-6 rounded-2xl shadow-sm hover:shadow-md transition-shadow">
+                        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
+                            <div class="glass p-5 rounded-2xl shadow-sm hover:shadow-md transition-shadow">
                                 <div class="flex justify-between items-start">
                                     <div>
-                                        <p class="text-sm text-gray-500 font-medium">Tổng Khách Hàng</p>
-                                        <h3 class="text-3xl font-bold mt-1" id="stat-customers">0</h3>
+                                        <p class="text-xs text-gray-500 font-medium">Tổng Khách Hàng</p>
+                                        <h3 class="text-2xl font-bold mt-1" id="stat-customers">0</h3>
                                     </div>
-                                    <div class="p-3 bg-blue-100 dark:bg-blue-900/30 text-blue-600 rounded-xl"><span class="material-symbols-outlined">group</span></div>
+                                    <div class="p-2 bg-blue-100 dark:bg-blue-900/30 text-blue-600 rounded-lg"><span class="material-symbols-outlined text-xl">group</span></div>
                                 </div>
                             </div>
-                            <div class="glass p-6 rounded-2xl shadow-sm hover:shadow-md transition-shadow">
+                            <div class="glass p-5 rounded-2xl shadow-sm hover:shadow-md transition-shadow">
                                 <div class="flex justify-between items-start">
                                     <div>
-                                        <p class="text-sm text-gray-500 font-medium">Tổng Dịch Vụ</p>
-                                        <h3 class="text-3xl font-bold mt-1" id="stat-services">0</h3>
+                                        <p class="text-xs text-gray-500 font-medium">Tổng Dịch Vụ</p>
+                                        <h3 class="text-2xl font-bold mt-1" id="stat-services">0</h3>
                                     </div>
-                                    <div class="p-3 bg-purple-100 dark:bg-purple-900/30 text-purple-600 rounded-xl"><span class="material-symbols-outlined">design_services</span></div>
+                                    <div class="p-2 bg-purple-100 dark:bg-purple-900/30 text-purple-600 rounded-lg"><span class="material-symbols-outlined text-xl">design_services</span></div>
                                 </div>
                             </div>
-                            <div class="glass p-6 rounded-2xl shadow-sm hover:shadow-md transition-shadow">
+                            <div class="glass p-5 rounded-2xl shadow-sm hover:shadow-md transition-shadow">
                                 <div class="flex justify-between items-start">
                                     <div>
-                                        <p class="text-sm text-gray-500 font-medium">Mẫu Hợp Đồng</p>
-                                        <h3 class="text-3xl font-bold mt-1" id="stat-templates">0</h3>
+                                        <p class="text-xs text-gray-500 font-medium">Tính năng Web</p>
+                                        <h3 class="text-2xl font-bold mt-1" id="stat-webfeatures">0</h3>
                                     </div>
-                                    <div class="p-3 bg-green-100 dark:bg-green-900/30 text-green-600 rounded-xl"><span class="material-symbols-outlined">description</span></div>
+                                    <div class="p-2 bg-teal-100 dark:bg-teal-900/30 text-teal-600 rounded-lg"><span class="material-symbols-outlined text-xl">web</span></div>
                                 </div>
                             </div>
-                            <div class="glass p-6 rounded-2xl shadow-sm hover:shadow-md transition-shadow border-l-4 border-l-yellow-500">
+                            <div class="glass p-5 rounded-2xl shadow-sm hover:shadow-md transition-shadow">
                                 <div class="flex justify-between items-start">
                                     <div>
-                                        <p class="text-sm text-gray-500 font-medium">Lịch sử xuất</p>
-                                        <h3 class="text-3xl font-bold mt-1" id="stat-history">0</h3>
+                                        <p class="text-xs text-gray-500 font-medium">Mẫu Hợp Đồng</p>
+                                        <h3 class="text-2xl font-bold mt-1" id="stat-templates">0</h3>
                                     </div>
-                                    <div class="p-3 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 rounded-xl"><span class="material-symbols-outlined">history</span></div>
+                                    <div class="p-2 bg-green-100 dark:bg-green-900/30 text-green-600 rounded-lg"><span class="material-symbols-outlined text-xl">description</span></div>
+                                </div>
+                            </div>
+                            <div class="glass p-5 rounded-2xl shadow-sm hover:shadow-md transition-shadow border-l-4 border-l-yellow-500">
+                                <div class="flex justify-between items-start">
+                                    <div>
+                                        <p class="text-xs text-gray-500 font-medium">Lịch sử xuất</p>
+                                        <h3 class="text-2xl font-bold mt-1" id="stat-history">0</h3>
+                                    </div>
+                                    <div class="p-2 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 rounded-lg"><span class="material-symbols-outlined text-xl">history</span></div>
                                 </div>
                             </div>
                         </div>
@@ -420,6 +433,21 @@
                                 </button>
                             </div>
                             <div class="flex-1 overflow-auto p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="services-grid">
+                                <!-- Rendered via JS -->
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- VIEW: WEB FEATURES -->
+                    <section id="view-webfeatures" class="page-view animate-fade-in hidden">
+                        <div class="glass rounded-2xl shadow-sm overflow-hidden flex flex-col h-[calc(100vh-140px)]">
+                            <div class="p-4 border-b border-gray-200 dark:border-slate-700 flex justify-between items-center bg-white/50 dark:bg-slate-800/50">
+                                <h3 class="font-bold flex items-center gap-2"><span class="material-symbols-outlined text-primary">web</span> Quản lý Các Tính năng Website</h3>
+                                <button onclick="openModal('webfeature-modal')" class="bg-primary text-white px-4 py-2 rounded-lg text-sm font-bold shadow-md hover:opacity-90 flex items-center gap-2">
+                                    <span class="material-symbols-outlined text-sm">add</span> Thêm Tính năng
+                                </button>
+                            </div>
+                            <div class="flex-1 overflow-auto p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4" id="webfeatures-grid">
                                 <!-- Rendered via JS -->
                             </div>
                         </div>
@@ -666,6 +694,76 @@
         </div>
     </div>
 
+    <!-- Modal: Web Feature -->
+    <div id="webfeature-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm hidden opacity-0 transition-opacity">
+        <div class="bg-white dark:bg-slate-900 w-full max-w-md rounded-2xl shadow-2xl border border-gray-200 dark:border-slate-700 transform scale-95 transition-transform" id="webfeature-modal-content">
+            <div class="p-5 border-b border-gray-200 dark:border-slate-800 flex justify-between items-center">
+                <h3 class="font-bold text-lg" id="webfeature-modal-title">Thêm Tính năng Website</h3>
+                <button onclick="closeModal('webfeature-modal')" class="text-gray-400 hover:text-red-500"><span class="material-symbols-outlined">close</span></button>
+            </div>
+            <form id="webfeature-form" class="p-5 space-y-4">
+                <input type="hidden" id="wf-id">
+                <div>
+                    <label class="block text-xs font-semibold text-gray-500 mb-1">Tên tính năng *</label>
+                    <input type="text" id="wf-name" required class="w-full px-3 py-2 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg text-sm outline-none focus:border-primary">
+                </div>
+                
+                <!-- Sửa thành Upload File Ảnh -->
+                <div>
+                    <label class="block text-xs font-semibold text-gray-500 mb-1">Ảnh minh hoạ (Tải lên file ảnh - Không bắt buộc)</label>
+                    <input type="file" id="wf-image-file" accept="image/*" class="w-full block text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20 cursor-pointer border border-gray-200 dark:border-slate-700 rounded-lg bg-gray-50 dark:bg-slate-800">
+                    <input type="hidden" id="wf-image-data">
+                    <div id="wf-image-preview-container" class="mt-2 hidden">
+                        <img id="wf-image-preview" src="" class="h-24 w-full object-cover rounded-lg border border-gray-200 dark:border-slate-700">
+                        <button type="button" onclick="clearWebFeatureImage()" class="text-xs text-red-500 mt-1 font-medium hover:underline">Xoá ảnh</button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-500 mb-1">Giá (VNĐ) *</label>
+                        <input type="number" id="wf-price" required class="w-full px-3 py-2 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg text-sm outline-none focus:border-primary">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-500 mb-1">Link Demo (URL)</label>
+                        <input type="url" id="wf-demo" placeholder="https://..." class="w-full px-3 py-2 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg text-sm outline-none focus:border-primary">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-500 mb-1">Mô tả tính năng</label>
+                    <textarea id="wf-desc" rows="3" class="w-full px-3 py-2 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg text-sm outline-none focus:border-primary"></textarea>
+                </div>
+                <div class="pt-2 flex justify-end gap-2">
+                    <button type="button" onclick="closeModal('webfeature-modal')" class="px-4 py-2 text-sm font-medium bg-gray-100 dark:bg-slate-800 rounded-lg hover:bg-gray-200 dark:hover:bg-slate-700">Hủy</button>
+                    <button type="submit" class="px-4 py-2 text-sm font-bold text-white bg-primary rounded-lg shadow-md hover:opacity-90">Lưu lại</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: View Web Feature (Quick View) -->
+    <div id="webfeature-view-modal" class="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm hidden opacity-0 transition-opacity">
+        <div class="bg-white dark:bg-slate-900 w-full max-w-lg rounded-2xl shadow-2xl border border-gray-200 dark:border-slate-700 transform scale-95 transition-transform overflow-hidden flex flex-col" id="webfeature-view-modal-content">
+            <div class="relative h-48 bg-gray-200 dark:bg-slate-800">
+                <img id="view-wf-image" src="" class="w-full h-full object-cover" onerror="this.src='https://via.placeholder.com/600x300?text=No+Image'">
+                <button onclick="closeModal('webfeature-view-modal')" class="absolute top-3 right-3 w-8 h-8 flex items-center justify-center rounded-full bg-black/50 text-white hover:bg-red-500 transition-colors"><span class="material-symbols-outlined">close</span></button>
+            </div>
+            <div class="p-6">
+                <h3 class="font-bold text-xl mb-1" id="view-wf-name">Tên tính năng</h3>
+                <p class="text-2xl font-extrabold text-primary mb-4" id="view-wf-price">0 đ</p>
+                <div class="bg-gray-50 dark:bg-slate-800 p-4 rounded-xl mb-6">
+                    <p class="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap" id="view-wf-desc">Mô tả tính năng...</p>
+                </div>
+                <div class="flex justify-end gap-3">
+                    <button onclick="closeModal('webfeature-view-modal')" class="px-5 py-2.5 text-sm font-medium bg-gray-100 dark:bg-slate-800 rounded-xl hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors">Đóng</button>
+                    <a id="view-wf-demo-btn" href="#" target="_blank" class="px-5 py-2.5 text-sm font-bold text-white bg-blue-500 rounded-xl shadow-md hover:opacity-90 flex items-center gap-2 transition-opacity">
+                        <span class="material-symbols-outlined text-sm">open_in_new</span> Xem Demo
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Modal: Template Upload -->
     <div id="template-upload-modal" class="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm hidden opacity-0 transition-opacity">
         <div class="bg-white dark:bg-slate-900 w-full max-w-lg rounded-2xl shadow-2xl border border-gray-200 dark:border-slate-700 transform scale-95 transition-transform" id="template-upload-modal-content">
@@ -809,11 +907,13 @@
         window.currentUser = null;
         let customersData = [];
         let servicesData = [];
+        let webfeaturesData = [];
         let templatesData = [];
         let historyData = [];
         let currentEditingTemplateHtml = "";
         let unsubscribeCustomers = null;
         let unsubscribeServices = null;
+        let unsubscribeWebfeatures = null;
         let unsubscribeTemplates = null;
         let unsubscribeHistory = null;
         let isLoginMode = true; 
@@ -958,6 +1058,7 @@
                 window.currentUser = null;
                 if (unsubscribeCustomers) unsubscribeCustomers();
                 if (unsubscribeServices) unsubscribeServices();
+                if (unsubscribeWebfeatures) unsubscribeWebfeatures();
                 if (unsubscribeTemplates) unsubscribeTemplates();
                 if (unsubscribeHistory) unsubscribeHistory();
 
@@ -1017,7 +1118,7 @@
         // ==========================================
         // APP NAVIGATION & INIT
         // ==========================================
-        const views = ['dashboard', 'customers', 'services', 'quotes', 'history', 'settings'];
+        const views = ['dashboard', 'customers', 'services', 'webfeatures', 'quotes', 'history', 'settings'];
         window.navigate = (target) => {
             views.forEach(v => document.getElementById(`view-${v}`).classList.add('hidden'));
             document.querySelectorAll('.nav-btn').forEach(btn => {
@@ -1026,13 +1127,14 @@
             });
             document.getElementById(`view-${target}`).classList.remove('hidden');
 
-            const titles = { dashboard: 'Tổng quan', customers: 'Quản lý Khách hàng', services: 'Dịch vụ', quotes: 'Báo giá & Hợp đồng', history: 'Lịch sử xuất', settings: 'Cài đặt hệ thống' };
+            const titles = { dashboard: 'Tổng quan', customers: 'Quản lý Khách hàng', services: 'Dịch vụ', webfeatures: 'Quản lý Tính năng Website', quotes: 'Báo giá & Hợp đồng', history: 'Lịch sử xuất', settings: 'Cài đặt hệ thống' };
             document.getElementById('page-title').innerText = titles[target];
         };
 
         function initAppLogic() {
             fetchCustomers();
             fetchServices();
+            fetchWebfeatures();
             fetchTemplates();
             fetchHistory();
             initChart();
@@ -1053,6 +1155,17 @@
             } else if (id === 'service-modal') {
                 document.getElementById('service-modal-title').innerText = data ? 'Sửa Dịch Vụ' : 'Thêm Dịch Vụ';
                 ['id','name','price','desc'].forEach(k => document.getElementById(`srv-${k}`).value = data ? (data[k]||'') : '');
+            } else if (id === 'webfeature-modal') {
+                document.getElementById('webfeature-modal-title').innerText = data ? 'Sửa Tính năng Website' : 'Thêm Tính năng Website';
+                ['id','name','price','demo','desc'].forEach(k => document.getElementById(`wf-${k}`).value = data ? (data[k]||'') : '');
+                
+                // Clear Image Input & Preview
+                window.clearWebFeatureImage();
+                if (data && data.image) {
+                    document.getElementById('wf-image-data').value = data.image;
+                    document.getElementById('wf-image-preview').src = data.image;
+                    document.getElementById('wf-image-preview-container').classList.remove('hidden');
+                }
             } else if (id === 'template-upload-modal') {
                 document.getElementById('tpl-name').value = '';
                 document.getElementById('tpl-file').value = '';
@@ -1176,6 +1289,123 @@
         window.editService = (data) => openModal('service-modal', data);
         window.deleteService = async (id) => {
             if (confirm('Xóa dịch vụ này?')) try { await deleteDoc(doc(db, 'artifacts', app_id, 'public', 'data', 'services', id)); } catch (e) { showToast('Lỗi', 'error'); }
+        };
+
+        // ==========================================
+        // CRUD: WEB FEATURES (WITH IMAGE UPLOAD)
+        // ==========================================
+        
+        // Handle File Input Selection
+        document.getElementById('wf-image-file').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            if (file.size > 1.5 * 1024 * 1024) { // Limit 1.5MB to save Firestore Space
+                showToast('Kích thước ảnh quá lớn. Vui lòng chọn ảnh dưới 1.5MB.', 'error');
+                this.value = ''; 
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const base64String = event.target.result;
+                document.getElementById('wf-image-data').value = base64String;
+                document.getElementById('wf-image-preview').src = base64String;
+                document.getElementById('wf-image-preview-container').classList.remove('hidden');
+            };
+            reader.readAsDataURL(file);
+        });
+
+        window.clearWebFeatureImage = () => {
+            document.getElementById('wf-image-file').value = '';
+            document.getElementById('wf-image-data').value = '';
+            document.getElementById('wf-image-preview-container').classList.add('hidden');
+            document.getElementById('wf-image-preview').src = '';
+        }
+
+        function fetchWebfeatures() {
+            unsubscribeWebfeatures = onSnapshot(query(getCollectionPath('webfeatures')), (snapshot) => {
+                webfeaturesData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                renderWebfeatures();
+                updateDashboardStats();
+            });
+        }
+
+        function renderWebfeatures() {
+            const grid = document.getElementById('webfeatures-grid');
+            if (webfeaturesData.length === 0) {
+                grid.innerHTML = `<div class="col-span-full text-center py-10 text-gray-500">Chưa có tính năng nào. Vui lòng thêm mới.</div>`;
+                return;
+            }
+
+            grid.innerHTML = webfeaturesData.map(wf => `
+                <div class="bg-white dark:bg-slate-800 rounded-xl border border-gray-100 dark:border-slate-700 shadow-sm overflow-hidden flex flex-col relative group hover:shadow-md transition-shadow">
+                    <div class="h-32 bg-gray-100 dark:bg-slate-700 relative flex-shrink-0">
+                        ${wf.image ? `<img src="${wf.image}" class="w-full h-full object-cover" onerror="this.src='https://via.placeholder.com/400x200?text=No+Image'">` : `<div class="flex items-center justify-center h-full text-gray-400"><span class="material-symbols-outlined text-4xl">image</span></div>`}
+                        <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
+                            <button onclick="viewWebfeature('${wf.id}')" class="w-9 h-9 rounded-full bg-white text-gray-900 flex items-center justify-center hover:scale-110 transition-transform shadow" title="Xem nhanh"><span class="material-symbols-outlined text-sm">visibility</span></button>
+                            ${wf.demo ? `<a href="${wf.demo}" target="_blank" class="w-9 h-9 rounded-full bg-blue-500 text-white flex items-center justify-center hover:scale-110 transition-transform shadow" title="Xem Demo"><span class="material-symbols-outlined text-sm">open_in_new</span></a>` : ''}
+                        </div>
+                    </div>
+                    <div class="p-4 flex-1 flex flex-col">
+                        <h4 class="font-bold text-base leading-tight mb-1 truncate" title="${wf.name}">${wf.name}</h4>
+                        <p class="text-sm font-extrabold text-primary mb-2">${formatCurrency(wf.price)}</p>
+                        <p class="text-xs text-gray-500 line-clamp-2 mb-4 flex-1" title="${wf.desc || ''}">${wf.desc || 'Không có mô tả.'}</p>
+                        <div class="flex justify-end gap-2 border-t border-gray-100 dark:border-slate-700 pt-3 mt-auto">
+                            <button onclick='editWebfeature(${JSON.stringify(wf).replace(/'/g, "&#39;")})' class="w-8 h-8 rounded-lg bg-gray-100 dark:bg-slate-700 flex items-center justify-center hover:text-primary transition-colors"><span class="material-symbols-outlined text-sm">edit</span></button>
+                            <button onclick="deleteWebfeature('${wf.id}')" class="w-8 h-8 rounded-lg bg-gray-100 dark:bg-slate-700 flex items-center justify-center hover:text-red-500 transition-colors"><span class="material-symbols-outlined text-sm">delete</span></button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        document.getElementById('webfeature-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('wf-id').value;
+            const data = { 
+                name: document.getElementById('wf-name').value, 
+                image: document.getElementById('wf-image-data').value, // Use the base64 stored value
+                price: Number(document.getElementById('wf-price').value), 
+                demo: document.getElementById('wf-demo').value,
+                desc: document.getElementById('wf-desc').value 
+            };
+            try {
+                if (id) await updateDoc(doc(db, 'artifacts', app_id, 'public', 'data', 'webfeatures', id), data);
+                else await addDoc(getCollectionPath('webfeatures'), { ...data, createdAt: new Date() });
+                showToast(id ? 'Cập nhật tính năng thành công' : 'Đã thêm tính năng Website');
+                closeModal('webfeature-modal');
+            } catch (error) { showToast('Lỗi khi lưu', 'error'); }
+        });
+
+        window.editWebfeature = (data) => openModal('webfeature-modal', data);
+        window.deleteWebfeature = async (id) => {
+            if (confirm('Bạn có chắc chắn muốn xóa tính năng này?')) {
+                try { await deleteDoc(doc(db, 'artifacts', app_id, 'public', 'data', 'webfeatures', id)); } 
+                catch (e) { showToast('Lỗi xóa tính năng', 'error'); }
+            }
+        };
+
+        window.viewWebfeature = (id) => {
+            const wf = webfeaturesData.find(w => w.id === id);
+            if (!wf) return;
+            
+            document.getElementById('view-wf-image').src = wf.image || 'https://via.placeholder.com/600x300?text=No+Image';
+            document.getElementById('view-wf-name').innerText = wf.name;
+            document.getElementById('view-wf-price').innerText = formatCurrency(wf.price);
+            document.getElementById('view-wf-desc').innerText = wf.desc || 'Tính năng này chưa có mô tả chi tiết.';
+            
+            const demoBtn = document.getElementById('view-wf-demo-btn');
+            if (wf.demo) {
+                demoBtn.href = wf.demo;
+                demoBtn.classList.remove('hidden');
+                demoBtn.classList.add('flex');
+            } else {
+                demoBtn.classList.add('hidden');
+                demoBtn.classList.remove('flex');
+            }
+            
+            openModal('webfeature-view-modal');
         };
 
         // ==========================================
@@ -1598,6 +1828,10 @@
             document.getElementById('stat-services').innerText = servicesData.length;
             document.getElementById('stat-templates').innerText = templatesData.length;
             
+            if (document.getElementById('stat-webfeatures')) {
+                document.getElementById('stat-webfeatures').innerText = webfeaturesData.length;
+            }
+
             if (document.getElementById('stat-history')) {
                 document.getElementById('stat-history').innerText = historyData.length;
             }
