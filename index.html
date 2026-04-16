@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Marketing CRM - SaaS Workspace</title>
+    <title>TEST</title>
     <link rel="shortcut icon" href="crm (1).png" type="image/x-icon">
 
     <!-- Fonts & Icons -->
@@ -183,6 +183,14 @@
             border-color: var(--color-primary);
             background-color: rgba(99, 102, 241, 0.05);
         }
+
+        /* Badge Types Lead */
+        .badge-lead-normal { background: #f3f4f6; color: #4b5563; }
+        .dark .badge-lead-normal { background: #374151; color: #d1d5db; }
+        .badge-lead-potential { background: #dbeafe; color: #1d4ed8; }
+        .dark .badge-lead-potential { background: #1e3a8a; color: #93c5fd; }
+        .badge-lead-vip { background: #fef08a; color: #854d0e; }
+        .dark .badge-lead-vip { background: #713f12; color: #fde047; }
     </style>
 </head>
 
@@ -278,6 +286,9 @@
                 <button onclick="navigate('dashboard')" class="nav-btn w-full flex items-center px-3 py-2.5 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-primary/10 hover:text-primary transition-colors active-nav" data-target="dashboard">
                     <span class="material-symbols-outlined mr-3 text-lg">space_dashboard</span> Tổng quan
                 </button>
+                <button onclick="navigate('leads')" class="nav-btn w-full flex items-center px-3 py-2.5 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-primary/10 hover:text-primary transition-colors" data-target="leads">
+                    <span class="material-symbols-outlined mr-3 text-lg">contact_mail</span> Leads (Tiềm năng)
+                </button>
                 <button onclick="navigate('customers')" class="nav-btn w-full flex items-center px-3 py-2.5 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-primary/10 hover:text-primary transition-colors" data-target="customers">
                     <span class="material-symbols-outlined mr-3 text-lg">group</span> Khách hàng
                 </button>
@@ -352,11 +363,20 @@
                     <!-- VIEW: DASHBOARD -->
                     <section id="view-dashboard" class="page-view animate-fade-in block">
                         <!-- Stats Cards -->
-                        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
+                        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
                             <div class="glass p-5 rounded-2xl shadow-sm hover:shadow-md transition-shadow">
                                 <div class="flex justify-between items-start">
                                     <div>
-                                        <p class="text-xs text-gray-500 font-medium">Tổng Khách Hàng</p>
+                                        <p class="text-xs text-gray-500 font-medium">Tổng Leads</p>
+                                        <h3 class="text-2xl font-bold mt-1" id="stat-leads">0</h3>
+                                    </div>
+                                    <div class="p-2 bg-orange-100 dark:bg-orange-900/30 text-orange-600 rounded-lg"><span class="material-symbols-outlined text-xl">contact_mail</span></div>
+                                </div>
+                            </div>
+                            <div class="glass p-5 rounded-2xl shadow-sm hover:shadow-md transition-shadow border-l-4 border-l-blue-500">
+                                <div class="flex justify-between items-start">
+                                    <div>
+                                        <p class="text-xs text-gray-500 font-medium">Khách Hàng</p>
                                         <h3 class="text-2xl font-bold mt-1" id="stat-customers">0</h3>
                                     </div>
                                     <div class="p-2 bg-blue-100 dark:bg-blue-900/30 text-blue-600 rounded-lg"><span class="material-symbols-outlined text-xl">group</span></div>
@@ -389,7 +409,7 @@
                                     <div class="p-2 bg-green-100 dark:bg-green-900/30 text-green-600 rounded-lg"><span class="material-symbols-outlined text-xl">description</span></div>
                                 </div>
                             </div>
-                            <div class="glass p-5 rounded-2xl shadow-sm hover:shadow-md transition-shadow border-l-4 border-l-yellow-500">
+                            <div class="glass p-5 rounded-2xl shadow-sm hover:shadow-md transition-shadow">
                                 <div class="flex justify-between items-start">
                                     <div>
                                         <p class="text-xs text-gray-500 font-medium">Lịch sử xuất</p>
@@ -405,11 +425,51 @@
                         </div>
                     </section>
 
+                    <!-- VIEW: LEADS -->
+                    <section id="view-leads" class="page-view animate-fade-in hidden">
+                        <div class="glass rounded-2xl shadow-sm overflow-hidden flex flex-col h-[calc(100vh-140px)]">
+                            <div class="p-4 border-b border-gray-200 dark:border-slate-700 flex flex-wrap justify-between items-center bg-white/50 dark:bg-slate-800/50 gap-4">
+                                <div class="flex gap-2">
+                                    <input type="text" id="search-lead" placeholder="Tìm tên/SĐT lead..." class="px-3 py-2 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg text-sm w-48 focus:ring-2 focus:ring-orange-500 outline-none">
+                                    <input type="date" id="filter-lead-date" class="px-3 py-2 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg text-sm outline-none text-gray-500">
+                                    <select id="filter-lead-type" class="px-3 py-2 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg text-sm outline-none text-gray-500">
+                                        <option value="">Tất cả loại Lead</option>
+                                        <option value="Thường">Thường</option>
+                                        <option value="Tiềm năng">Tiềm năng</option>
+                                        <option value="VIP">VIP</option>
+                                    </select>
+                                </div>
+                                <button onclick="openModal('lead-modal')" class="bg-orange-500 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-md hover:bg-orange-600 flex items-center gap-2">
+                                    <span class="material-symbols-outlined text-sm">add</span> Thêm Lead
+                                </button>
+                            </div>
+                            <div class="flex-1 overflow-auto p-4">
+                                <table class="w-full text-left border-collapse">
+                                    <thead>
+                                        <tr class="text-xs text-gray-500 uppercase border-b border-gray-200 dark:border-slate-700">
+                                            <th class="pb-3 font-semibold">Khách hàng (Lead)</th>
+                                            <th class="pb-3 font-semibold">Liên hệ</th>
+                                            <th class="pb-3 font-semibold text-center">Loại</th>
+                                            <th class="pb-3 font-semibold">Nguồn & Ngày</th>
+                                            <th class="pb-3 font-semibold text-right">Hành động</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="leads-list" class="text-sm divide-y divide-gray-100 dark:divide-slate-800/50">
+                                        <!-- Rendered via JS -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </section>
+
                     <!-- VIEW: CUSTOMERS -->
                     <section id="view-customers" class="page-view animate-fade-in hidden">
                         <div class="glass rounded-2xl shadow-sm overflow-hidden flex flex-col h-[calc(100vh-140px)]">
-                            <div class="p-4 border-b border-gray-200 dark:border-slate-700 flex justify-between items-center bg-white/50 dark:bg-slate-800/50">
-                                <input type="text" id="search-customer" placeholder="Tìm kiếm khách hàng..." class="px-4 py-2 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg text-sm w-64 focus:ring-2 focus:ring-primary outline-none">
+                            <div class="p-4 border-b border-gray-200 dark:border-slate-700 flex flex-wrap justify-between items-center bg-white/50 dark:bg-slate-800/50 gap-4">
+                                <div class="flex gap-2">
+                                    <input type="text" id="search-customer" placeholder="Tìm kiếm tên, SĐT KH..." class="px-4 py-2 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg text-sm w-64 focus:ring-2 focus:ring-primary outline-none">
+                                    <input type="date" id="filter-customer-date" title="Lọc theo ngày thêm" class="px-3 py-2 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg text-sm outline-none text-gray-500">
+                                </div>
                                 <button onclick="openModal('customer-modal')" class="bg-primary text-white px-4 py-2 rounded-lg text-sm font-bold shadow-md hover:opacity-90 flex items-center gap-2">
                                     <span class="material-symbols-outlined text-sm">add</span> Thêm KH
                                 </button>
@@ -421,7 +481,7 @@
                                             <th class="pb-3 font-semibold">Khách hàng</th>
                                             <th class="pb-3 font-semibold">Liên hệ</th>
                                             <th class="pb-3 font-semibold">Ngân hàng</th>
-                                            <th class="pb-3 font-semibold">Nguồn</th>
+                                            <th class="pb-3 font-semibold">Nguồn / Ngày thêm</th>
                                             <th class="pb-3 font-semibold text-right">Hành động</th>
                                         </tr>
                                     </thead>
@@ -482,7 +542,7 @@
                                     <!-- TAB 1: Báo giá cơ bản -->
                                     <div id="panel-standard" class="space-y-4">
                                         <div>
-                                            <label class="block text-xs font-semibold text-gray-500 mb-1">Chọn Khách Hàng</label>
+                                            <label class="block text-xs font-semibold text-gray-500 mb-1">Chọn Khách Hàng / Lead</label>
                                             <select id="quote-customer" class="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-primary outline-none">
                                                 <option value="">-- Chọn --</option>
                                             </select>
@@ -635,7 +695,57 @@
     <!-- MODALS & TOASTS                            -->
     <!-- ========================================== -->
 
-    <!-- Modal: Customer (UPDATED WITH NEW FIELDS) -->
+    <!-- Modal: Lead -->
+    <div id="lead-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm hidden opacity-0 transition-opacity">
+        <div class="bg-white dark:bg-slate-900 w-full max-w-lg rounded-2xl shadow-2xl border border-gray-200 dark:border-slate-700 transform scale-95 transition-transform flex flex-col" id="lead-modal-content">
+            <div class="p-5 border-b border-gray-200 dark:border-slate-800 flex justify-between items-center shrink-0">
+                <h3 class="font-bold text-lg text-orange-600" id="lead-modal-title">Thêm Khách Hàng Tiềm Năng</h3>
+                <button onclick="closeModal('lead-modal')" class="text-gray-400 hover:text-red-500"><span class="material-symbols-outlined">close</span></button>
+            </div>
+            
+            <form id="lead-form" class="p-5 space-y-4 overflow-y-auto">
+                <input type="hidden" id="lead-id">
+                <div>
+                    <label class="block text-xs font-semibold text-gray-500 mb-1">Tên khách hàng *</label>
+                    <input type="text" id="lead-name" required class="w-full px-3 py-2 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg text-sm outline-none focus:border-orange-500">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-500 mb-1">Số điện thoại *</label>
+                        <input type="text" id="lead-phone" required class="w-full px-3 py-2 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg text-sm outline-none focus:border-orange-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-500 mb-1">Email</label>
+                        <input type="email" id="lead-email" class="w-full px-3 py-2 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg text-sm outline-none focus:border-orange-500">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-500 mb-1">Nguồn (Facebook, Google...)</label>
+                        <input type="text" id="lead-source" class="w-full px-3 py-2 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg text-sm outline-none focus:border-orange-500" placeholder="Ví dụ: Facebook Ads">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-500 mb-1">Loại Khách Hàng</label>
+                        <select id="lead-type" class="w-full px-3 py-2 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg text-sm outline-none focus:border-orange-500">
+                            <option value="Thường">Thường</option>
+                            <option value="Tiềm năng">Tiềm năng</option>
+                            <option value="VIP">VIP</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-500 mb-1">Ghi chú thêm</label>
+                    <textarea id="lead-note" rows="3" class="w-full px-3 py-2 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg text-sm outline-none focus:border-orange-500"></textarea>
+                </div>
+                <div class="pt-2 flex justify-end gap-3 border-t border-gray-200 dark:border-slate-800 shrink-0 mt-4">
+                    <button type="button" onclick="closeModal('lead-modal')" class="px-5 py-2 text-sm font-medium bg-gray-100 dark:bg-slate-800 rounded-lg hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors">Hủy</button>
+                    <button type="submit" class="px-5 py-2 text-sm font-bold text-white bg-orange-500 rounded-lg shadow hover:opacity-90">Lưu Lead</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Customer (UPDATED WITH NEW FIELDS & CONVERT) -->
     <div id="customer-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm hidden opacity-0 transition-opacity">
         <div class="bg-white dark:bg-slate-900 w-full max-w-3xl rounded-2xl shadow-2xl border border-gray-200 dark:border-slate-700 transform scale-95 transition-transform flex flex-col max-h-[90vh]" id="customer-modal-content">
             <div class="p-5 border-b border-gray-200 dark:border-slate-800 flex justify-between items-center shrink-0">
@@ -645,6 +755,7 @@
             
             <form id="customer-form" class="p-5 overflow-y-auto space-y-6 flex-1">
                 <input type="hidden" id="cus-id">
+                <input type="hidden" id="cus-convert-lead-id"> <!-- Chứa ID của Lead nếu tạo KH từ chức năng Convert -->
                 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <!-- Column 1: Basic Info & Banks -->
@@ -756,7 +867,7 @@
                     </div>
                 </div>
 
-                <div class="pt-4 flex justify-end gap-3 border-t border-gray-200 dark:border-slate-800 shrink-0">
+                <div class="pt-4 flex justify-end gap-3 border-t border-gray-200 dark:border-slate-800 shrink-0 mt-4">
                     <button type="button" onclick="closeModal('customer-modal')" class="px-5 py-2.5 text-sm font-medium bg-gray-100 dark:bg-slate-800 rounded-xl hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors">Hủy</button>
                     <button type="submit" class="px-5 py-2.5 text-sm font-bold text-white bg-primary rounded-xl shadow-md hover:opacity-90 transition-opacity">Lưu thông tin</button>
                 </div>
@@ -870,7 +981,7 @@
                     <label class="block text-xs font-semibold text-gray-500 mb-1">Mô tả chi tiết</label>
                     <textarea id="srv-desc" rows="3" class="w-full px-3 py-2 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg text-sm outline-none focus:border-primary"></textarea>
                 </div>
-                <div class="pt-2 flex justify-end gap-2">
+                <div class="pt-2 flex justify-end gap-2 mt-4">
                     <button type="button" onclick="closeModal('service-modal')" class="px-4 py-2 text-sm font-medium bg-gray-100 dark:bg-slate-800 rounded-lg hover:bg-gray-200 dark:hover:bg-slate-700">Hủy</button>
                     <button type="submit" class="px-4 py-2 text-sm font-bold text-white bg-primary rounded-lg shadow-md hover:opacity-90">Lưu lại</button>
                 </div>
@@ -916,7 +1027,7 @@
                     <label class="block text-xs font-semibold text-gray-500 mb-1">Mô tả tính năng</label>
                     <textarea id="wf-desc" rows="3" class="w-full px-3 py-2 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg text-sm outline-none focus:border-primary"></textarea>
                 </div>
-                <div class="pt-2 flex justify-end gap-2">
+                <div class="pt-2 flex justify-end gap-2 mt-4">
                     <button type="button" onclick="closeModal('webfeature-modal')" class="px-4 py-2 text-sm font-medium bg-gray-100 dark:bg-slate-800 rounded-lg hover:bg-gray-200 dark:hover:bg-slate-700">Hủy</button>
                     <button type="submit" class="px-4 py-2 text-sm font-bold text-white bg-primary rounded-lg shadow-md hover:opacity-90">Lưu lại</button>
                 </div>
@@ -956,7 +1067,7 @@
             </div>
             <div class="p-5 space-y-4">
                 <div class="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg text-sm text-blue-700 dark:text-blue-300">
-                    <strong>Hướng dẫn:</strong> Hệ thống giờ đây có thể tự động nhận diện các <strong>đường chấm chấm (.....)</strong>, <strong>dấu ba chấm (……)</strong> hoặc <strong>dấu gạch dưới (___)</strong> trong file Word của bạn thành các ô trống để nhập liệu.
+                    <strong>Hướng dẫn:</strong> Hệ thống có thể nhận diện các <strong>đường chấm chấm (.....)</strong>, <strong>dấu ba chấm (……)</strong> hoặc <strong>dấu gạch dưới (___)</strong> trong file Word của bạn thành các ô trống để nhập liệu.
                 </div>
                 <div>
                     <label class="block text-sm font-semibold mb-1">Tên lưu gợi nhớ *</label>
@@ -972,7 +1083,7 @@
                     <div id="tpl-detected-fields" class="flex flex-wrap gap-2"></div>
                 </div>
 
-                <div class="pt-4 flex justify-end gap-2 border-t border-gray-200 dark:border-slate-700">
+                <div class="pt-4 flex justify-end gap-2 border-t border-gray-200 dark:border-slate-700 mt-4">
                     <button type="button" onclick="closeModal('template-upload-modal')" class="px-4 py-2 text-sm font-medium bg-gray-100 dark:bg-slate-800 rounded-lg hover:bg-gray-200 dark:hover:bg-slate-700">Hủy</button>
                     <button type="button" onclick="processAndSaveTemplate()" id="btn-save-tpl" class="px-4 py-2 text-sm font-bold text-white bg-primary rounded-lg shadow-md hover:opacity-90">Lưu Mẫu</button>
                 </div>
@@ -1017,7 +1128,7 @@
                     <label class="block text-sm font-semibold mb-1">Tên mẫu mới</label>
                     <input type="text" id="edit-tpl-name" required class="w-full px-3 py-2 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg text-sm outline-none focus:border-primary">
                 </div>
-                <div class="flex justify-end gap-2">
+                <div class="flex justify-end gap-2 mt-4">
                     <button type="button" onclick="closeModal('template-edit-modal')" class="px-4 py-2 text-sm font-medium bg-gray-100 dark:bg-slate-800 rounded-lg">Hủy</button>
                     <button type="submit" class="px-4 py-2 text-sm font-bold text-white bg-primary rounded-lg shadow-md">Lưu</button>
                 </div>
@@ -1059,18 +1170,16 @@
     </div>
 
     <!-- Toast Container -->
-    <div id="toast-container" class="fixed bottom-5 right-5 z-[100] flex flex-col gap-2"></div>
+    <div id="toast-container" class="fixed bottom-5 right-5 z-[100] flex flex-col gap-2 pointer-events-none"></div>
 
     <!-- ========================================== -->
-    <!-- FIREBASE & CORE LOGIC SCRIPT               -->
+    <!-- SCRIPTS                                    -->
     <!-- ========================================== -->
-    
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, onAuthStateChanged, signOut, updateProfile, updatePassword } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
         import { getFirestore, collection, doc, setDoc, getDoc, onSnapshot, addDoc, updateDoc, deleteDoc, query } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // --- CẤU HÌNH FIREBASE ---
         const firebaseConfig = {
             apiKey: "AIzaSyBqdX8HpUSP_atbFPQEDur_lQsjMI3TPXo",
             authDomain: "crm-neo-wave.firebaseapp.com",
@@ -1081,50 +1190,45 @@
             appId: "1:221144536693:web:09a81e9abc09afd81b4a3c"
         };
 
-        const app_id = typeof __app_id !== 'undefined' ? __app_id : 'demo-marketing-crm-v3';
+        const app_id = typeof __app_id !== 'undefined' ? __app_id : 'demo-marketing-crm-v4';
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
 
-        // --- GLOBAL STATE ---
         window.currentUser = null;
+        let leadsData = [];
         let customersData = [];
         let servicesData = [];
         let webfeaturesData = [];
         let templatesData = [];
         let historyData = [];
         let currentEditingTemplateHtml = "";
-        let unsubscribeCustomers = null;
-        let unsubscribeServices = null;
-        let unsubscribeWebfeatures = null;
-        let unsubscribeTemplates = null;
-        let unsubscribeHistory = null;
+        let unsubscribes = [];
         let isLoginMode = true; 
 
         const getCollectionPath = (name) => collection(db, 'artifacts', app_id, 'public', 'data', name);
 
-        // ==========================================
-        // UI HELPERS & ANIMATIONS
-        // ==========================================
+        // Utilities
         window.showToast = (msg, type = 'success') => {
             const toast = document.createElement('div');
-            toast.className = `toast-enter p-4 rounded-xl shadow-lg flex items-center gap-3 text-white max-w-sm ${type === 'success' ? 'bg-green-600' : type === 'error' ? 'bg-red-600' : 'bg-blue-600'}`;
+            toast.className = `toast-enter p-4 rounded-xl shadow-lg flex items-center gap-3 text-white max-w-sm ${type === 'success' ? 'bg-green-600' : type === 'error' ? 'bg-red-600' : 'bg-blue-600'} pointer-events-auto`;
             toast.innerHTML = `<span class="material-symbols-outlined">${type === 'success' ? 'check_circle' : type === 'error' ? 'error' : 'info'}</span><span class="text-sm font-medium">${msg}</span>`;
             document.getElementById('toast-container').appendChild(toast);
             setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 300); }, 3000);
         };
-
         window.formatCurrency = (num) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(num);
-        
-        window.formatDate = (timestamp) => {
+        window.formatDateStr = (timestamp) => {
             if (!timestamp) return '...';
             const date = timestamp.seconds ? new Date(timestamp.seconds * 1000) : new Date(timestamp);
             return date.toLocaleString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
         };
+        const getISODate = (timestamp) => {
+            if (!timestamp) return null;
+            const date = timestamp.seconds ? new Date(timestamp.seconds * 1000) : new Date(timestamp);
+            return date.toISOString().split('T')[0]; // YYYY-MM-DD
+        };
 
-        // ==========================================
-        // LOGIN FORM LOGIC
-        // ==========================================
+        // --- AUTH LOGIC ---
         const usernameInput = document.getElementById('email');
         const passwordInput = document.getElementById('password');
         const tail = document.getElementById('tail');
@@ -1160,101 +1264,45 @@
 
         document.getElementById('loginForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const email = usernameInput.value;
-            const password = passwordInput.value;
-            const btn = document.getElementById('auth-btn');
-            btn.disabled = true; btn.style.opacity = '0.7';
-
+            const email = usernameInput.value; const password = passwordInput.value;
+            const btn = document.getElementById('auth-btn'); btn.disabled = true; btn.style.opacity = '0.7';
             try {
-                if (isLoginMode) {
-                    await signInWithEmailAndPassword(auth, email, password);
-                    catReact(true);
-                } else {
-                    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-                    await updateProfile(userCredential.user, { displayName: email.split('@')[0] });
-                    catReact(true);
+                if (isLoginMode) await signInWithEmailAndPassword(auth, email, password);
+                else {
+                    const cred = await createUserWithEmailAndPassword(auth, email, password);
+                    await updateProfile(cred.user, { displayName: email.split('@')[0] });
                     showToast('Đăng ký thành công!');
                 }
+                mouth.style.height = '12px'; mouth.style.borderRadius = '0 0 20px 20px'; mouth.style.borderBottomWidth = '4px'; 
             } catch (error) {
-                catReact(false);
-                showToast(error.message.includes('invalid-credential') ? 'Sai mật khẩu hoặc email!' : 'Lỗi xác thực: ' + error.message, 'error');
+                mouth.style.borderRadius = '20px 20px 0 0'; mouth.style.borderBottom = 'none'; mouth.style.borderTop = '2px solid #b31b25';
+                showToast(error.message.includes('invalid') ? 'Sai thông tin!' : error.message, 'error');
             } finally { btn.disabled = false; btn.style.opacity = '1'; }
         });
-
-        window.resetPassword = async () => {
-            const email = usernameInput.value;
-            if (!email) return showToast('Vui lòng nhập email vào ô trên để reset', 'error');
-            try { await sendPasswordResetEmail(auth, email); showToast('Đã gửi link reset vào email của bạn!'); } 
-            catch (e) { showToast('Lỗi gửi email reset', 'error'); }
-        };
-
-        window.logout = async () => { if (confirm('Bạn có chắc muốn đăng xuất?')) await signOut(auth); };
-
-        function catReact(isSuccess) {
-            if (isSuccess) { mouth.style.height = '12px'; mouth.style.borderRadius = '0 0 20px 20px'; mouth.style.borderBottomWidth = '4px'; } 
-            else {
-                mouth.style.borderRadius = '20px 20px 0 0'; mouth.style.borderBottom = 'none'; mouth.style.borderTop = '2px solid #b31b25';
-                document.getElementById('loginForm').classList.add('animate-bounce');
-                setTimeout(() => document.getElementById('loginForm').classList.remove('animate-bounce'), 500);
-                setTimeout(() => { mouth.style.borderRadius = '0 0 20px 20px'; mouth.style.borderTop = 'none'; mouth.style.borderBottom = '2px solid var(--color-surface-dark)'; }, 2000);
-            }
-        }
+        window.logout = async () => { if (confirm('Đăng xuất?')) await signOut(auth); };
+        window.resetPassword = async () => { if(usernameInput.value) sendPasswordResetEmail(auth, usernameInput.value).then(()=>showToast('Đã gửi email reset')); };
 
         onAuthStateChanged(auth, async (user) => {
-            const loginScreen = document.getElementById('login-screen');
-            const appScreen = document.getElementById('app-screen');
-
+            const ls = document.getElementById('login-screen'); const as = document.getElementById('app-screen');
             if (user) {
                 window.currentUser = user;
-                
-                // Fetch user doc from Firestore for Fullname
-                let fullname = '';
-                try {
-                    const userRef = doc(db, 'artifacts', app_id, 'public', 'data', 'users', user.uid);
-                    const userSnap = await getDoc(userRef);
-                    if (userSnap.exists()) {
-                        fullname = userSnap.data().fullname || '';
-                    }
-                } catch(e) { console.log('Mock rule applied'); }
-
-                const dName = user.displayName || user.email.split('@')[0];
-                
-                // Update UI Sidebar
-                document.getElementById('user-name-display').innerText = dName;
+                document.getElementById('user-name-display').innerText = user.displayName || user.email.split('@')[0];
                 document.getElementById('user-email-display').innerText = user.email;
-                document.getElementById('user-avatar').innerText = dName.charAt(0).toUpperCase();
+                document.getElementById('user-avatar').innerText = (user.displayName || user.email).charAt(0).toUpperCase();
                 
-                // Fill Settings Form
                 document.getElementById('profile-email').value = user.email;
-                document.getElementById('profile-username').value = dName;
-                document.getElementById('profile-fullname').value = fullname;
-                document.getElementById('profile-password').value = '';
+                document.getElementById('profile-username').value = user.displayName || user.email.split('@')[0];
 
-                loginScreen.classList.add('opacity-0');
-                setTimeout(() => {
-                    loginScreen.classList.add('hidden');
-                    appScreen.classList.remove('hidden');
-                    setTimeout(() => appScreen.classList.remove('opacity-0'), 50);
-                    initAppLogic();
-                }, 500);
+                ls.classList.add('opacity-0');
+                setTimeout(() => { ls.classList.add('hidden'); as.classList.remove('hidden'); setTimeout(() => as.classList.remove('opacity-0'), 50); initAppLogic(); }, 500);
             } else {
-                window.currentUser = null;
-                if (unsubscribeCustomers) unsubscribeCustomers();
-                if (unsubscribeServices) unsubscribeServices();
-                if (unsubscribeWebfeatures) unsubscribeWebfeatures();
-                if (unsubscribeTemplates) unsubscribeTemplates();
-                if (unsubscribeHistory) unsubscribeHistory();
-
-                appScreen.classList.add('opacity-0');
-                setTimeout(() => {
-                    appScreen.classList.add('hidden');
-                    loginScreen.classList.remove('hidden');
-                    setTimeout(() => loginScreen.classList.remove('opacity-0'), 50);
-                }, 500);
+                window.currentUser = null; unsubscribes.forEach(fn => fn()); unsubscribes = [];
+                as.classList.add('opacity-0');
+                setTimeout(() => { as.classList.add('hidden'); ls.classList.remove('hidden'); setTimeout(() => ls.classList.remove('opacity-0'), 50); }, 500);
             }
         });
 
-        // Update Profile Logic
+        // Update Profile
         window.updateProfileData = async () => {
             const username = document.getElementById('profile-username').value.trim();
             const fullname = document.getElementById('profile-fullname').value.trim();
@@ -1281,162 +1329,67 @@
                 document.getElementById('user-avatar').innerText = username.charAt(0).toUpperCase();
                 showToast('Đã cập nhật thông tin thành công!');
             } catch(e) { 
-                if (e.code === 'auth/requires-recent-login') {
-                    showToast('Phiên đăng nhập đã cũ! Vui lòng đăng xuất và đăng nhập lại để đổi mật khẩu.', 'error');
-                } else {
-                    showToast('Lỗi cập nhật: ' + e.message, 'error'); 
-                }
+                showToast('Lỗi cập nhật: ' + e.message, 'error'); 
             } finally {
                 btn.innerHTML = 'Lưu Thay Đổi'; 
                 btn.disabled = false;
             }
         };
 
-        // ==========================================
-        // APP NAVIGATION & INIT
-        // ==========================================
-        const views = ['dashboard', 'customers', 'services', 'webfeatures', 'quotes', 'history', 'settings'];
+
+        // --- APP NAVIGATION ---
+        const views = ['dashboard', 'leads', 'customers', 'services', 'webfeatures', 'quotes', 'history', 'settings'];
         window.navigate = (target) => {
             views.forEach(v => document.getElementById(`view-${v}`).classList.add('hidden'));
             document.querySelectorAll('.nav-btn').forEach(btn => {
-                btn.classList.remove('bg-primary/10', 'text-primary');
-                if (btn.dataset.target === target) btn.classList.add('bg-primary/10', 'text-primary');
+                btn.classList.remove('bg-primary/10', 'text-primary', 'active-nav');
+                if (btn.dataset.target === target) btn.classList.add('bg-primary/10', 'text-primary', 'active-nav');
             });
             document.getElementById(`view-${target}`).classList.remove('hidden');
 
-            const titles = { dashboard: 'Tổng quan', customers: 'Quản lý Khách hàng', services: 'Dịch vụ', webfeatures: 'Quản lý Tính năng Website', quotes: 'Báo giá & Hợp đồng', history: 'Lịch sử xuất', settings: 'Cài đặt hệ thống' };
+            const titles = { dashboard: 'Tổng quan', leads: 'Quản lý Lead', customers: 'Quản lý Khách hàng', services: 'Dịch vụ', webfeatures: 'Tính năng Website', quotes: 'Báo giá & Hợp đồng', history: 'Lịch sử xuất', settings: 'Cài đặt hệ thống' };
             document.getElementById('page-title').innerText = titles[target];
         };
 
         function initAppLogic() {
-            fetchCustomers();
-            fetchServices();
-            fetchWebfeatures();
-            fetchTemplates();
-            fetchHistory();
+            unsubscribes.push(onSnapshot(query(getCollectionPath('leads')), snap => { leadsData = snap.docs.map(d => ({id: d.id, ...d.data()})); renderLeads(); updateDashboardStats(); updateQuoteCustomerSelect(); }));
+            unsubscribes.push(onSnapshot(query(getCollectionPath('customers')), snap => { customersData = snap.docs.map(d => ({id: d.id, ...d.data()})); renderCustomers(); updateDashboardStats(); updateQuoteCustomerSelect(); }));
+            unsubscribes.push(onSnapshot(query(getCollectionPath('services')), snap => { servicesData = snap.docs.map(d => ({id: d.id, ...d.data()})); renderServices(); updateDashboardStats(); }));
+            unsubscribes.push(onSnapshot(query(getCollectionPath('webfeatures')), snap => { webfeaturesData = snap.docs.map(d => ({id: d.id, ...d.data()})); renderWebfeatures(); updateDashboardStats(); }));
+            unsubscribes.push(onSnapshot(query(getCollectionPath('templates')), snap => { templatesData = snap.docs.map(d => ({id: d.id, ...d.data()})); renderTemplatesList(); updateTemplateSelector(); updateDashboardStats(); }));
+            unsubscribes.push(onSnapshot(query(getCollectionPath('export_history')), snap => { historyData = snap.docs.map(d => ({id: d.id, ...d.data()})); renderHistory(); updateDashboardStats(); }));
             initChart();
-            
-            // Khởi tạo các Dropzone cho hình ảnh Khách hàng
-            setupImageDropzone('cus-gpkd');
-            setupImageDropzone('cus-cccd');
-            setupImageDropzone('cus-store');
+            setupImageDropzone('cus-gpkd'); setupImageDropzone('cus-cccd'); setupImageDropzone('cus-store');
         }
 
-        // ==========================================
-        // HELPER: IMAGE UPLOAD & PASTE ZONE
-        // ==========================================
-        function setupImageDropzone(prefix) {
-            const zone = document.getElementById(`${prefix}-zone`);
-            const fileInput = document.getElementById(`${prefix}-file`);
-            const dataInput = document.getElementById(`${prefix}-data`);
-            const preview = document.getElementById(`${prefix}-preview`);
-            const clearBtn = document.getElementById(`${prefix}-clear`);
-            const placeholder = document.getElementById(`${prefix}-placeholder`);
-
-            if(!zone) return;
-
-            // Click to open file dialog
-            zone.addEventListener('click', (e) => {
-                if (e.target !== clearBtn && e.target.tagName !== 'SPAN') fileInput.click();
-            });
-
-            // File input change
-            fileInput.addEventListener('change', (e) => handleFile(e.target.files[0]));
-
-            // Paste event on the zone
-            zone.addEventListener('paste', (e) => {
-                e.preventDefault();
-                const items = (e.clipboardData || e.originalEvent.clipboardData).items;
-                for (let index in items) {
-                    const item = items[index];
-                    if (item.kind === 'file') {
-                        const blob = item.getAsFile();
-                        handleFile(blob);
-                        break; // Only take the first pasted image
-                    }
-                }
-            });
-
-            // Drag & Drop
-            zone.addEventListener('dragover', (e) => { e.preventDefault(); zone.classList.add('border-primary', 'bg-primary/5'); });
-            zone.addEventListener('dragleave', () => zone.classList.remove('border-primary', 'bg-primary/5'));
-            zone.addEventListener('drop', (e) => {
-                e.preventDefault();
-                zone.classList.remove('border-primary', 'bg-primary/5');
-                handleFile(e.dataTransfer.files[0]);
-            });
-
-            function handleFile(file) {
-                if (!file || !file.type.startsWith('image/')) {
-                    showToast('Vui lòng chọn hoặc dán định dạng ảnh.', 'error');
-                    return;
-                }
-                if (file.size > 1.5 * 1024 * 1024) { // 1.5MB Limit
-                    showToast('Ảnh quá lớn. Vui lòng chọn ảnh < 1.5MB để tiết kiệm dung lượng.', 'error');
-                    return;
-                }
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    dataInput.value = e.target.result;
-                    preview.src = e.target.result;
-                    preview.classList.remove('hidden');
-                    placeholder.classList.add('hidden');
-                    clearBtn.classList.remove('hidden');
-                };
-                reader.readAsDataURL(file);
-            }
-
-            // Expose clear function globally to be used in HTML onclick
-            window[`clearImage_${prefix.replace('-', '_')}`] = (e) => {
-                if(e) e.stopPropagation();
-                fileInput.value = '';
-                dataInput.value = '';
-                preview.src = '';
-                preview.classList.add('hidden');
-                placeholder.classList.remove('hidden');
-                clearBtn.classList.add('hidden');
-            };
-        }
-
-
-        // ==========================================
-        // MODAL MANAGEMENT
-        // ==========================================
+        // --- COMMON UI LOGIC ---
         window.openModal = (id, data = null) => {
-            const modal = document.getElementById(id);
-            const content = document.getElementById(`${id}-content`);
-            modal.classList.remove('hidden');
-            setTimeout(() => { modal.classList.remove('opacity-0'); content.classList.remove('scale-95'); }, 10);
-
-            if (id === 'customer-modal') {
-                document.getElementById('customer-modal-title').innerText = data ? 'Sửa Thông Tin Khách Hàng' : 'Thêm Khách Hàng Mới';
-                
-                // Clear all Text fields
-                ['id','name','address','email','phone','bank-owner','bank-account','bank-name','bank-branch','note','source'].forEach(k => {
+            const modal = document.getElementById(id); const content = document.getElementById(`${id}-content`);
+            modal.classList.remove('hidden'); setTimeout(() => { modal.classList.remove('opacity-0'); content.classList.remove('scale-95'); }, 10);
+            
+            if(id === 'lead-modal') {
+                document.getElementById('lead-modal-title').innerText = data ? 'Sửa Khách Hàng Tiềm Năng' : 'Thêm Lead Mới';
+                ['id', 'name', 'phone', 'email', 'source', 'type', 'note'].forEach(k => {
+                    const el = document.getElementById(`lead-${k}`);
+                    if(el) el.value = data ? (data[k] || '') : (k==='type' ? 'Thường' : '');
+                });
+            } else if (id === 'customer-modal') {
+                document.getElementById('customer-modal-title').innerText = data ? 'Sửa Khách Hàng' : 'Thêm Khách Hàng Mới';
+                ['id','name','address','email','phone','bank-owner','bank-account','bank-name','bank-branch','note','source', 'convert-lead-id'].forEach(k => {
                     const el = document.getElementById(`cus-${k}`);
                     if(el) el.value = data ? (data[k.replace('-','')] || data[k] || '') : '';
                 });
-
-                // Xử lý Bank Info do tên biến khác biệt một chút (camelCase)
-                if(data) {
-                    if(data.bankOwner) document.getElementById('cus-bank-owner').value = data.bankOwner;
-                    if(data.bankAccount) document.getElementById('cus-bank-account').value = data.bankAccount;
-                    if(data.bankName) document.getElementById('cus-bank-name').value = data.bankName;
-                    if(data.bankBranch) document.getElementById('cus-bank-branch').value = data.bankBranch;
-                }
-
-                // Xóa ảnh cũ trên form
-                window.clearImage_cus_gpkd();
-                window.clearImage_cus_cccd();
-                window.clearImage_cus_store();
-
-                // Nạp ảnh nếu có (Edit mode)
+                if(data && data.bankOwner) document.getElementById('cus-bank-owner').value = data.bankOwner;
+                if(data && data.bankAccount) document.getElementById('cus-bank-account').value = data.bankAccount;
+                if(data && data.bankName) document.getElementById('cus-bank-name').value = data.bankName;
+                if(data && data.bankBranch) document.getElementById('cus-bank-branch').value = data.bankBranch;
+                
+                window.clearImage_cus_gpkd(); window.clearImage_cus_cccd(); window.clearImage_cus_store();
                 if(data) {
                     if(data.gpkd) loadExistingImageToZone('cus-gpkd', data.gpkd);
                     if(data.cccd) loadExistingImageToZone('cus-cccd', data.cccd);
                     if(data.storeImage) loadExistingImageToZone('cus-store', data.storeImage);
                 }
-
             } else if (id === 'service-modal') {
                 document.getElementById('service-modal-title').innerText = data ? 'Sửa Dịch Vụ' : 'Thêm Dịch Vụ';
                 ['id','name','price','desc'].forEach(k => document.getElementById(`srv-${k}`).value = data ? (data[k]||'') : '');
@@ -1460,79 +1413,137 @@
             }
         };
 
-        function loadExistingImageToZone(prefix, base64Data) {
-            document.getElementById(`${prefix}-data`).value = base64Data;
-            const preview = document.getElementById(`${prefix}-preview`);
-            preview.src = base64Data;
-            preview.classList.remove('hidden');
-            document.getElementById(`${prefix}-placeholder`).classList.add('hidden');
-            document.getElementById(`${prefix}-clear`).classList.remove('hidden');
-        }
-
         window.closeModal = (id) => {
-            const modal = document.getElementById(id);
-            const content = document.getElementById(`${id}-content`);
-            modal.classList.add('opacity-0'); content.classList.add('scale-95');
-            setTimeout(() => modal.classList.add('hidden'), 300);
+            const m = document.getElementById(id); const c = document.getElementById(`${id}-content`);
+            m.classList.add('opacity-0'); c.classList.add('scale-95'); setTimeout(() => m.classList.add('hidden'), 300);
         };
 
-        // ==========================================
-        // CRUD: CUSTOMERS & SERVICES 
-        // ==========================================
-        function fetchCustomers() {
-            unsubscribeCustomers = onSnapshot(query(getCollectionPath('customers')), (snapshot) => {
-                customersData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                renderCustomers();
-                updateDashboardStats();
-            });
+        function setupImageDropzone(prefix) {
+            const z=document.getElementById(`${prefix}-zone`), f=document.getElementById(`${prefix}-file`), d=document.getElementById(`${prefix}-data`), p=document.getElementById(`${prefix}-preview`), c=document.getElementById(`${prefix}-clear`), pl=document.getElementById(`${prefix}-placeholder`);
+            if(!z) return;
+            z.addEventListener('click', e => { if(e.target!==c && e.target.tagName!=='SPAN') f.click(); });
+            f.addEventListener('change', e => hF(e.target.files[0]));
+            z.addEventListener('paste', e => { e.preventDefault(); const i = (e.clipboardData || e.originalEvent.clipboardData).items; for (let idx in i) if (i[idx].kind === 'file') { hF(i[idx].getAsFile()); break; } });
+            z.addEventListener('dragover', e => { e.preventDefault(); z.classList.add('border-primary'); });
+            z.addEventListener('dragleave', () => z.classList.remove('border-primary'));
+            z.addEventListener('drop', e => { e.preventDefault(); z.classList.remove('border-primary'); hF(e.dataTransfer.files[0]); });
+            function hF(file) {
+                if (!file || !file.type.startsWith('image/')) return showToast('Chỉ nhận ảnh', 'error');
+                if (file.size > 1.5 * 1024 * 1024) return showToast('Ảnh < 1.5MB', 'error');
+                const r = new FileReader(); r.onload = e => { d.value = e.target.result; p.src = e.target.result; p.classList.remove('hidden'); pl.classList.add('hidden'); c.classList.remove('hidden'); }; r.readAsDataURL(file);
+            }
+            window[`clearImage_${prefix.replace('-', '_')}`] = (e) => { if(e) e.stopPropagation(); f.value=''; d.value=''; p.src=''; p.classList.add('hidden'); pl.classList.remove('hidden'); c.classList.add('hidden'); };
         }
+        function loadExistingImageToZone(prefix, b64) { document.getElementById(`${prefix}-data`).value = b64; const p = document.getElementById(`${prefix}-preview`); p.src = b64; p.classList.remove('hidden'); document.getElementById(`${prefix}-placeholder`).classList.add('hidden'); document.getElementById(`${prefix}-clear`).classList.remove('hidden'); }
 
-        window.renderCustomers = (filter = '') => {
-            const tbody = document.getElementById('customers-list');
-            tbody.innerHTML = '';
-            const filtered = customersData.filter(c => 
-                c.name.toLowerCase().includes(filter.toLowerCase()) || 
-                (c.phone && c.phone.includes(filter))
-            );
 
-            if (filtered.length === 0) return tbody.innerHTML = `<tr><td colspan="5" class="py-6 text-center text-gray-500">Chưa có dữ liệu</td></tr>`;
+        // --- LEADS LOGIC ---
+        window.renderLeads = () => {
+            const txt = document.getElementById('search-lead').value.toLowerCase();
+            const dt = document.getElementById('filter-lead-date').value;
+            const tp = document.getElementById('filter-lead-type').value;
 
-            filtered.forEach(cus => {
-                const bankInfoStr = cus.bankName ? `${cus.bankName}<br><span class="text-gray-400 font-mono text-[10px]">${cus.bankAccount || ''}</span>` : '<span class="text-gray-300 italic">Chưa có</span>';
-                
-                tbody.innerHTML += `
-                    <tr class="hover:bg-gray-50/50 dark:hover:bg-slate-800/30 transition-colors border-b border-gray-100 dark:border-slate-800/50 last:border-0">
-                        <td class="py-3 font-semibold text-primary max-w-[200px] truncate" title="${cus.name}">${cus.name}</td>
-                        <td class="py-3"><div class="text-xs font-mono font-bold">${cus.phone}</div><div class="text-[11px] text-gray-500 truncate max-w-[150px]">${cus.email || ''}</div></td>
-                        <td class="py-3 text-xs leading-tight">${bankInfoStr}</td>
-                        <td class="py-3 text-xs text-gray-500 max-w-[150px] truncate">
-                            ${cus.source ? `<a href="${cus.source}" target="_blank" class="text-blue-500 hover:underline flex items-center gap-1"><span class="material-symbols-outlined text-[12px]">link</span> Link</a>` : 'N/A'}
-                        </td>
-                        <td class="py-3 text-right">
-                            <button onclick="previewCustomer('${cus.id}')" class="p-1 text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 mr-1" title="Xem chi tiết"><span class="material-symbols-outlined text-sm">visibility</span></button>
-                            <button onclick='editCustomer(${JSON.stringify(cus).replace(/'/g, "&#39;")})' class="p-1 text-gray-400 hover:text-primary mr-1" title="Sửa"><span class="material-symbols-outlined text-sm">edit</span></button>
-                            <button onclick="deleteCustomer('${cus.id}')" class="p-1 text-gray-400 hover:text-red-500" title="Xóa"><span class="material-symbols-outlined text-sm">delete</span></button>
-                        </td>
-                    </tr>
-                `;
+            const filtered = leadsData.filter(l => {
+                const matchTxt = l.name.toLowerCase().includes(txt) || l.phone.includes(txt);
+                const matchDt = !dt || getISODate(l.createdAt) === dt;
+                const matchTp = !tp || l.type === tp;
+                return matchTxt && matchDt && matchTp;
             });
-            
-            // Cập nhật Select box trong Báo giá
-            document.getElementById('quote-customer').innerHTML = '<option value="">-- Chọn Khách Hàng --</option>' + customersData.map(c => `<option value="${c.id}">${c.name} - ${c.phone}</option>`).join('');
+
+            const tbody = document.getElementById('leads-list');
+            if(filtered.length === 0) return tbody.innerHTML = `<tr><td colspan="5" class="py-6 text-center text-gray-500">Chưa có Lead phù hợp</td></tr>`;
+
+            tbody.innerHTML = filtered.map(l => {
+                let badgeClass = 'badge-lead-normal';
+                if(l.type === 'Tiềm năng') badgeClass = 'badge-lead-potential';
+                if(l.type === 'VIP') badgeClass = 'badge-lead-vip';
+
+                return `
+                <tr class="hover:bg-gray-50/50 dark:hover:bg-slate-800/30 border-b border-gray-100 dark:border-slate-800/50 transition-colors">
+                    <td class="py-3 font-semibold text-orange-600 max-w-[200px] truncate">${l.name}</td>
+                    <td class="py-3"><div class="text-xs font-mono font-bold">${l.phone}</div><div class="text-[11px] text-gray-500">${l.email || ''}</div></td>
+                    <td class="py-3 text-center"><span class="px-2 py-1 text-[10px] uppercase font-bold rounded-full ${badgeClass}">${l.type}</span></td>
+                    <td class="py-3"><div class="text-xs font-medium">${l.source || 'N/A'}</div><div class="text-[10px] text-gray-400">${formatDateStr(l.createdAt)}</div></td>
+                    <td class="py-3 text-right">
+                        <button onclick="convertLeadToCustomer('${l.id}')" class="p-1 text-green-500 hover:text-green-600 mr-1" title="Chuyển sang Khách Hàng"><span class="material-symbols-outlined text-sm">person_add</span></button>
+                        <button onclick='editLead(${JSON.stringify(l).replace(/'/g, "&#39;")})' class="p-1 text-gray-400 hover:text-primary mr-1" title="Sửa"><span class="material-symbols-outlined text-sm">edit</span></button>
+                        <button onclick="deleteLead('${l.id}')" class="p-1 text-gray-400 hover:text-red-500" title="Xóa"><span class="material-symbols-outlined text-sm">delete</span></button>
+                    </td>
+                </tr>
+            `}).join('');
+        };
+        ['search-lead', 'filter-lead-date', 'filter-lead-type'].forEach(id => document.getElementById(id).addEventListener('input', renderLeads));
+
+        document.getElementById('lead-form').addEventListener('submit', async(e) => {
+            e.preventDefault();
+            const id = document.getElementById('lead-id').value;
+            const data = {
+                name: document.getElementById('lead-name').value.trim(),
+                phone: document.getElementById('lead-phone').value.trim(),
+                email: document.getElementById('lead-email').value.trim(),
+                source: document.getElementById('lead-source').value.trim(),
+                type: document.getElementById('lead-type').value,
+                note: document.getElementById('lead-note').value.trim(),
+            };
+            try {
+                if (id) await updateDoc(doc(db, 'artifacts', app_id, 'public', 'data', 'leads', id), data);
+                else await addDoc(getCollectionPath('leads'), { ...data, createdAt: new Date() });
+                showToast(id ? 'Cập nhật Lead thành công' : 'Đã thêm Lead mới');
+                closeModal('lead-modal');
+            } catch (err) { showToast('Lỗi: ' + err.message, 'error'); }
+        });
+
+        window.editLead = (data) => openModal('lead-modal', data);
+        window.deleteLead = async (id) => { if(confirm('Xóa Lead này?')) await deleteDoc(doc(db, 'artifacts', app_id, 'public', 'data', 'leads', id)); };
+        
+        window.convertLeadToCustomer = (leadId) => {
+            const lead = leadsData.find(l => l.id === leadId);
+            if(!lead) return;
+            openModal('customer-modal', {
+                name: lead.name, phone: lead.phone, email: lead.email, source: lead.source, note: lead.note, 'convert-lead-id': lead.id
+            });
+            showToast('Vui lòng bổ sung thêm thông tin để hoàn tất chuyển đổi', 'info');
         };
 
-        document.getElementById('search-customer').addEventListener('input', (e) => renderCustomers(e.target.value));
+        // --- CUSTOMERS LOGIC ---
+        window.renderCustomers = () => {
+            const txt = document.getElementById('search-customer').value.toLowerCase();
+            const dt = document.getElementById('filter-customer-date').value;
 
-        // Submit form khách hàng mới
+            const filtered = customersData.filter(c => {
+                const matchTxt = c.name.toLowerCase().includes(txt) || (c.phone && c.phone.includes(txt));
+                const matchDt = !dt || getISODate(c.createdAt) === dt;
+                return matchTxt && matchDt;
+            });
+
+            const tbody = document.getElementById('customers-list');
+            if(filtered.length === 0) return tbody.innerHTML = `<tr><td colspan="5" class="py-6 text-center text-gray-500">Chưa có dữ liệu</td></tr>`;
+
+            tbody.innerHTML = filtered.map(cus => {
+                const bankInfoStr = cus.bankName ? `${cus.bankName}<br><span class="text-gray-400 font-mono text-[10px]">${cus.bankAccount || ''}</span>` : '<span class="text-gray-300 italic">Chưa có</span>';
+                return `
+                <tr class="hover:bg-gray-50/50 dark:hover:bg-slate-800/30 border-b border-gray-100 dark:border-slate-800/50 transition-colors">
+                    <td class="py-3 font-semibold text-primary max-w-[200px] truncate">${cus.name}</td>
+                    <td class="py-3"><div class="text-xs font-mono font-bold">${cus.phone}</div><div class="text-[11px] text-gray-500 max-w-[150px] truncate">${cus.email || ''}</div></td>
+                    <td class="py-3 text-xs leading-tight">${bankInfoStr}</td>
+                    <td class="py-3"><div class="text-[11px] text-gray-500 truncate max-w-[150px]">${cus.source || 'N/A'}</div><div class="text-[10px] text-gray-400 mt-0.5">${formatDateStr(cus.createdAt)}</div></td>
+                    <td class="py-3 text-right">
+                        <button onclick="previewCustomer('${cus.id}')" class="p-1 text-blue-500 hover:text-blue-700 mr-1" title="Xem chi tiết"><span class="material-symbols-outlined text-sm">visibility</span></button>
+                        <button onclick='editCustomer(${JSON.stringify(cus).replace(/'/g, "&#39;")})' class="p-1 text-gray-400 hover:text-primary mr-1" title="Sửa"><span class="material-symbols-outlined text-sm">edit</span></button>
+                        <button onclick="deleteCustomer('${cus.id}')" class="p-1 text-gray-400 hover:text-red-500" title="Xóa"><span class="material-symbols-outlined text-sm">delete</span></button>
+                    </td>
+                </tr>
+            `}).join('');
+        };
+        ['search-customer', 'filter-customer-date'].forEach(id => document.getElementById(id).addEventListener('input', renderCustomers));
+
         document.getElementById('customer-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const id = document.getElementById('cus-id').value;
+            const convertLeadId = document.getElementById('cus-convert-lead-id').value;
             
-            // Map tất cả các trường dữ liệu theo đúng yêu cầu
             const data = {
                 name: document.getElementById('cus-name').value.trim(),
-                gpkd: document.getElementById('cus-gpkd-data').value,
-                cccd: document.getElementById('cus-cccd-data').value,
                 address: document.getElementById('cus-address').value.trim(),
                 email: document.getElementById('cus-email').value.trim(),
                 phone: document.getElementById('cus-phone').value.trim(),
@@ -1540,34 +1551,30 @@
                 bankAccount: document.getElementById('cus-bank-account').value.trim(),
                 bankName: document.getElementById('cus-bank-name').value.trim(),
                 bankBranch: document.getElementById('cus-bank-branch').value.trim(),
-                storeImage: document.getElementById('cus-store-data').value,
                 note: document.getElementById('cus-note').value.trim(),
-                source: document.getElementById('cus-source').value.trim()
+                source: document.getElementById('cus-source').value.trim(),
+                gpkd: document.getElementById('cus-gpkd-data').value,
+                cccd: document.getElementById('cus-cccd-data').value,
+                storeImage: document.getElementById('cus-store-data').value
             };
 
             try {
-                if (id) {
-                    await updateDoc(doc(db, 'artifacts', app_id, 'public', 'data', 'customers', id), data);
-                    showToast('Cập nhật hồ sơ khách hàng thành công');
+                if (id) await updateDoc(doc(db, 'artifacts', app_id, 'public', 'data', 'customers', id), data);
+                else await addDoc(getCollectionPath('customers'), { ...data, createdAt: new Date() });
+                
+                // Nếu được convert từ Lead, hãy xoá Lead cũ
+                if(convertLeadId) {
+                    await deleteDoc(doc(db, 'artifacts', app_id, 'public', 'data', 'leads', convertLeadId));
+                    showToast('Đã chuyển Lead thành Khách Hàng!');
                 } else {
-                    await addDoc(getCollectionPath('customers'), { ...data, createdAt: new Date() });
-                    showToast('Đã thêm khách hàng mới');
+                    showToast(id ? 'Cập nhật thành công' : 'Đã thêm khách hàng mới');
                 }
                 closeModal('customer-modal');
-            } catch (error) { 
-                showToast('Lỗi lưu dữ liệu: ' + error.message, 'error'); 
-            }
+            } catch (error) { showToast('Lỗi: ' + error.message, 'error'); }
         });
-
         window.editCustomer = (data) => openModal('customer-modal', data);
+        window.deleteCustomer = async (id) => { if(confirm('Xóa khách hàng này?')) await deleteDoc(doc(db, 'artifacts', app_id, 'public', 'data', 'customers', id)); };
         
-        window.deleteCustomer = async (id) => {
-            if (confirm('Bạn có chắc chắn muốn xóa khách hàng này?')) {
-                try { await deleteDoc(doc(db, 'artifacts', app_id, 'public', 'data', 'customers', id)); showToast('Đã xóa khách hàng'); }
-                catch (error) { showToast('Lỗi khi xoá', 'error'); }
-            }
-        };
-
         window.previewCustomer = (id) => {
             const cus = customersData.find(c => c.id === id);
             if(!cus) return;
@@ -1585,26 +1592,13 @@
             document.getElementById('prev-cus-note').innerText = cus.note || '---';
             
             const sourceEl = document.getElementById('prev-cus-source');
-            if(cus.source) {
-                sourceEl.innerText = cus.source;
-                sourceEl.href = cus.source;
-            } else {
-                sourceEl.innerText = '---';
-                sourceEl.removeAttribute('href');
-            }
+            if(cus.source) { sourceEl.innerText = cus.source; sourceEl.href = cus.source; } 
+            else { sourceEl.innerText = '---'; sourceEl.removeAttribute('href'); }
 
-            // Xử lý hiển thị ảnh
             const setPreviewImage = (elId, src) => {
                 const img = document.getElementById(elId);
-                if(src) {
-                    img.src = src;
-                    img.style.display = 'block';
-                    img.nextElementSibling.style.display = 'none'; // Ẩn chữ "Không có ảnh"
-                } else {
-                    img.src = '';
-                    img.style.display = 'none';
-                    img.nextElementSibling.style.display = 'block'; // Hiện chữ "Không có ảnh"
-                }
+                if(src) { img.src = src; img.style.display = 'block'; img.nextElementSibling.style.display = 'none'; } 
+                else { img.src = ''; img.style.display = 'none'; img.nextElementSibling.style.display = 'block'; }
             };
 
             setPreviewImage('prev-cus-gpkd', cus.gpkd);
@@ -1615,72 +1609,48 @@
         };
 
         // --- SERVICES LOGIC ---
-        function fetchServices() {
-            unsubscribeServices = onSnapshot(query(getCollectionPath('services')), (snapshot) => {
-                servicesData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                renderServices();
-                document.getElementById('quote-services-list').innerHTML = servicesData.map(srv => `
-                    <label class="flex items-center gap-3 p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded cursor-pointer">
-                        <input type="checkbox" class="quote-srv-cb form-checkbox h-4 w-4 text-primary rounded border-gray-300" value="${srv.id}" data-name="${srv.name}" data-price="${srv.price}">
-                        <div class="flex-1"><div class="text-sm font-semibold">${srv.name}</div><div class="text-xs text-gray-500">${formatCurrency(srv.price)}</div></div>
-                    </label>
-                `).join('');
-                updateDashboardStats();
-            });
-        }
-
         function renderServices() {
             const grid = document.getElementById('services-grid');
-            grid.innerHTML = servicesData.length === 0 ? `<div class="col-span-full text-center py-10 text-gray-500">Chưa có dữ liệu</div>` : servicesData.map(srv => `
+            grid.innerHTML = servicesData.map(srv => `
                 <div class="bg-white dark:bg-slate-800 p-5 rounded-xl border border-gray-100 dark:border-slate-700 shadow-sm relative overflow-hidden group">
-                    <div class="absolute top-0 left-0 w-1 h-full bg-primary opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                    <div class="flex justify-between items-start mb-2">
-                        <h4 class="font-bold text-lg leading-tight pr-4">${srv.name}</h4>
-                    </div>
+                    <h4 class="font-bold text-lg leading-tight mb-2">${srv.name}</h4>
                     <p class="text-xl font-extrabold text-primary mb-3">${formatCurrency(srv.price)}</p>
                     <p class="text-xs text-gray-500 line-clamp-2 mb-4 h-8">${srv.desc || ''}</p>
                     <div class="flex gap-2">
-                        <button onclick='editService(${JSON.stringify(srv).replace(/'/g, "&#39;")})' class="w-8 h-8 rounded-lg bg-gray-100 dark:bg-slate-700 flex items-center justify-center hover:text-primary transition-colors"><span class="material-symbols-outlined text-sm">edit</span></button>
-                        <button onclick="deleteService('${srv.id}')" class="w-8 h-8 rounded-lg bg-gray-100 dark:bg-slate-700 flex items-center justify-center hover:text-red-500 transition-colors"><span class="material-symbols-outlined text-sm">delete</span></button>
+                        <button onclick='editService(${JSON.stringify(srv).replace(/'/g, "&#39;")})' class="w-8 h-8 rounded-lg bg-gray-100 dark:bg-slate-700 flex items-center justify-center hover:text-primary"><span class="material-symbols-outlined text-sm">edit</span></button>
+                        <button onclick="deleteService('${srv.id}')" class="w-8 h-8 rounded-lg bg-gray-100 dark:bg-slate-700 flex items-center justify-center hover:text-red-500"><span class="material-symbols-outlined text-sm">delete</span></button>
                     </div>
                 </div>
             `).join('');
+            document.getElementById('quote-services-list').innerHTML = servicesData.map(srv => `
+                <label class="flex items-center gap-3 p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded cursor-pointer">
+                    <input type="checkbox" class="quote-srv-cb form-checkbox h-4 w-4 text-primary rounded" value="${srv.id}" data-name="${srv.name}" data-price="${srv.price}">
+                    <div class="flex-1"><div class="text-sm font-semibold">${srv.name}</div><div class="text-xs text-gray-500">${formatCurrency(srv.price)}</div></div>
+                </label>
+            `).join('');
         }
-
         document.getElementById('service-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const id = document.getElementById('srv-id').value;
+            e.preventDefault(); const id = document.getElementById('srv-id').value;
             const data = { name: document.getElementById('srv-name').value, price: Number(document.getElementById('srv-price').value), desc: document.getElementById('srv-desc').value };
             try {
-                if (id) await updateDoc(doc(db, 'artifacts', app_id, 'public', 'data', 'services', id), data);
+                if(id) await updateDoc(doc(db, 'artifacts', app_id, 'public', 'data', 'services', id), data); 
                 else await addDoc(getCollectionPath('services'), data);
-                showToast('Lưu dịch vụ thành công'); closeModal('service-modal');
-            } catch (error) { showToast('Lỗi', 'error'); }
+                showToast('Lưu dịch vụ thành công');
+                closeModal('service-modal');
+            } catch(e) { showToast('Lỗi', 'error'); }
         });
-
         window.editService = (data) => openModal('service-modal', data);
-        window.deleteService = async (id) => {
-            if (confirm('Xóa dịch vụ này?')) try { await deleteDoc(doc(db, 'artifacts', app_id, 'public', 'data', 'services', id)); } catch (e) { showToast('Lỗi', 'error'); }
-        };
+        window.deleteService = async (id) => { if(confirm('Xóa?')) await deleteDoc(doc(db, 'artifacts', app_id, 'public', 'data', 'services', id)); };
 
-        // ==========================================
-        // CRUD: WEB FEATURES
-        // ==========================================
+        // --- WEB FEATURES LOGIC ---
         document.getElementById('wf-image-file').addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-
-            if (file.size > 1.5 * 1024 * 1024) { 
-                showToast('Kích thước ảnh quá lớn. Vui lòng chọn ảnh dưới 1.5MB.', 'error');
-                this.value = ''; 
-                return;
-            }
-
+            const file = e.target.files[0]; if (!file) return;
+            if (file.size > 1.5 * 1024 * 1024) { showToast('Ảnh < 1.5MB.', 'error'); this.value = ''; return; }
             const reader = new FileReader();
             reader.onload = function(event) {
-                const base64String = event.target.result;
-                document.getElementById('wf-image-data').value = base64String;
-                document.getElementById('wf-image-preview').src = base64String;
+                const b64 = event.target.result;
+                document.getElementById('wf-image-data').value = b64;
+                document.getElementById('wf-image-preview').src = b64;
                 document.getElementById('wf-image-preview-container').classList.remove('hidden');
             };
             reader.readAsDataURL(file);
@@ -1693,37 +1663,26 @@
             document.getElementById('wf-image-preview').src = '';
         }
 
-        function fetchWebfeatures() {
-            unsubscribeWebfeatures = onSnapshot(query(getCollectionPath('webfeatures')), (snapshot) => {
-                webfeaturesData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                renderWebfeatures();
-                updateDashboardStats();
-            });
-        }
-
         function renderWebfeatures() {
             const grid = document.getElementById('webfeatures-grid');
-            if (webfeaturesData.length === 0) {
-                grid.innerHTML = `<div class="col-span-full text-center py-10 text-gray-500">Chưa có tính năng nào. Vui lòng thêm mới.</div>`;
-                return;
-            }
-
+            if (webfeaturesData.length === 0) return grid.innerHTML = `<div class="col-span-full text-center py-10 text-gray-500">Chưa có tính năng nào.</div>`;
+            
             grid.innerHTML = webfeaturesData.map(wf => `
-                <div class="bg-white dark:bg-slate-800 rounded-xl border border-gray-100 dark:border-slate-700 shadow-sm overflow-hidden flex flex-col relative group hover:shadow-md transition-shadow">
+                <div class="bg-white dark:bg-slate-800 rounded-xl border border-gray-100 dark:border-slate-700 shadow-sm overflow-hidden flex flex-col relative group">
                     <div class="h-32 bg-gray-100 dark:bg-slate-700 relative flex-shrink-0">
                         ${wf.image ? `<img src="${wf.image}" class="w-full h-full object-cover" onerror="this.src='https://via.placeholder.com/400x200?text=No+Image'">` : `<div class="flex items-center justify-center h-full text-gray-400"><span class="material-symbols-outlined text-4xl">image</span></div>`}
                         <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
-                            <button onclick="viewWebfeature('${wf.id}')" class="w-9 h-9 rounded-full bg-white text-gray-900 flex items-center justify-center hover:scale-110 transition-transform shadow" title="Xem nhanh"><span class="material-symbols-outlined text-sm">visibility</span></button>
-                            ${wf.demo ? `<a href="${wf.demo}" target="_blank" class="w-9 h-9 rounded-full bg-blue-500 text-white flex items-center justify-center hover:scale-110 transition-transform shadow" title="Xem Demo"><span class="material-symbols-outlined text-sm">open_in_new</span></a>` : ''}
+                            <button onclick="viewWebfeature('${wf.id}')" class="w-9 h-9 rounded-full bg-white text-gray-900 flex items-center justify-center hover:scale-110 shadow"><span class="material-symbols-outlined text-sm">visibility</span></button>
+                            ${wf.demo ? `<a href="${wf.demo}" target="_blank" class="w-9 h-9 rounded-full bg-blue-500 text-white flex items-center justify-center hover:scale-110 shadow"><span class="material-symbols-outlined text-sm">open_in_new</span></a>` : ''}
                         </div>
                     </div>
                     <div class="p-4 flex-1 flex flex-col">
                         <h4 class="font-bold text-base leading-tight mb-1 truncate" title="${wf.name}">${wf.name}</h4>
                         <p class="text-sm font-extrabold text-primary mb-2">${formatCurrency(wf.price)}</p>
-                        <p class="text-xs text-gray-500 line-clamp-2 mb-4 flex-1" title="${wf.desc || ''}">${wf.desc || 'Không có mô tả.'}</p>
+                        <p class="text-xs text-gray-500 line-clamp-2 mb-4 flex-1">${wf.desc || 'Không có mô tả.'}</p>
                         <div class="flex justify-end gap-2 border-t border-gray-100 dark:border-slate-700 pt-3 mt-auto">
-                            <button onclick='editWebfeature(${JSON.stringify(wf).replace(/'/g, "&#39;")})' class="w-8 h-8 rounded-lg bg-gray-100 dark:bg-slate-700 flex items-center justify-center hover:text-primary transition-colors"><span class="material-symbols-outlined text-sm">edit</span></button>
-                            <button onclick="deleteWebfeature('${wf.id}')" class="w-8 h-8 rounded-lg bg-gray-100 dark:bg-slate-700 flex items-center justify-center hover:text-red-500 transition-colors"><span class="material-symbols-outlined text-sm">delete</span></button>
+                            <button onclick='editWebfeature(${JSON.stringify(wf).replace(/'/g, "&#39;")})' class="w-8 h-8 rounded-lg bg-gray-100 dark:bg-slate-700 flex items-center justify-center hover:text-primary"><span class="material-symbols-outlined text-sm">edit</span></button>
+                            <button onclick="deleteWebfeature('${wf.id}')" class="w-8 h-8 rounded-lg bg-gray-100 dark:bg-slate-700 flex items-center justify-center hover:text-red-500"><span class="material-symbols-outlined text-sm">delete</span></button>
                         </div>
                     </div>
                 </div>
@@ -1749,171 +1708,73 @@
         });
 
         window.editWebfeature = (data) => openModal('webfeature-modal', data);
-        window.deleteWebfeature = async (id) => {
-            if (confirm('Bạn có chắc chắn muốn xóa tính năng này?')) {
-                try { await deleteDoc(doc(db, 'artifacts', app_id, 'public', 'data', 'webfeatures', id)); } 
-                catch (e) { showToast('Lỗi xóa tính năng', 'error'); }
-            }
-        };
-
+        window.deleteWebfeature = async (id) => { if (confirm('Xóa tính năng này?')) await deleteDoc(doc(db, 'artifacts', app_id, 'public', 'data', 'webfeatures', id)); };
         window.viewWebfeature = (id) => {
-            const wf = webfeaturesData.find(w => w.id === id);
-            if (!wf) return;
-            
+            const wf = webfeaturesData.find(w => w.id === id); if (!wf) return;
             document.getElementById('view-wf-image').src = wf.image || 'https://via.placeholder.com/600x300?text=No+Image';
             document.getElementById('view-wf-name').innerText = wf.name;
             document.getElementById('view-wf-price').innerText = formatCurrency(wf.price);
-            document.getElementById('view-wf-desc').innerText = wf.desc || 'Tính năng này chưa có mô tả chi tiết.';
-            
+            document.getElementById('view-wf-desc').innerText = wf.desc || 'Chưa có mô tả chi tiết.';
             const demoBtn = document.getElementById('view-wf-demo-btn');
-            if (wf.demo) {
-                demoBtn.href = wf.demo;
-                demoBtn.classList.remove('hidden');
-                demoBtn.classList.add('flex');
-            } else {
-                demoBtn.classList.add('hidden');
-                demoBtn.classList.remove('flex');
-            }
-            
+            if (wf.demo) { demoBtn.href = wf.demo; demoBtn.classList.remove('hidden'); demoBtn.classList.add('flex'); } 
+            else { demoBtn.classList.add('hidden'); demoBtn.classList.remove('flex'); }
             openModal('webfeature-view-modal');
         };
 
-        // ==========================================
-        // TEMPLATE WORD UPLOAD & PARSING & MANAGEMENT
-        // ==========================================
-        function fetchTemplates() {
-            unsubscribeTemplates = onSnapshot(query(getCollectionPath('templates')), (snapshot) => {
-                templatesData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                
-                const selector = document.getElementById('template-selector');
-                const currentSelection = selector.value;
-                selector.innerHTML = '<option value="">-- Chọn Mẫu Word --</option>' + 
-                    templatesData.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
-                
-                if(templatesData.find(t => t.id === currentSelection)) {
-                    selector.value = currentSelection;
-                }
-
-                if (document.getElementById('templates-list')) {
-                    renderTemplatesList();
-                }
-                
-                updateDashboardStats();
-            });
+        // --- TEMPLATES LOGIC ---
+        function updateTemplateSelector() {
+            const selector = document.getElementById('template-selector');
+            const currentSelection = selector.value;
+            selector.innerHTML = '<option value="">-- Chọn Mẫu Word --</option>' + templatesData.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
+            if(templatesData.find(t => t.id === currentSelection)) selector.value = currentSelection;
         }
 
         window.renderTemplatesList = () => {
             const tbody = document.getElementById('templates-list');
-            tbody.innerHTML = '';
-            
-            if (templatesData.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="3" class="py-6 text-center text-gray-500">Chưa có mẫu nào được lưu</td></tr>`;
-                return;
-            }
-
-            templatesData.forEach(tpl => {
-                tbody.innerHTML += `
-                    <tr class="hover:bg-gray-50/50 dark:hover:bg-slate-800/30 transition-colors border-b border-gray-100 dark:border-slate-800/50 last:border-0">
-                        <td class="py-3 font-semibold text-primary">${tpl.name}</td>
-                        <td class="py-3 text-xs text-gray-500">${tpl.fields ? tpl.fields.length : 0} trường trống</td>
-                        <td class="py-3 text-right">
-                            <button onclick="selectTemplateToView('${tpl.id}')" class="p-1 text-gray-400 hover:text-green-500 mr-1" title="Xem & Sử dụng"><span class="material-symbols-outlined text-sm">visibility</span></button>
-                            <button onclick='editTemplate(${JSON.stringify(tpl).replace(/'/g, "&#39;")})' class="p-1 text-gray-400 hover:text-primary mr-1" title="Sửa tên"><span class="material-symbols-outlined text-sm">edit</span></button>
-                            <button onclick="deleteTemplate('${tpl.id}')" class="p-1 text-gray-400 hover:text-red-500" title="Xóa"><span class="material-symbols-outlined text-sm">delete</span></button>
-                        </td>
-                    </tr>
-                `;
-            });
-        }
-
-        window.selectTemplateToView = (id) => {
-            closeModal('template-manage-modal');
-            const selector = document.getElementById('template-selector');
-            selector.value = id;
-            loadSelectedTemplate();
+            if (templatesData.length === 0) return tbody.innerHTML = `<tr><td colspan="3" class="py-6 text-center text-gray-500">Chưa có mẫu nào được lưu</td></tr>`;
+            tbody.innerHTML = templatesData.map(tpl => `
+                <tr class="hover:bg-gray-50/50 dark:hover:bg-slate-800/30 border-b border-gray-100 dark:border-slate-800/50">
+                    <td class="py-3 font-semibold text-primary">${tpl.name}</td>
+                    <td class="py-3 text-xs text-gray-500">${tpl.fields ? tpl.fields.length : 0} trường trống</td>
+                    <td class="py-3 text-right">
+                        <button onclick="selectTemplateToView('${tpl.id}')" class="p-1 text-gray-400 hover:text-green-500 mr-1" title="Sử dụng"><span class="material-symbols-outlined text-sm">visibility</span></button>
+                        <button onclick='editTemplate(${JSON.stringify(tpl).replace(/'/g, "&#39;")})' class="p-1 text-gray-400 hover:text-primary mr-1" title="Sửa tên"><span class="material-symbols-outlined text-sm">edit</span></button>
+                        <button onclick="deleteTemplate('${tpl.id}')" class="p-1 text-gray-400 hover:text-red-500" title="Xóa"><span class="material-symbols-outlined text-sm">delete</span></button>
+                    </td>
+                </tr>
+            `).join('');
         };
 
-        window.editTemplate = (tpl) => {
-            document.getElementById('edit-tpl-id').value = tpl.id;
-            document.getElementById('edit-tpl-name').value = tpl.name;
-            openModal('template-edit-modal');
-        };
-
+        window.selectTemplateToView = (id) => { closeModal('template-manage-modal'); document.getElementById('template-selector').value = id; loadSelectedTemplate(); };
+        window.editTemplate = (tpl) => { document.getElementById('edit-tpl-id').value = tpl.id; document.getElementById('edit-tpl-name').value = tpl.name; openModal('template-edit-modal'); };
+        
         document.getElementById('template-edit-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const id = document.getElementById('edit-tpl-id').value;
-            const newName = document.getElementById('edit-tpl-name').value.trim();
-            if (newName) {
-                try {
-                    await updateDoc(doc(db, 'artifacts', app_id, 'public', 'data', 'templates', id), { name: newName });
-                    showToast('Đã cập nhật tên mẫu hợp đồng');
-                    closeModal('template-edit-modal');
-                } catch (err) {
-                    showToast('Lỗi cập nhật: ' + err.message, 'error');
-                }
-            }
+            e.preventDefault(); const id = document.getElementById('edit-tpl-id').value; const newName = document.getElementById('edit-tpl-name').value.trim();
+            if (newName) { try { await updateDoc(doc(db, 'artifacts', app_id, 'public', 'data', 'templates', id), { name: newName }); showToast('Đã cập nhật tên mẫu'); closeModal('template-edit-modal'); } catch (err) {} }
         });
-
         window.deleteTemplate = async (id) => {
-            if (confirm('Bạn có chắc chắn muốn xóa vĩnh viễn mẫu hợp đồng này?')) {
-                try {
-                    await deleteDoc(doc(db, 'artifacts', app_id, 'public', 'data', 'templates', id));
-                    showToast('Đã xóa mẫu hợp đồng thành công');
-                    if (document.getElementById('template-selector').value === id) {
-                        document.getElementById('template-selector').value = '';
-                        loadSelectedTemplate();
-                    }
-                } catch (err) {
-                    showToast('Lỗi xóa: ' + err.message, 'error');
-                }
+            if (confirm('Xóa vĩnh viễn mẫu hợp đồng này?')) {
+                try { await deleteDoc(doc(db, 'artifacts', app_id, 'public', 'data', 'templates', id)); showToast('Đã xóa mẫu'); if (document.getElementById('template-selector').value === id) { document.getElementById('template-selector').value = ''; loadSelectedTemplate(); } } catch (err) { }
             }
         };
-
 
         document.getElementById('tpl-file').addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-
+            const file = e.target.files[0]; if (!file) return;
             const reader = new FileReader();
             reader.onload = function(loadEvent) {
                 const arrayBuffer = loadEvent.target.result;
-                
-                mammoth.convertToHtml({arrayBuffer: arrayBuffer})
-                    .then(function(result) {
-                        let html = result.value; 
-
-                        let blankCounter = 1;
-                        const blankRegex = /(\.{3,}|…{2,}|_{3,})/g;
-                        html = html.replace(blankRegex, function() {
-                            return `{{Trống_${blankCounter++}}}`;
-                        });
-
-                        window.tempExtractedHtml = html;
-                        
-                        const regex = /\{\{([^}]+)\}\}/g;
-                        const fieldsFound = new Set();
-                        let match;
-                        while ((match = regex.exec(html)) !== null) {
-                            fieldsFound.add(match[1].trim());
-                        }
-
-                        window.tempExtractedFields = Array.from(fieldsFound);
-
-                        const statusDiv = document.getElementById('tpl-extract-status');
-                        const fieldsDiv = document.getElementById('tpl-detected-fields');
-                        statusDiv.classList.remove('hidden');
-                        
-                        if(window.tempExtractedFields.length > 0) {
-                            fieldsDiv.innerHTML = window.tempExtractedFields.map(f => `<span class="px-2 py-1 bg-green-100 text-green-700 rounded text-[11px] font-mono">{{${f}}}</span>`).join('');
-                        } else {
-                            fieldsDiv.innerHTML = `<span class="text-sm text-gray-500">Không tìm thấy trường nào. File sẽ được dùng làm mẫu tĩnh.</span>`;
-                        }
-
-                    })
-                    .catch(function(err) {
-                        showToast("Lỗi đọc file Word. Hãy chắc chắn đó là file .docx hợp lệ.", "error");
-                        console.error(err);
-                    });
+                mammoth.convertToHtml({arrayBuffer: arrayBuffer}).then(function(result) {
+                    let html = result.value; let blankCounter = 1; const blankRegex = /(\.{3,}|…{2,}|_{3,})/g;
+                    html = html.replace(blankRegex, function() { return `{{Trống_${blankCounter++}}}`; });
+                    window.tempExtractedHtml = html;
+                    const regex = /\{\{([^}]+)\}\}/g; const fieldsFound = new Set(); let match;
+                    while ((match = regex.exec(html)) !== null) fieldsFound.add(match[1].trim());
+                    window.tempExtractedFields = Array.from(fieldsFound);
+                    const statusDiv = document.getElementById('tpl-extract-status'); const fieldsDiv = document.getElementById('tpl-detected-fields');
+                    statusDiv.classList.remove('hidden');
+                    if(window.tempExtractedFields.length > 0) fieldsDiv.innerHTML = window.tempExtractedFields.map(f => `<span class="px-2 py-1 bg-green-100 text-green-700 rounded text-[11px] font-mono">{{${f}}}</span>`).join('');
+                    else fieldsDiv.innerHTML = `<span class="text-sm text-gray-500">Không tìm thấy trường trống.</span>`;
+                }).catch(function(err) { showToast("Lỗi đọc file Word.", "error"); });
             };
             reader.readAsArrayBuffer(file);
         });
@@ -1921,56 +1782,49 @@
         window.processAndSaveTemplate = async () => {
             const name = document.getElementById('tpl-name').value.trim();
             if(!name) return showToast('Vui lòng nhập tên mẫu', 'error');
-            if(!window.tempExtractedHtml) return showToast('Vui lòng chọn file Word hợp lệ', 'error');
-
-            const btn = document.getElementById('btn-save-tpl');
-            btn.disabled = true; btn.innerHTML = 'Đang lưu...';
-
+            if(!window.tempExtractedHtml) return showToast('Vui lòng chọn file Word', 'error');
+            const btn = document.getElementById('btn-save-tpl'); btn.disabled = true; btn.innerHTML = 'Đang lưu...';
             try {
-                await addDoc(getCollectionPath('templates'), {
-                    name: name,
-                    htmlContent: window.tempExtractedHtml,
-                    fields: window.tempExtractedFields,
-                    createdAt: new Date()
-                });
-                showToast('Đã lưu mẫu hợp đồng!');
-                closeModal('template-upload-modal');
-            } catch (e) {
-                showToast('Lỗi lưu mẫu: ' + e.message, 'error');
-            } finally {
-                btn.disabled = false; btn.innerHTML = 'Lưu Mẫu';
-            }
+                await addDoc(getCollectionPath('templates'), { name: name, htmlContent: window.tempExtractedHtml, fields: window.tempExtractedFields, createdAt: new Date() });
+                showToast('Đã lưu mẫu!'); closeModal('template-upload-modal');
+            } catch (e) { showToast('Lỗi lưu: ' + e.message, 'error'); } 
+            finally { btn.disabled = false; btn.innerHTML = 'Lưu Mẫu'; }
         };
 
-        // ==========================================
-        // QUOTATIONS & TEMPLATE LOGIC
-        // ==========================================
-        window.switchQuoteTab = (tab) => {
-            document.getElementById('panel-standard').classList.add('hidden');
-            document.getElementById('panel-template').classList.add('hidden');
-            document.getElementById('tab-standard').classList.remove('bg-white', 'shadow', 'text-primary');
-            document.getElementById('tab-standard').classList.add('text-gray-500');
-            document.getElementById('tab-template').classList.remove('bg-white', 'shadow', 'text-primary');
-            document.getElementById('tab-template').classList.add('text-gray-500');
-            
-            document.getElementById(`panel-${tab}`).classList.remove('hidden');
-            document.getElementById(`tab-${tab}`).classList.remove('text-gray-500');
-            document.getElementById(`tab-${tab}`).classList.add('bg-white', 'shadow', 'text-primary');
+        // --- QUOTES LOGIC ---
+        function updateQuoteCustomerSelect() {
+            let html = '<option value="">-- Chọn --</option>';
+            html += '<optgroup label="Khách Hàng">';
+            customersData.forEach(c => html += `<option value="cus_${c.id}">${c.name} - ${c.phone}</option>`);
+            html += '</optgroup><optgroup label="Lead (Tiềm năng)">';
+            leadsData.forEach(l => html += `<option value="lead_${l.id}">${l.name} - ${l.phone}</option>`);
+            html += '</optgroup>';
+            document.getElementById('quote-customer').innerHTML = html;
+        }
 
+        window.switchQuoteTab = (tab) => {
+            document.getElementById('panel-standard').classList.toggle('hidden', tab !== 'standard');
+            document.getElementById('panel-template').classList.toggle('hidden', tab !== 'template');
+            ['standard','template'].forEach(t => {
+                const btn = document.getElementById(`tab-${t}`);
+                if(t === tab) btn.classList.add('bg-white', 'shadow', 'text-primary'); 
+                else btn.classList.remove('bg-white', 'shadow', 'text-primary');
+                if(t !== tab) btn.classList.add('text-gray-500'); else btn.classList.remove('text-gray-500');
+            });
             document.getElementById('document-preview-area').innerHTML = '<div class="text-center text-gray-400 mt-20 italic" id="empty-preview-msg">Vui lòng chọn tạo báo giá cơ bản hoặc chọn mẫu hợp đồng ở cột bên trái.</div>';
         };
 
         window.generateStandardQuote = () => {
-            const cusId = document.getElementById('quote-customer').value;
-            if (!cusId) return showToast('Vui lòng chọn khách hàng', 'error');
-            const customer = customersData.find(c => c.id === cusId);
+            const selId = document.getElementById('quote-customer').value;
+            if (!selId) return showToast('Chọn đối tượng', 'error');
+            const type = selId.split('_')[0]; const trueId = selId.split('_')[1];
+            const target = type === 'cus' ? customersData.find(c=>c.id===trueId) : leadsData.find(l=>l.id===trueId);
+            
             const checkboxes = document.querySelectorAll('.quote-srv-cb:checked');
-            if (checkboxes.length === 0) return showToast('Vui lòng chọn dịch vụ', 'error');
+            if (checkboxes.length === 0) return showToast('Chọn dịch vụ', 'error');
 
             const vatPercent = Number(document.getElementById('quote-vat').value) || 0;
-            let subtotal = 0;
-            let rowsHtml = '';
-            
+            let subtotal = 0; let rowsHtml = '';
             checkboxes.forEach((cb, index) => {
                 const price = Number(cb.dataset.price); subtotal += price;
                 rowsHtml += `<tr><td style="border:1px solid #000; padding:4px; text-align:center">${index + 1}</td><td style="border:1px solid #000; padding:4px;">${cb.dataset.name}</td><td style="border:1px solid #000; padding:4px; text-align:right">${price.toLocaleString('vi-VN')}</td></tr>`;
@@ -1978,29 +1832,12 @@
             const vatAmount = subtotal * (vatPercent / 100); const total = subtotal + vatAmount;
 
             const html = `
-                <div class="text-center mb-8 border-b-2 border-black pb-4">
-                    <h1 class="text-2xl font-bold uppercase tracking-widest">Báo Giá Dịch Vụ Marketing</h1>
-                    <p class="text-gray-600 mt-1">Ngày: ${new Date().toLocaleDateString('vi-VN')}</p>
-                </div>
-                <div class="mb-6">
-                    <p><strong>Kính gửi:</strong> ${customer.name}</p>
-                    <p><strong>Số điện thoại:</strong> ${customer.phone}</p>
-                    <p><strong>Email:</strong> ${customer.email || '.......................'}</p>
-                </div>
+                <div class="text-center mb-8 border-b-2 border-black pb-4"><h1 class="text-2xl font-bold uppercase tracking-widest">Báo Giá Dịch Vụ Marketing</h1><p class="text-gray-600 mt-1">Ngày: ${new Date().toLocaleDateString('vi-VN')}</p></div>
+                <div class="mb-6"><p><strong>Kính gửi:</strong> ${target.name} ${type==='lead'?'(Lead)':''}</p><p><strong>Số điện thoại:</strong> ${target.phone}</p><p><strong>Email:</strong> ${target.email || '.......................'}</p></div>
                 <p class="mb-4">Chúng tôi hân hạnh gửi tới Quý khách hàng bảng báo giá chi tiết:</p>
-                <table style="width:100%; border-collapse:collapse; margin-bottom:24px;">
-                    <tr style="background:#f3f4f6"><th style="border:1px solid #000; padding:4px;">STT</th><th style="border:1px solid #000; padding:4px;">Nội dung</th><th style="border:1px solid #000; padding:4px; text-align:right">Thành tiền (VNĐ)</th></tr>
-                    ${rowsHtml}
-                </table>
-                <div class="flex justify-end mb-8"><div class="w-64 text-right">
-                    <p>Cộng tiền: <strong>${subtotal.toLocaleString('vi-VN')} đ</strong></p>
-                    <p>VAT (${vatPercent}%): <strong>${vatAmount.toLocaleString('vi-VN')} đ</strong></p>
-                    <p class="border-t border-black pt-1 mt-1 text-lg">Tổng cộng: <strong class="text-red-600">${total.toLocaleString('vi-VN')} đ</strong></p>
-                </div></div>
-                <div class="grid grid-cols-2 text-center mt-16">
-                    <div><strong>Đại diện Khách hàng</strong><p class="text-xs text-gray-500">(Ký, ghi rõ họ tên)</p></div>
-                    <div><strong>Đại diện Công ty</strong><p class="text-xs text-gray-500">(Ký, đóng dấu)</p></div>
-                </div>
+                <table style="width:100%; border-collapse:collapse; margin-bottom:24px;"><tr style="background:#f3f4f6"><th style="border:1px solid #000; padding:4px;">STT</th><th style="border:1px solid #000; padding:4px;">Nội dung</th><th style="border:1px solid #000; padding:4px; text-align:right">Thành tiền (VNĐ)</th></tr>${rowsHtml}</table>
+                <div class="flex justify-end mb-8"><div class="w-64 text-right"><p>Cộng tiền: <strong>${subtotal.toLocaleString('vi-VN')} đ</strong></p><p>VAT (${vatPercent}%): <strong>${vatAmount.toLocaleString('vi-VN')} đ</strong></p><p class="border-t border-black pt-1 mt-1 text-lg">Tổng cộng: <strong class="text-red-600">${total.toLocaleString('vi-VN')} đ</strong></p></div></div>
+                <div class="grid grid-cols-2 text-center mt-16"><div><strong>Đại diện Khách hàng</strong></div><div><strong>Đại diện Công ty</strong></div></div>
             `;
             document.getElementById('document-preview-area').innerHTML = html;
         };
@@ -2012,13 +1849,12 @@
             
             if (!tplId) {
                 container.classList.add('hidden');
-                document.getElementById('document-preview-area').innerHTML = '<div class="text-center text-gray-400 mt-20 italic" id="empty-preview-msg">Vui lòng chọn tạo báo giá cơ bản hoặc chọn mẫu hợp đồng ở cột bên trái.</div>';
+                document.getElementById('document-preview-area').innerHTML = '<div class="text-center text-gray-400 mt-20 italic" id="empty-preview-msg">Chọn mẫu hợp đồng.</div>';
                 return;
             }
 
             const template = templatesData.find(t => t.id === tplId);
             currentEditingTemplateHtml = template.htmlContent;
-            
             inputsList.innerHTML = '';
             
             if (template.fields && template.fields.length > 0) {
@@ -2027,84 +1863,33 @@
                     const labelName = field.replace('_', ' ');
                     inputsList.innerHTML += `
                         <div>
-                            <label class="block text-xs font-semibold text-gray-600 mb-1">${labelName}</label>
+                            <label class="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1">${labelName}</label>
                             <input type="text" data-field="${field}" class="dynamic-tpl-input w-full px-2 py-1.5 bg-white border border-gray-300 rounded text-sm outline-none focus:border-primary" placeholder="Nhập nội dung...">
                         </div>
                     `;
                 });
-            } else {
-                container.classList.add('hidden');
-            }
-
+            } else { container.classList.add('hidden'); }
             updateTemplatePreview(); 
         };
 
         window.updateTemplatePreview = () => {
             let html = currentEditingTemplateHtml;
             const inputs = document.querySelectorAll('.dynamic-tpl-input');
-            
             inputs.forEach(input => {
                 const fieldName = input.dataset.field;
                 const val = input.value || `<span style="background-color: #fee2e2; color: #dc2626; padding: 0 4px; border-radius: 4px; border: 1px dashed #f87171;">[Chưa điền: ${fieldName.replace('_',' ')}]</span>`;
                 const regex = new RegExp(`\\{\\{\\s*${fieldName}\\s*\\}\\}`, 'g');
                 html = html.replace(regex, val);
             });
-
             document.getElementById('document-preview-area').innerHTML = html;
         };
 
-        // ==========================================
-        // EXPORT & HISTORY LOGIC
-        // ==========================================
-        
-        function fetchHistory() {
-            unsubscribeHistory = onSnapshot(query(getCollectionPath('export_history')), (snapshot) => {
-                historyData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                historyData.sort((a, b) => {
-                    const t1 = a.createdAt ? (a.createdAt.seconds || a.createdAt) : 0;
-                    const t2 = b.createdAt ? (b.createdAt.seconds || b.createdAt) : 0;
-                    return t2 - t1; // Descending
-                });
-                renderHistory();
-                updateDashboardStats();
-            });
-        }
-
-        function renderHistory() {
-            const tbody = document.getElementById('history-list');
-            tbody.innerHTML = '';
-            
-            if (historyData.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="4" class="py-6 text-center text-gray-500">Chưa có lịch sử xuất tài liệu nào</td></tr>`;
-                return;
-            }
-
-            historyData.forEach((item, index) => {
-                tbody.innerHTML += `
-                    <tr class="hover:bg-gray-50/50 dark:hover:bg-slate-800/30 transition-colors border-b border-gray-100 dark:border-slate-800/50 last:border-0">
-                        <td class="py-3 text-center font-mono text-gray-500">${index + 1}</td>
-                        <td class="py-3 font-semibold text-primary">${item.name}</td>
-                        <td class="py-3 text-xs text-gray-500">${formatDate(item.createdAt)}</td>
-                        <td class="py-3 text-center">
-                            <button onclick="viewHistoricalDoc('${item.id}')" class="p-1.5 bg-blue-100 dark:bg-blue-900/40 text-blue-600 rounded hover:bg-blue-200 dark:hover:bg-blue-800/60 transition-colors" title="Xem lại file PDF">
-                                <span class="material-symbols-outlined text-base">visibility</span>
-                            </button>
-                        </td>
-                    </tr>
-                `;
-            });
-        }
-
         window.exportPDF = async () => {
             const element = document.getElementById('document-preview-area');
+            if (element.querySelector('#empty-preview-msg')) return showToast('Vui lòng tạo nội dung trước', 'error');
             
-            if (element.querySelector('#empty-preview-msg')) {
-                return showToast('Vui lòng tạo nội dung trước khi xuất PDF', 'error');
-            }
-
             let docName = "Tài liệu chưa đặt tên";
             const isStandardTab = !document.getElementById('panel-standard').classList.contains('hidden');
-            
             if (isStandardTab) {
                 const cusSelect = document.getElementById('quote-customer');
                 const cusName = cusSelect.options[cusSelect.selectedIndex]?.text || 'Khách hàng';
@@ -2115,81 +1900,66 @@
                 docName = `Hợp đồng - ${tplName}`;
             }
 
-            const htmlContentToSave = element.innerHTML;
-
-            const opt = {
-                margin: 10,
-                filename: `${docName}_${new Date().getTime()}.pdf`,
-                image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: { scale: 2, useCORS: true },
-                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-            };
-
+            const opt = { margin: 10, filename: `${docName}_${new Date().getTime()}.pdf`, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2, useCORS: true }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } };
+            const htmlToSave = element.innerHTML;
+            
             const btn = document.querySelector('button[onclick="exportPDF()"]');
-            const oldText = btn.innerHTML;
-            btn.innerHTML = `Đang tạo...`;
+            const oldText = btn.innerHTML; btn.innerHTML = `Đang tạo...`;
 
             html2pdf().set(opt).from(element).save().then(async () => {
                 btn.innerHTML = oldText;
-                
-                try {
-                    await addDoc(getCollectionPath('export_history'), {
-                        name: docName,
-                        htmlContent: htmlContentToSave,
-                        createdAt: new Date()
-                    });
-                    showToast('Đã xuất PDF và lưu vào Lịch sử!');
-                } catch (e) {
-                    console.error("Lỗi lưu lịch sử", e);
-                    showToast('Xuất PDF thành công nhưng lỗi lưu lịch sử', 'error');
-                }
+                try { await addDoc(getCollectionPath('export_history'), { name: docName, htmlContent: htmlToSave, createdAt: new Date() }); showToast('Đã xuất PDF và lưu lịch sử'); } catch(e){}
             });
         };
+
+        // --- HISTORY LOGIC ---
+        function renderHistory() {
+            const tbody = document.getElementById('history-list');
+            if (historyData.length === 0) return tbody.innerHTML = `<tr><td colspan="4" class="py-6 text-center text-gray-500">Chưa có lịch sử xuất tài liệu nào</td></tr>`;
+            
+            // Xắp xếp theo ngày giảm dần
+            const sortedHistory = [...historyData].sort((a,b) => {
+                const ta = a.createdAt ? (a.createdAt.seconds || a.createdAt) : 0;
+                const tb = b.createdAt ? (b.createdAt.seconds || b.createdAt) : 0;
+                return tb - ta;
+            });
+
+            tbody.innerHTML = sortedHistory.map((item, idx) => `
+                <tr class="hover:bg-gray-50/50 dark:hover:bg-slate-800/30 border-b border-gray-100 dark:border-slate-800/50">
+                    <td class="py-3 text-center font-mono text-gray-500">${idx + 1}</td>
+                    <td class="py-3 font-semibold text-primary">${item.name}</td>
+                    <td class="py-3 text-xs text-gray-500">${formatDateStr(item.createdAt)}</td>
+                    <td class="py-3 text-center">
+                        <button onclick="viewHistoricalDoc('${item.id}')" class="p-1.5 bg-blue-100 text-blue-600 rounded hover:bg-blue-200" title="Xem lại file PDF"><span class="material-symbols-outlined text-base">visibility</span></button>
+                    </td>
+                </tr>
+            `).join('');
+        }
 
         window.viewHistoricalDoc = (historyId) => {
             const item = historyData.find(h => h.id === historyId);
             if (!item) return;
-
             document.getElementById('history-doc-title').innerText = item.name;
-            document.getElementById('history-doc-time').innerText = `Thời gian xuất: ${formatDate(item.createdAt)}`;
+            document.getElementById('history-doc-time').innerText = `Thời gian xuất: ${formatDateStr(item.createdAt)}`;
             document.getElementById('history-doc-content').innerHTML = item.htmlContent;
-            
             openModal('history-view-modal');
         };
 
         window.reExportHistoryPDF = () => {
             const element = document.getElementById('history-doc-content'); 
             const title = document.getElementById('history-doc-title').innerText;
-            
-            const opt = {
-                margin: 10,
-                filename: `${title}_ReExport.pdf`,
-                image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: { scale: 2, useCORS: true },
-                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-            };
-
-            html2pdf().set(opt).from(element).save().then(() => {
-                showToast('Đã tải lại file PDF thành công!');
-            });
+            const opt = { margin: 10, filename: `${title}_ReExport.pdf`, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2, useCORS: true }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } };
+            html2pdf().set(opt).from(element).save().then(() => { showToast('Đã tải lại file PDF!'); });
         };
 
-
-        // ==========================================
-        // DASHBOARD & CUSTOMIZATION
-        // ==========================================
+        // --- DASHBOARD ---
         function updateDashboardStats() {
+            document.getElementById('stat-leads').innerText = leadsData.length;
             document.getElementById('stat-customers').innerText = customersData.length;
             document.getElementById('stat-services').innerText = servicesData.length;
-            document.getElementById('stat-templates').innerText = templatesData.length;
-            
-            if (document.getElementById('stat-webfeatures')) {
-                document.getElementById('stat-webfeatures').innerText = webfeaturesData.length;
-            }
-
-            if (document.getElementById('stat-history')) {
-                document.getElementById('stat-history').innerText = historyData.length;
-            }
+            if(document.getElementById('stat-webfeatures')) document.getElementById('stat-webfeatures').innerText = webfeaturesData.length;
+            if(document.getElementById('stat-templates')) document.getElementById('stat-templates').innerText = templatesData.length;
+            if(document.getElementById('stat-history')) document.getElementById('stat-history').innerText = historyData.length;
         }
 
         let myChart = null;
@@ -2199,17 +1969,9 @@
             const isDark = document.documentElement.classList.contains('dark');
             const textColor = isDark ? '#cbd5e1' : '#64748b';
             const primaryColor = getComputedStyle(document.documentElement).getPropertyValue('--color-primary').trim();
-
-            myChart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: ['T1', 'T2', 'T3', 'T4', 'T5', 'T6'],
-                    datasets: [{ label: 'Tương tác', data: [12, 19, 15, 25, 22, 30], borderColor: primaryColor, tension: 0.4, fill: true, backgroundColor: primaryColor + '20' }]
-                },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { color: textColor } }, x: { ticks: { color: textColor } } } }
-            });
+            myChart = new Chart(ctx, { type: 'line', data: { labels: ['T1', 'T2', 'T3', 'T4', 'T5', 'T6'], datasets: [{ label: 'Tương tác', data: [12, 19, 15, 25, 22, 30], borderColor: primaryColor, tension: 0.4, fill: true, backgroundColor: primaryColor + '20' }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { color: textColor } }, x: { ticks: { color: textColor } } } } });
         }
-
+        
         window.toggleTheme = () => {
             document.documentElement.classList.toggle('dark');
             const isDark = document.documentElement.classList.contains('dark');
@@ -2243,26 +2005,13 @@
         const gScript2 = document.createElement('script');
         gScript2.src = "//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit";
         document.body.appendChild(gScript2);
-
-        window.googleTranslateElementInit = function() {
-            new google.translate.TranslateElement({
-                pageLanguage: 'vi',
-                includedLanguages: 'vi,en,zh-CN,ja,ko',
-                autoDisplay: false
-            }, 'google_translate_element');
-        };
-
+        window.googleTranslateElementInit = function() { new google.translate.TranslateElement({ pageLanguage: 'vi', includedLanguages: 'vi,en,zh-CN,ja,ko', autoDisplay: false }, 'google_translate_element'); };
         window.changeLanguage = function(langCode, displayName) {
             document.getElementById('currentLang').innerText = displayName;
             const selectField = document.querySelector(".goog-te-combo");
-            if (selectField) {
-                selectField.value = langCode;
-                selectField.dispatchEvent(new Event('change'));
-            } else {
-                setTimeout(() => window.changeLanguage(langCode, displayName), 500);
-            }
+            if (selectField) { selectField.value = langCode; selectField.dispatchEvent(new Event('change')); } 
+            else { setTimeout(() => window.changeLanguage(langCode, displayName), 500); }
         };
-
     </script>
 </body>
 </html>
