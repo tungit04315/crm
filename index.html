@@ -173,6 +173,16 @@
         
         /* Make history view read-only strictly */
         .history-readonly { pointer-events: none; user-select: none; }
+
+        /* Image Upload Zone Styles */
+        .image-upload-zone {
+            transition: all 0.2s ease;
+        }
+        .image-upload-zone:focus {
+            outline: none;
+            border-color: var(--color-primary);
+            background-color: rgba(99, 102, 241, 0.05);
+        }
     </style>
 </head>
 
@@ -274,7 +284,6 @@
                 <button onclick="navigate('services')" class="nav-btn w-full flex items-center px-3 py-2.5 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-primary/10 hover:text-primary transition-colors" data-target="services">
                     <span class="material-symbols-outlined mr-3 text-lg">design_services</span> Dịch vụ
                 </button>
-                <!-- Nút Tính năng Website -->
                 <button onclick="navigate('webfeatures')" class="nav-btn w-full flex items-center px-3 py-2.5 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-primary/10 hover:text-primary transition-colors" data-target="webfeatures">
                     <span class="material-symbols-outlined mr-3 text-lg">web</span> Tính năng Website
                 </button>
@@ -411,8 +420,8 @@
                                         <tr class="text-xs text-gray-500 uppercase border-b border-gray-200 dark:border-slate-700">
                                             <th class="pb-3 font-semibold">Khách hàng</th>
                                             <th class="pb-3 font-semibold">Liên hệ</th>
+                                            <th class="pb-3 font-semibold">Ngân hàng</th>
                                             <th class="pb-3 font-semibold">Nguồn</th>
-                                            <th class="pb-3 font-semibold">Ghi chú</th>
                                             <th class="pb-3 font-semibold text-right">Hành động</th>
                                         </tr>
                                     </thead>
@@ -626,44 +635,219 @@
     <!-- MODALS & TOASTS                            -->
     <!-- ========================================== -->
 
-    <!-- Modal: Customer -->
+    <!-- Modal: Customer (UPDATED WITH NEW FIELDS) -->
     <div id="customer-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm hidden opacity-0 transition-opacity">
-        <div class="bg-white dark:bg-slate-900 w-full max-w-md rounded-2xl shadow-2xl border border-gray-200 dark:border-slate-700 transform scale-95 transition-transform" id="customer-modal-content">
-            <div class="p-5 border-b border-gray-200 dark:border-slate-800 flex justify-between items-center">
+        <div class="bg-white dark:bg-slate-900 w-full max-w-3xl rounded-2xl shadow-2xl border border-gray-200 dark:border-slate-700 transform scale-95 transition-transform flex flex-col max-h-[90vh]" id="customer-modal-content">
+            <div class="p-5 border-b border-gray-200 dark:border-slate-800 flex justify-between items-center shrink-0">
                 <h3 class="font-bold text-lg" id="customer-modal-title">Thêm Khách Hàng</h3>
                 <button onclick="closeModal('customer-modal')" class="text-gray-400 hover:text-red-500"><span class="material-symbols-outlined">close</span></button>
             </div>
-            <form id="customer-form" class="p-5 space-y-4">
+            
+            <form id="customer-form" class="p-5 overflow-y-auto space-y-6 flex-1">
                 <input type="hidden" id="cus-id">
-                <div>
-                    <label class="block text-xs font-semibold text-gray-500 mb-1">Tên khách hàng/Công ty *</label>
-                    <input type="text" id="cus-name" required class="w-full px-3 py-2 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg text-sm outline-none focus:border-primary">
-                </div>
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-xs font-semibold text-gray-500 mb-1">Số điện thoại *</label>
-                        <input type="text" id="cus-phone" required class="w-full px-3 py-2 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg text-sm outline-none focus:border-primary">
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Column 1: Basic Info & Banks -->
+                    <div class="space-y-4">
+                        <!-- 0: Name -->
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-500 mb-1">0. Tên khách hàng/Công ty *</label>
+                            <input type="text" id="cus-name" required class="w-full px-3 py-2 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg text-sm outline-none focus:border-primary">
+                        </div>
+
+                        <!-- 3: Address -->
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-500 mb-1">3. Địa chỉ thường trú (VNID) *</label>
+                            <input type="text" id="cus-address" required class="w-full px-3 py-2 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg text-sm outline-none focus:border-primary">
+                        </div>
+
+                        <!-- 4 & 5: Email & Phone -->
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-500 mb-1">4. Email</label>
+                                <input type="email" id="cus-email" class="w-full px-3 py-2 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg text-sm outline-none focus:border-primary">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-500 mb-1">5. Số điện thoại *</label>
+                                <input type="text" id="cus-phone" required class="w-full px-3 py-2 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg text-sm outline-none focus:border-primary">
+                            </div>
+                        </div>
+
+                        <!-- 6: Bank Info -->
+                        <div class="p-3 bg-gray-50 dark:bg-slate-800/50 rounded-xl border border-gray-200 dark:border-slate-700">
+                            <label class="block text-xs font-bold text-primary mb-2">6. Thông tin ngân hàng (QR VNPAY)</label>
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <input type="text" id="cus-bank-owner" placeholder="Chủ tài khoản" class="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-600 rounded-md text-sm outline-none focus:border-primary">
+                                </div>
+                                <div>
+                                    <input type="text" id="cus-bank-account" placeholder="Số tài khoản" class="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-600 rounded-md text-sm outline-none focus:border-primary">
+                                </div>
+                                <div>
+                                    <input type="text" id="cus-bank-name" placeholder="Ngân hàng" class="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-600 rounded-md text-sm outline-none focus:border-primary">
+                                </div>
+                                <div>
+                                    <input type="text" id="cus-bank-branch" placeholder="Chi nhánh" class="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-600 rounded-md text-sm outline-none focus:border-primary">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 8: Note -->
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-500 mb-1">8. Ghi chú</label>
+                            <textarea id="cus-note" rows="2" class="w-full px-3 py-2 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg text-sm outline-none focus:border-primary"></textarea>
+                        </div>
+
+                        <!-- 9: Source -->
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-500 mb-1">9. Nguồn từ đâu (Dán Link)</label>
+                            <input type="url" id="cus-source" placeholder="https://" class="w-full px-3 py-2 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg text-sm outline-none focus:border-primary">
+                        </div>
                     </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-gray-500 mb-1">Nguồn (Facebook, Google...)</label>
-                        <input type="text" id="cus-source" class="w-full px-3 py-2 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg text-sm outline-none focus:border-primary">
+
+                    <!-- Column 2: Images Upload -->
+                    <div class="space-y-4">
+                        
+                        <!-- 1: GPKD Image -->
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-500 mb-1">1. GPKD (Click, kéo thả hoặc Ctrl+V dán ảnh)</label>
+                            <div class="image-upload-zone border-2 border-dashed border-gray-300 dark:border-slate-600 rounded-xl p-4 text-center cursor-pointer relative bg-gray-50 dark:bg-slate-800/50" tabindex="0" id="cus-gpkd-zone">
+                                <div id="cus-gpkd-placeholder" class="pointer-events-none">
+                                    <span class="material-symbols-outlined text-3xl text-gray-400">add_photo_alternate</span>
+                                    <p class="text-xs text-gray-500 mt-1">Thêm ảnh GPKD</p>
+                                </div>
+                                <input type="file" id="cus-gpkd-file" class="hidden" accept="image/*">
+                                <input type="hidden" id="cus-gpkd-data">
+                                <img id="cus-gpkd-preview" class="hidden max-h-24 mx-auto rounded-lg shadow-sm border border-gray-200 dark:border-slate-700 mt-2">
+                                <button type="button" id="cus-gpkd-clear" onclick="clearImage_cus_gpkd(event)" class="hidden absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-600"><span class="material-symbols-outlined text-[14px]">close</span></button>
+                            </div>
+                        </div>
+
+                        <!-- 2: CCCD Image -->
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-500 mb-1">2. Ảnh 2 mặt CCCD (Ghép chung 1 ảnh hoặc dán ảnh)</label>
+                            <div class="image-upload-zone border-2 border-dashed border-gray-300 dark:border-slate-600 rounded-xl p-4 text-center cursor-pointer relative bg-gray-50 dark:bg-slate-800/50" tabindex="0" id="cus-cccd-zone">
+                                <div id="cus-cccd-placeholder" class="pointer-events-none">
+                                    <span class="material-symbols-outlined text-3xl text-gray-400">id_card</span>
+                                    <p class="text-xs text-gray-500 mt-1">Thêm ảnh CCCD</p>
+                                </div>
+                                <input type="file" id="cus-cccd-file" class="hidden" accept="image/*">
+                                <input type="hidden" id="cus-cccd-data">
+                                <img id="cus-cccd-preview" class="hidden max-h-24 mx-auto rounded-lg shadow-sm border border-gray-200 dark:border-slate-700 mt-2">
+                                <button type="button" id="cus-cccd-clear" onclick="clearImage_cus_cccd(event)" class="hidden absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-600"><span class="material-symbols-outlined text-[14px]">close</span></button>
+                            </div>
+                        </div>
+
+                        <!-- 7: Store Image -->
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-500 mb-1">7. Hình ảnh cửa hàng (Chụp rõ bảng hiệu)</label>
+                            <div class="image-upload-zone border-2 border-dashed border-gray-300 dark:border-slate-600 rounded-xl p-4 text-center cursor-pointer relative bg-gray-50 dark:bg-slate-800/50" tabindex="0" id="cus-store-zone">
+                                <div id="cus-store-placeholder" class="pointer-events-none">
+                                    <span class="material-symbols-outlined text-3xl text-gray-400">storefront</span>
+                                    <p class="text-xs text-gray-500 mt-1">Thêm ảnh cửa hàng</p>
+                                </div>
+                                <input type="file" id="cus-store-file" class="hidden" accept="image/*">
+                                <input type="hidden" id="cus-store-data">
+                                <img id="cus-store-preview" class="hidden max-h-24 mx-auto rounded-lg shadow-sm border border-gray-200 dark:border-slate-700 mt-2">
+                                <button type="button" id="cus-store-clear" onclick="clearImage_cus_store(event)" class="hidden absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-600"><span class="material-symbols-outlined text-[14px]">close</span></button>
+                            </div>
+                        </div>
+
                     </div>
                 </div>
-                <div>
-                    <label class="block text-xs font-semibold text-gray-500 mb-1">Email</label>
-                    <input type="email" id="cus-email" class="w-full px-3 py-2 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg text-sm outline-none focus:border-primary">
-                </div>
-                <div>
-                    <label class="block text-xs font-semibold text-gray-500 mb-1">Ghi chú yêu cầu</label>
-                    <textarea id="cus-note" rows="2" class="w-full px-3 py-2 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg text-sm outline-none focus:border-primary"></textarea>
-                </div>
-                <div class="pt-2 flex justify-end gap-2">
-                    <button type="button" onclick="closeModal('customer-modal')" class="px-4 py-2 text-sm font-medium bg-gray-100 dark:bg-slate-800 rounded-lg hover:bg-gray-200 dark:hover:bg-slate-700">Hủy</button>
-                    <button type="submit" class="px-4 py-2 text-sm font-bold text-white bg-primary rounded-lg shadow-md hover:opacity-90">Lưu lại</button>
+
+                <div class="pt-4 flex justify-end gap-3 border-t border-gray-200 dark:border-slate-800 shrink-0">
+                    <button type="button" onclick="closeModal('customer-modal')" class="px-5 py-2.5 text-sm font-medium bg-gray-100 dark:bg-slate-800 rounded-xl hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors">Hủy</button>
+                    <button type="submit" class="px-5 py-2.5 text-sm font-bold text-white bg-primary rounded-xl shadow-md hover:opacity-90 transition-opacity">Lưu thông tin</button>
                 </div>
             </form>
         </div>
     </div>
+
+    <!-- Modal: Customer Preview (Xem Trước) -->
+    <div id="customer-preview-modal" class="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm hidden opacity-0 transition-opacity">
+        <div class="bg-white dark:bg-slate-900 w-full max-w-4xl rounded-2xl shadow-2xl border border-gray-200 dark:border-slate-700 transform scale-95 transition-transform flex flex-col max-h-[90vh]" id="customer-preview-modal-content">
+            <div class="p-5 border-b border-gray-200 dark:border-slate-800 flex justify-between items-center shrink-0 bg-primary/5">
+                <h3 class="font-bold text-xl flex items-center gap-2 text-primary">
+                    <span class="material-symbols-outlined">assignment_ind</span> Hồ Sơ Khách Hàng
+                </h3>
+                <button onclick="closeModal('customer-preview-modal')" class="text-gray-400 hover:text-red-500"><span class="material-symbols-outlined">close</span></button>
+            </div>
+            
+            <div class="p-6 overflow-y-auto flex-1">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    
+                    <!-- Text Info Column -->
+                    <div class="space-y-5">
+                        <div>
+                            <p class="text-xs text-gray-500 font-semibold uppercase tracking-wider mb-1">0. Khách hàng / Công ty</p>
+                            <p class="text-lg font-bold text-gray-900 dark:text-white" id="prev-cus-name">---</p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-gray-500 font-semibold uppercase tracking-wider mb-1">3. Địa chỉ thường trú (VNID)</p>
+                            <p class="text-sm text-gray-800 dark:text-gray-200 font-medium" id="prev-cus-address">---</p>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <p class="text-xs text-gray-500 font-semibold uppercase tracking-wider mb-1">4. Email</p>
+                                <p class="text-sm text-gray-800 dark:text-gray-200 font-medium" id="prev-cus-email">---</p>
+                            </div>
+                            <div>
+                                <p class="text-xs text-gray-500 font-semibold uppercase tracking-wider mb-1">5. Số điện thoại</p>
+                                <p class="text-sm text-gray-800 dark:text-gray-200 font-bold" id="prev-cus-phone">---</p>
+                            </div>
+                        </div>
+                        <div class="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-xl border border-blue-100 dark:border-blue-800/30">
+                            <p class="text-xs text-blue-600 dark:text-blue-400 font-bold uppercase tracking-wider mb-3">6. Thông tin ngân hàng</p>
+                            <div class="grid grid-cols-2 gap-y-3 gap-x-4 text-sm">
+                                <div><span class="text-gray-500">Ngân hàng:</span> <br><strong class="text-gray-800 dark:text-gray-200" id="prev-cus-bank-name">---</strong></div>
+                                <div><span class="text-gray-500">Chi nhánh:</span> <br><strong class="text-gray-800 dark:text-gray-200" id="prev-cus-bank-branch">---</strong></div>
+                                <div><span class="text-gray-500">Chủ TK:</span> <br><strong class="text-gray-800 dark:text-gray-200" id="prev-cus-bank-owner">---</strong></div>
+                                <div><span class="text-gray-500">Số TK:</span> <br><strong class="text-gray-800 dark:text-gray-200 font-mono" id="prev-cus-bank-account">---</strong></div>
+                            </div>
+                        </div>
+                        <div>
+                            <p class="text-xs text-gray-500 font-semibold uppercase tracking-wider mb-1">8. Ghi chú</p>
+                            <p class="text-sm text-gray-800 dark:text-gray-200 bg-gray-50 dark:bg-slate-800 p-3 rounded-lg" id="prev-cus-note">---</p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-gray-500 font-semibold uppercase tracking-wider mb-1">9. Nguồn (Link)</p>
+                            <a href="#" target="_blank" class="text-sm text-primary hover:underline break-all" id="prev-cus-source">---</a>
+                        </div>
+                    </div>
+
+                    <!-- Images Column -->
+                    <div class="space-y-6">
+                        <div>
+                            <p class="text-xs text-gray-500 font-semibold uppercase tracking-wider mb-2">1. Giấy phép kinh doanh</p>
+                            <div class="border border-gray-200 dark:border-slate-700 rounded-xl overflow-hidden bg-gray-50 dark:bg-slate-800 flex items-center justify-center min-h-[120px]">
+                                <img id="prev-cus-gpkd" src="" class="w-full object-contain max-h-[250px]" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                                <span class="text-sm text-gray-400 hidden italic">Không có ảnh</span>
+                            </div>
+                        </div>
+                        <div>
+                            <p class="text-xs text-gray-500 font-semibold uppercase tracking-wider mb-2">2. Căn cước công dân</p>
+                            <div class="border border-gray-200 dark:border-slate-700 rounded-xl overflow-hidden bg-gray-50 dark:bg-slate-800 flex items-center justify-center min-h-[120px]">
+                                <img id="prev-cus-cccd" src="" class="w-full object-contain max-h-[250px]" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                                <span class="text-sm text-gray-400 hidden italic">Không có ảnh</span>
+                            </div>
+                        </div>
+                        <div>
+                            <p class="text-xs text-gray-500 font-semibold uppercase tracking-wider mb-2">7. Ảnh cửa hàng / Bảng hiệu</p>
+                            <div class="border border-gray-200 dark:border-slate-700 rounded-xl overflow-hidden bg-gray-50 dark:bg-slate-800 flex items-center justify-center min-h-[120px]">
+                                <img id="prev-cus-store" src="" class="w-full object-contain max-h-[250px]" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                                <span class="text-sm text-gray-400 hidden italic">Không có ảnh</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="p-4 border-t border-gray-200 dark:border-slate-800 flex justify-end">
+                <button onclick="closeModal('customer-preview-modal')" class="px-6 py-2.5 text-sm font-bold bg-gray-200 dark:bg-slate-700 rounded-xl hover:bg-gray-300 dark:hover:bg-slate-600 transition-colors">Đóng Lại</button>
+            </div>
+        </div>
+    </div>
+
 
     <!-- Modal: Service -->
     <div id="service-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm hidden opacity-0 transition-opacity">
@@ -708,7 +892,6 @@
                     <input type="text" id="wf-name" required class="w-full px-3 py-2 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg text-sm outline-none focus:border-primary">
                 </div>
                 
-                <!-- Sửa thành Upload File Ảnh -->
                 <div>
                     <label class="block text-xs font-semibold text-gray-500 mb-1">Ảnh minh hoạ (Tải lên file ảnh - Không bắt buộc)</label>
                     <input type="file" id="wf-image-file" accept="image/*" class="w-full block text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20 cursor-pointer border border-gray-200 dark:border-slate-700 rounded-lg bg-gray-50 dark:bg-slate-800">
@@ -773,7 +956,7 @@
             </div>
             <div class="p-5 space-y-4">
                 <div class="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg text-sm text-blue-700 dark:text-blue-300">
-                    <strong>Hướng dẫn:</strong> Hệ thống giờ đây có thể tự động nhận diện các <strong>đường chấm chấm (.....)</strong>, <strong>dấu ba chấm (……)</strong> hoặc <strong>dấu gạch dưới (___)</strong> trong file Word của bạn thành các ô trống để nhập liệu mà không cần phải gõ cú pháp gì thêm!
+                    <strong>Hướng dẫn:</strong> Hệ thống giờ đây có thể tự động nhận diện các <strong>đường chấm chấm (.....)</strong>, <strong>dấu ba chấm (……)</strong> hoặc <strong>dấu gạch dưới (___)</strong> trong file Word của bạn thành các ô trống để nhập liệu.
                 </div>
                 <div>
                     <label class="block text-sm font-semibold mb-1">Tên lưu gợi nhớ *</label>
@@ -1045,7 +1228,7 @@
                 document.getElementById('profile-email').value = user.email;
                 document.getElementById('profile-username').value = dName;
                 document.getElementById('profile-fullname').value = fullname;
-                document.getElementById('profile-password').value = ''; // clear input
+                document.getElementById('profile-password').value = '';
 
                 loginScreen.classList.add('opacity-0');
                 setTimeout(() => {
@@ -1084,24 +1267,18 @@
             btn.disabled = true;
 
             try {
-                // 1. Update DisplayName
                 await updateProfile(auth.currentUser, { displayName: username });
-
-                // 2. Save Fullname to Firestore
                 const userRef = doc(db, 'artifacts', app_id, 'public', 'data', 'users', auth.currentUser.uid);
                 await setDoc(userRef, { username, fullname, updatedAt: new Date() }, { merge: true });
 
-                // 3. Update Password if provided
                 if (newPassword) {
                     await updatePassword(auth.currentUser, newPassword);
                     document.getElementById('profile-password').value = '';
                     showToast('Đã cập nhật mật khẩu mới!');
                 }
 
-                // Update Sidebar
                 document.getElementById('user-name-display').innerText = username;
                 document.getElementById('user-avatar').innerText = username.charAt(0).toUpperCase();
-                
                 showToast('Đã cập nhật thông tin thành công!');
             } catch(e) { 
                 if (e.code === 'auth/requires-recent-login') {
@@ -1138,7 +1315,89 @@
             fetchTemplates();
             fetchHistory();
             initChart();
+            
+            // Khởi tạo các Dropzone cho hình ảnh Khách hàng
+            setupImageDropzone('cus-gpkd');
+            setupImageDropzone('cus-cccd');
+            setupImageDropzone('cus-store');
         }
+
+        // ==========================================
+        // HELPER: IMAGE UPLOAD & PASTE ZONE
+        // ==========================================
+        function setupImageDropzone(prefix) {
+            const zone = document.getElementById(`${prefix}-zone`);
+            const fileInput = document.getElementById(`${prefix}-file`);
+            const dataInput = document.getElementById(`${prefix}-data`);
+            const preview = document.getElementById(`${prefix}-preview`);
+            const clearBtn = document.getElementById(`${prefix}-clear`);
+            const placeholder = document.getElementById(`${prefix}-placeholder`);
+
+            if(!zone) return;
+
+            // Click to open file dialog
+            zone.addEventListener('click', (e) => {
+                if (e.target !== clearBtn && e.target.tagName !== 'SPAN') fileInput.click();
+            });
+
+            // File input change
+            fileInput.addEventListener('change', (e) => handleFile(e.target.files[0]));
+
+            // Paste event on the zone
+            zone.addEventListener('paste', (e) => {
+                e.preventDefault();
+                const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+                for (let index in items) {
+                    const item = items[index];
+                    if (item.kind === 'file') {
+                        const blob = item.getAsFile();
+                        handleFile(blob);
+                        break; // Only take the first pasted image
+                    }
+                }
+            });
+
+            // Drag & Drop
+            zone.addEventListener('dragover', (e) => { e.preventDefault(); zone.classList.add('border-primary', 'bg-primary/5'); });
+            zone.addEventListener('dragleave', () => zone.classList.remove('border-primary', 'bg-primary/5'));
+            zone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                zone.classList.remove('border-primary', 'bg-primary/5');
+                handleFile(e.dataTransfer.files[0]);
+            });
+
+            function handleFile(file) {
+                if (!file || !file.type.startsWith('image/')) {
+                    showToast('Vui lòng chọn hoặc dán định dạng ảnh.', 'error');
+                    return;
+                }
+                if (file.size > 1.5 * 1024 * 1024) { // 1.5MB Limit
+                    showToast('Ảnh quá lớn. Vui lòng chọn ảnh < 1.5MB để tiết kiệm dung lượng.', 'error');
+                    return;
+                }
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    dataInput.value = e.target.result;
+                    preview.src = e.target.result;
+                    preview.classList.remove('hidden');
+                    placeholder.classList.add('hidden');
+                    clearBtn.classList.remove('hidden');
+                };
+                reader.readAsDataURL(file);
+            }
+
+            // Expose clear function globally to be used in HTML onclick
+            window[`clearImage_${prefix.replace('-', '_')}`] = (e) => {
+                if(e) e.stopPropagation();
+                fileInput.value = '';
+                dataInput.value = '';
+                preview.src = '';
+                preview.classList.add('hidden');
+                placeholder.classList.remove('hidden');
+                clearBtn.classList.add('hidden');
+            };
+        }
+
 
         // ==========================================
         // MODAL MANAGEMENT
@@ -1150,8 +1409,34 @@
             setTimeout(() => { modal.classList.remove('opacity-0'); content.classList.remove('scale-95'); }, 10);
 
             if (id === 'customer-modal') {
-                document.getElementById('customer-modal-title').innerText = data ? 'Sửa Khách Hàng' : 'Thêm Khách Hàng';
-                ['id','name','phone','email','source','note'].forEach(k => document.getElementById(`cus-${k}`).value = data ? (data[k]||'') : '');
+                document.getElementById('customer-modal-title').innerText = data ? 'Sửa Thông Tin Khách Hàng' : 'Thêm Khách Hàng Mới';
+                
+                // Clear all Text fields
+                ['id','name','address','email','phone','bank-owner','bank-account','bank-name','bank-branch','note','source'].forEach(k => {
+                    const el = document.getElementById(`cus-${k}`);
+                    if(el) el.value = data ? (data[k.replace('-','')] || data[k] || '') : '';
+                });
+
+                // Xử lý Bank Info do tên biến khác biệt một chút (camelCase)
+                if(data) {
+                    if(data.bankOwner) document.getElementById('cus-bank-owner').value = data.bankOwner;
+                    if(data.bankAccount) document.getElementById('cus-bank-account').value = data.bankAccount;
+                    if(data.bankName) document.getElementById('cus-bank-name').value = data.bankName;
+                    if(data.bankBranch) document.getElementById('cus-bank-branch').value = data.bankBranch;
+                }
+
+                // Xóa ảnh cũ trên form
+                window.clearImage_cus_gpkd();
+                window.clearImage_cus_cccd();
+                window.clearImage_cus_store();
+
+                // Nạp ảnh nếu có (Edit mode)
+                if(data) {
+                    if(data.gpkd) loadExistingImageToZone('cus-gpkd', data.gpkd);
+                    if(data.cccd) loadExistingImageToZone('cus-cccd', data.cccd);
+                    if(data.storeImage) loadExistingImageToZone('cus-store', data.storeImage);
+                }
+
             } else if (id === 'service-modal') {
                 document.getElementById('service-modal-title').innerText = data ? 'Sửa Dịch Vụ' : 'Thêm Dịch Vụ';
                 ['id','name','price','desc'].forEach(k => document.getElementById(`srv-${k}`).value = data ? (data[k]||'') : '');
@@ -1159,7 +1444,6 @@
                 document.getElementById('webfeature-modal-title').innerText = data ? 'Sửa Tính năng Website' : 'Thêm Tính năng Website';
                 ['id','name','price','demo','desc'].forEach(k => document.getElementById(`wf-${k}`).value = data ? (data[k]||'') : '');
                 
-                // Clear Image Input & Preview
                 window.clearWebFeatureImage();
                 if (data && data.image) {
                     document.getElementById('wf-image-data').value = data.image;
@@ -1175,6 +1459,15 @@
                 window.tempExtractedFields = [];
             }
         };
+
+        function loadExistingImageToZone(prefix, base64Data) {
+            document.getElementById(`${prefix}-data`).value = base64Data;
+            const preview = document.getElementById(`${prefix}-preview`);
+            preview.src = base64Data;
+            preview.classList.remove('hidden');
+            document.getElementById(`${prefix}-placeholder`).classList.add('hidden');
+            document.getElementById(`${prefix}-clear`).classList.remove('hidden');
+        }
 
         window.closeModal = (id) => {
             const modal = document.getElementById(id);
@@ -1197,52 +1490,131 @@
         window.renderCustomers = (filter = '') => {
             const tbody = document.getElementById('customers-list');
             tbody.innerHTML = '';
-            const filtered = customersData.filter(c => c.name.toLowerCase().includes(filter.toLowerCase()) || c.phone.includes(filter));
+            const filtered = customersData.filter(c => 
+                c.name.toLowerCase().includes(filter.toLowerCase()) || 
+                (c.phone && c.phone.includes(filter))
+            );
 
             if (filtered.length === 0) return tbody.innerHTML = `<tr><td colspan="5" class="py-6 text-center text-gray-500">Chưa có dữ liệu</td></tr>`;
 
             filtered.forEach(cus => {
+                const bankInfoStr = cus.bankName ? `${cus.bankName}<br><span class="text-gray-400 font-mono text-[10px]">${cus.bankAccount || ''}</span>` : '<span class="text-gray-300 italic">Chưa có</span>';
+                
                 tbody.innerHTML += `
                     <tr class="hover:bg-gray-50/50 dark:hover:bg-slate-800/30 transition-colors border-b border-gray-100 dark:border-slate-800/50 last:border-0">
-                        <td class="py-3 font-semibold text-primary">${cus.name}</td>
-                        <td class="py-3"><div class="text-xs font-mono">${cus.phone}</div><div class="text-[11px] text-gray-500">${cus.email || ''}</div></td>
-                        <td class="py-3 text-xs"><span class="px-2 py-1 bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 rounded-md">${cus.source || 'N/A'}</span></td>
-                        <td class="py-3 text-xs text-gray-500 max-w-[150px] truncate" title="${cus.note}">${cus.note || ''}</td>
+                        <td class="py-3 font-semibold text-primary max-w-[200px] truncate" title="${cus.name}">${cus.name}</td>
+                        <td class="py-3"><div class="text-xs font-mono font-bold">${cus.phone}</div><div class="text-[11px] text-gray-500 truncate max-w-[150px]">${cus.email || ''}</div></td>
+                        <td class="py-3 text-xs leading-tight">${bankInfoStr}</td>
+                        <td class="py-3 text-xs text-gray-500 max-w-[150px] truncate">
+                            ${cus.source ? `<a href="${cus.source}" target="_blank" class="text-blue-500 hover:underline flex items-center gap-1"><span class="material-symbols-outlined text-[12px]">link</span> Link</a>` : 'N/A'}
+                        </td>
                         <td class="py-3 text-right">
+                            <button onclick="previewCustomer('${cus.id}')" class="p-1 text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 mr-1" title="Xem chi tiết"><span class="material-symbols-outlined text-sm">visibility</span></button>
                             <button onclick='editCustomer(${JSON.stringify(cus).replace(/'/g, "&#39;")})' class="p-1 text-gray-400 hover:text-primary mr-1" title="Sửa"><span class="material-symbols-outlined text-sm">edit</span></button>
                             <button onclick="deleteCustomer('${cus.id}')" class="p-1 text-gray-400 hover:text-red-500" title="Xóa"><span class="material-symbols-outlined text-sm">delete</span></button>
                         </td>
                     </tr>
                 `;
             });
+            
+            // Cập nhật Select box trong Báo giá
             document.getElementById('quote-customer').innerHTML = '<option value="">-- Chọn Khách Hàng --</option>' + customersData.map(c => `<option value="${c.id}">${c.name} - ${c.phone}</option>`).join('');
         };
 
         document.getElementById('search-customer').addEventListener('input', (e) => renderCustomers(e.target.value));
 
+        // Submit form khách hàng mới
         document.getElementById('customer-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const id = document.getElementById('cus-id').value;
+            
+            // Map tất cả các trường dữ liệu theo đúng yêu cầu
             const data = {
-                name: document.getElementById('cus-name').value, phone: document.getElementById('cus-phone').value,
-                email: document.getElementById('cus-email').value, source: document.getElementById('cus-source').value, note: document.getElementById('cus-note').value
+                name: document.getElementById('cus-name').value.trim(),
+                gpkd: document.getElementById('cus-gpkd-data').value,
+                cccd: document.getElementById('cus-cccd-data').value,
+                address: document.getElementById('cus-address').value.trim(),
+                email: document.getElementById('cus-email').value.trim(),
+                phone: document.getElementById('cus-phone').value.trim(),
+                bankOwner: document.getElementById('cus-bank-owner').value.trim(),
+                bankAccount: document.getElementById('cus-bank-account').value.trim(),
+                bankName: document.getElementById('cus-bank-name').value.trim(),
+                bankBranch: document.getElementById('cus-bank-branch').value.trim(),
+                storeImage: document.getElementById('cus-store-data').value,
+                note: document.getElementById('cus-note').value.trim(),
+                source: document.getElementById('cus-source').value.trim()
             };
+
             try {
-                if (id) await updateDoc(doc(db, 'artifacts', app_id, 'public', 'data', 'customers', id), data);
-                else await addDoc(getCollectionPath('customers'), { ...data, createdAt: new Date() });
-                showToast(id ? 'Cập nhật thành công' : 'Thêm thành công');
+                if (id) {
+                    await updateDoc(doc(db, 'artifacts', app_id, 'public', 'data', 'customers', id), data);
+                    showToast('Cập nhật hồ sơ khách hàng thành công');
+                } else {
+                    await addDoc(getCollectionPath('customers'), { ...data, createdAt: new Date() });
+                    showToast('Đã thêm khách hàng mới');
+                }
                 closeModal('customer-modal');
-            } catch (error) { showToast('Lỗi: ' + error.message, 'error'); }
+            } catch (error) { 
+                showToast('Lỗi lưu dữ liệu: ' + error.message, 'error'); 
+            }
         });
 
         window.editCustomer = (data) => openModal('customer-modal', data);
+        
         window.deleteCustomer = async (id) => {
             if (confirm('Bạn có chắc chắn muốn xóa khách hàng này?')) {
-                try { await deleteDoc(doc(db, 'artifacts', app_id, 'public', 'data', 'customers', id)); showToast('Đã xóa'); }
-                catch (error) { showToast('Lỗi', 'error'); }
+                try { await deleteDoc(doc(db, 'artifacts', app_id, 'public', 'data', 'customers', id)); showToast('Đã xóa khách hàng'); }
+                catch (error) { showToast('Lỗi khi xoá', 'error'); }
             }
         };
 
+        window.previewCustomer = (id) => {
+            const cus = customersData.find(c => c.id === id);
+            if(!cus) return;
+
+            document.getElementById('prev-cus-name').innerText = cus.name || '---';
+            document.getElementById('prev-cus-address').innerText = cus.address || '---';
+            document.getElementById('prev-cus-email').innerText = cus.email || '---';
+            document.getElementById('prev-cus-phone').innerText = cus.phone || '---';
+            
+            document.getElementById('prev-cus-bank-name').innerText = cus.bankName || '---';
+            document.getElementById('prev-cus-bank-branch').innerText = cus.bankBranch || '---';
+            document.getElementById('prev-cus-bank-owner').innerText = cus.bankOwner || '---';
+            document.getElementById('prev-cus-bank-account').innerText = cus.bankAccount || '---';
+            
+            document.getElementById('prev-cus-note').innerText = cus.note || '---';
+            
+            const sourceEl = document.getElementById('prev-cus-source');
+            if(cus.source) {
+                sourceEl.innerText = cus.source;
+                sourceEl.href = cus.source;
+            } else {
+                sourceEl.innerText = '---';
+                sourceEl.removeAttribute('href');
+            }
+
+            // Xử lý hiển thị ảnh
+            const setPreviewImage = (elId, src) => {
+                const img = document.getElementById(elId);
+                if(src) {
+                    img.src = src;
+                    img.style.display = 'block';
+                    img.nextElementSibling.style.display = 'none'; // Ẩn chữ "Không có ảnh"
+                } else {
+                    img.src = '';
+                    img.style.display = 'none';
+                    img.nextElementSibling.style.display = 'block'; // Hiện chữ "Không có ảnh"
+                }
+            };
+
+            setPreviewImage('prev-cus-gpkd', cus.gpkd);
+            setPreviewImage('prev-cus-cccd', cus.cccd);
+            setPreviewImage('prev-cus-store', cus.storeImage);
+
+            openModal('customer-preview-modal');
+        };
+
+        // --- SERVICES LOGIC ---
         function fetchServices() {
             unsubscribeServices = onSnapshot(query(getCollectionPath('services')), (snapshot) => {
                 servicesData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -1292,15 +1664,13 @@
         };
 
         // ==========================================
-        // CRUD: WEB FEATURES (WITH IMAGE UPLOAD)
+        // CRUD: WEB FEATURES
         // ==========================================
-        
-        // Handle File Input Selection
         document.getElementById('wf-image-file').addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (!file) return;
 
-            if (file.size > 1.5 * 1024 * 1024) { // Limit 1.5MB to save Firestore Space
+            if (file.size > 1.5 * 1024 * 1024) { 
                 showToast('Kích thước ảnh quá lớn. Vui lòng chọn ảnh dưới 1.5MB.', 'error');
                 this.value = ''; 
                 return;
@@ -1365,7 +1735,7 @@
             const id = document.getElementById('wf-id').value;
             const data = { 
                 name: document.getElementById('wf-name').value, 
-                image: document.getElementById('wf-image-data').value, // Use the base64 stored value
+                image: document.getElementById('wf-image-data').value,
                 price: Number(document.getElementById('wf-price').value), 
                 demo: document.getElementById('wf-demo').value,
                 desc: document.getElementById('wf-desc').value 
@@ -1420,7 +1790,6 @@
                 selector.innerHTML = '<option value="">-- Chọn Mẫu Word --</option>' + 
                     templatesData.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
                 
-                // Keep the selection if it still exists
                 if(templatesData.find(t => t.id === currentSelection)) {
                     selector.value = currentSelection;
                 }
@@ -1490,8 +1859,6 @@
                 try {
                     await deleteDoc(doc(db, 'artifacts', app_id, 'public', 'data', 'templates', id));
                     showToast('Đã xóa mẫu hợp đồng thành công');
-                    
-                    // Clear preview if deleted template was currently selected
                     if (document.getElementById('template-selector').value === id) {
                         document.getElementById('template-selector').value = '';
                         loadSelectedTemplate();
@@ -1503,7 +1870,6 @@
         };
 
 
-        // Handle File Selection to Extract Text & Fields
         document.getElementById('tpl-file').addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (!file) return;
@@ -1512,12 +1878,10 @@
             reader.onload = function(loadEvent) {
                 const arrayBuffer = loadEvent.target.result;
                 
-                // Use mammoth.js to convert docx to HTML
                 mammoth.convertToHtml({arrayBuffer: arrayBuffer})
                     .then(function(result) {
                         let html = result.value; 
 
-                        // Bắt các chuỗi: 3 dấu chấm trở lên (.....), 2 dấu ba chấm trở lên (……), hoặc 3 gạch dưới trở lên (_____)
                         let blankCounter = 1;
                         const blankRegex = /(\.{3,}|…{2,}|_{3,})/g;
                         html = html.replace(blankRegex, function() {
@@ -1593,11 +1957,9 @@
             document.getElementById(`tab-${tab}`).classList.remove('text-gray-500');
             document.getElementById(`tab-${tab}`).classList.add('bg-white', 'shadow', 'text-primary');
 
-            // Reset preview
             document.getElementById('document-preview-area').innerHTML = '<div class="text-center text-gray-400 mt-20 italic" id="empty-preview-msg">Vui lòng chọn tạo báo giá cơ bản hoặc chọn mẫu hợp đồng ở cột bên trái.</div>';
         };
 
-        // --- Standard Quote Logic ---
         window.generateStandardQuote = () => {
             const cusId = document.getElementById('quote-customer').value;
             if (!cusId) return showToast('Vui lòng chọn khách hàng', 'error');
@@ -1643,7 +2005,6 @@
             document.getElementById('document-preview-area').innerHTML = html;
         };
 
-        // --- Dynamic Template Logic ---
         window.loadSelectedTemplate = () => {
             const tplId = document.getElementById('template-selector').value;
             const container = document.getElementById('dynamic-fields-container');
@@ -1698,7 +2059,6 @@
         
         function fetchHistory() {
             unsubscribeHistory = onSnapshot(query(getCollectionPath('export_history')), (snapshot) => {
-                // Fetch all history data, sort in memory (Client-side) to avoid requiring compound indexes
                 historyData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 historyData.sort((a, b) => {
                     const t1 = a.createdAt ? (a.createdAt.seconds || a.createdAt) : 0;
@@ -1738,12 +2098,10 @@
         window.exportPDF = async () => {
             const element = document.getElementById('document-preview-area');
             
-            // Prevent exporting empty state
             if (element.querySelector('#empty-preview-msg')) {
                 return showToast('Vui lòng tạo nội dung trước khi xuất PDF', 'error');
             }
 
-            // --- Determine Document Name for History ---
             let docName = "Tài liệu chưa đặt tên";
             const isStandardTab = !document.getElementById('panel-standard').classList.contains('hidden');
             
@@ -1757,7 +2115,6 @@
                 docName = `Hợp đồng - ${tplName}`;
             }
 
-            // Get Current HTML content for archiving
             const htmlContentToSave = element.innerHTML;
 
             const opt = {
@@ -1775,7 +2132,6 @@
             html2pdf().set(opt).from(element).save().then(async () => {
                 btn.innerHTML = oldText;
                 
-                // Save to History Firebase
                 try {
                     await addDoc(getCollectionPath('export_history'), {
                         name: docName,
@@ -1790,7 +2146,6 @@
             });
         };
 
-        // Current Viewing History Doc
         window.viewHistoricalDoc = (historyId) => {
             const item = historyData.find(h => h.id === historyId);
             if (!item) return;
@@ -1803,7 +2158,7 @@
         };
 
         window.reExportHistoryPDF = () => {
-            const element = document.getElementById('history-doc-content'); // specifically target content wrapper
+            const element = document.getElementById('history-doc-content'); 
             const title = document.getElementById('history-doc-title').innerText;
             
             const opt = {
