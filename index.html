@@ -38,6 +38,7 @@
         }
     </script>
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="projects-style.css">
 </head>
 
 <body class="bg-gray-50 text-gray-900 dark:bg-slate-900 dark:text-gray-100 h-screen w-screen flex overflow-hidden">
@@ -204,6 +205,11 @@
                     class="nav-btn w-full flex items-center px-3 py-2.5 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-primary/10 hover:text-primary transition-colors"
                     data-target="webfeatures">
                     <span class="material-symbols-outlined mr-3 text-lg">web</span> Tính năng Website
+                </button>
+                <button onclick="navigate('projects')"
+                    class="nav-btn w-full flex items-center px-3 py-2.5 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-primary/10 hover:text-primary transition-colors"
+                    data-target="projects">
+                    <span class="material-symbols-outlined mr-3 text-lg">folder_special</span> Dự án
                 </button>
 
                 <p class="px-3 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 mt-6">Nghiệp vụ</p>
@@ -396,6 +402,88 @@
                                 </div>
                             </div>
                             <div class="h-64 w-full"><canvas id="mainChart"></canvas></div>
+                        </div>
+                    </section>
+
+                    <!-- VIEW: PROJECT DỰ ÁN -->
+                    <section id="view-projects" class="page-view animate-fade-in hidden">
+
+                        <!-- Header + nút thêm -->
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
+                            <div>
+                                <h2 class="text-xl font-bold">Quản lý Dự Án</h2>
+                                <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                                    Hiển thị <span id="prj-count" class="font-semibold text-primary">0</span>
+                                    / <span id="prj-total" class="font-semibold">0</span> dự án
+                                </p>
+                            </div>
+                            <button onclick="window.openAddProject()"
+                                class="flex items-center gap-2 bg-primary text-white px-4 py-2.5 rounded-xl text-sm font-bold shadow-md hover:opacity-90 active:scale-95 transition-all">
+                                <span class="material-symbols-outlined text-[18px]">add</span>
+                                Thêm dự án
+                            </button>
+                        </div>
+
+                        <!-- Bộ lọc -->
+                        <div class="glass rounded-2xl p-4 mb-5 border border-gray-200/60 dark:border-slate-700/60">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+                                <!-- Tìm kiếm -->
+                                <div class="sm:col-span-2 lg:col-span-2 relative">
+                                    <span
+                                        class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-[18px]">search</span>
+                                    <input type="text" id="prj-search" placeholder="Tìm kiếm theo tên dự án..."
+                                        class="w-full pl-9 pr-4 py-2.5 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl text-sm outline-none focus:border-primary transition-colors">
+                                </div>
+
+                                <!-- Ngành nghề -->
+                                <select id="prj-filter-sector"
+                                    class="py-2.5 px-3 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl text-sm outline-none focus:border-primary transition-colors appearance-none cursor-pointer">
+                                    <option value="">Tất cả ngành nghề</option>
+                                </select>
+
+                                <!-- Khoảng giá -->
+                                <div class="flex items-center gap-1.5">
+                                    <input type="number" id="prj-filter-min" placeholder="Giá từ..." min="0"
+                                        class="w-full py-2.5 px-3 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl text-sm outline-none focus:border-primary transition-colors">
+                                    <span class="text-gray-400 text-xs shrink-0">—</span>
+                                    <input type="number" id="prj-filter-max" placeholder="Đến..." min="0"
+                                        class="w-full py-2.5 px-3 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl text-sm outline-none focus:border-primary transition-colors">
+                                </div>
+
+                                <!-- Sort + Reset -->
+                                <div class="flex items-center gap-2">
+                                    <select id="prj-sort"
+                                        class="flex-1 py-2.5 px-3 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl text-sm outline-none focus:border-primary cursor-pointer appearance-none">
+                                        <option value="newest">Mới nhất</option>
+                                        <option value="oldest">Cũ nhất</option>
+                                        <option value="price_asc">Giá thấp → cao</option>
+                                        <option value="price_desc">Giá cao → thấp</option>
+                                    </select>
+                                    <button onclick="window.resetProjectFilters()" title="Đặt lại bộ lọc"
+                                        class="shrink-0 w-10 h-10 rounded-xl bg-gray-100 dark:bg-slate-800 text-gray-500 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center justify-center transition-all active:scale-90">
+                                        <span class="material-symbols-outlined text-[18px]">filter_list_off</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Grid dự án -->
+                        <div id="projects-grid"
+                            class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 min-h-[200px]">
+                            <!-- Rendered via JS -->
+                        </div>
+
+                        <!-- Empty state -->
+                        <div id="prj-empty" class="hidden flex flex-col items-center justify-center py-24 text-center">
+                            <span
+                                class="material-symbols-outlined text-6xl text-gray-300 dark:text-slate-700 mb-4">folder_open</span>
+                            <p class="text-gray-500 dark:text-gray-400 font-medium">Chưa có dự án nào</p>
+                            <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">Nhấn "Thêm dự án" để bắt đầu</p>
+                        </div>
+
+                        <!-- Pagination -->
+                        <div id="prj-pagination" class="flex items-center justify-center gap-1.5 mt-8 flex-wrap">
+                            <!-- Rendered via JS -->
                         </div>
                     </section>
 
@@ -1265,6 +1353,231 @@
     <!-- MODALS & TOASTS                            -->
     <!-- ========================================== -->
 
+    <!-- Modal: Project -->
+    <div id="project-modal"
+        class="fixed inset-0 z-[120] flex items-center justify-center bg-black/60 backdrop-blur-sm hidden opacity-0 transition-opacity p-4">
+        <div id="project-modal-content"
+            class="bg-white dark:bg-slate-900 w-full max-w-2xl rounded-2xl shadow-2xl border border-gray-200 dark:border-slate-700 transform scale-95 transition-transform flex flex-col modal-mobile-safe max-h-[90vh]">
+
+            <!-- Header -->
+            <div
+                class="p-4 lg:p-5 border-b border-gray-200 dark:border-slate-800 flex justify-between items-center shrink-0">
+                <h3 class="font-bold text-base" id="project-modal-title">Thêm Dự Án Mới</h3>
+                <button onclick="window.closeModal('project-modal')"
+                    class="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 dark:bg-slate-800 text-gray-400 hover:text-red-500 transition-colors">
+                    <span class="material-symbols-outlined text-[18px]">close</span>
+                </button>
+            </div>
+
+            <!-- Form body -->
+            <form id="project-form" class="flex-1 overflow-y-auto p-4 lg:p-5 space-y-4">
+
+                <!-- Tên dự án -->
+                <div>
+                    <label class="block text-xs font-semibold mb-1.5 text-gray-700 dark:text-gray-300">
+                        Tên dự án <span class="text-red-500">*</span>
+                    </label>
+                    <input type="text" id="prj-form-name" required placeholder="Ví dụ: Website bán hàng thời trang..."
+                        class="w-full px-3 py-2.5 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl text-sm outline-none focus:border-primary transition-colors">
+                </div>
+
+                <!-- Ngành nghề + Giá -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold mb-1.5 text-gray-700 dark:text-gray-300">Ngành
+                            nghề</label>
+                        <input type="text" id="prj-form-sector" placeholder="Thời trang, F&B, Bất động sản..."
+                            list="prj-sector-list"
+                            class="w-full px-3 py-2.5 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl text-sm outline-none focus:border-primary transition-colors">
+                        <!-- Datalist gợi ý từ dữ liệu hiện có -->
+                        <datalist id="prj-sector-list">
+                            <option value="Thời trang">
+                            <option value="F&B / Ẩm thực">
+                            <option value="Bất động sản">
+                            <option value="Giáo dục">
+                            <option value="Y tế / Sức khoẻ">
+                            <option value="Công nghệ">
+                            <option value="Du lịch / Lữ hành">
+                            <option value="Nội thất">
+                            <option value="Xây dựng">
+                            <option value="Dịch vụ chuyên nghiệp">
+                        </datalist>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold mb-1.5 text-gray-700 dark:text-gray-300">Giá dự án
+                            (VND)</label>
+                        <input type="number" id="prj-form-price" placeholder="0 = Liên hệ" min="0"
+                            class="w-full px-3 py-2.5 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl text-sm outline-none focus:border-primary transition-colors">
+                    </div>
+                </div>
+
+                <!-- Mô tả -->
+                <div>
+                    <label class="block text-xs font-semibold mb-1.5 text-gray-700 dark:text-gray-300">Mô tả dự
+                        án</label>
+                    <textarea id="prj-form-desc" rows="3"
+                        placeholder="Mô tả ngắn về dự án, tính năng nổi bật, công nghệ sử dụng..."
+                        class="w-full px-3 py-2.5 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl text-sm outline-none focus:border-primary transition-colors resize-none"></textarea>
+                </div>
+
+                <!-- Upload ảnh -->
+                <div>
+                    <label class="block text-xs font-semibold mb-1.5 text-gray-700 dark:text-gray-300">
+                        Hình ảnh dự án
+                        <span class="text-gray-400 font-normal">(tối đa 5MB / ảnh, nhiều ảnh)</span>
+                    </label>
+
+                    <!-- Dropzone -->
+                    <div id="prj-dropzone"
+                        class="border-2 border-dashed border-gray-300 dark:border-slate-700 rounded-xl p-5 text-center cursor-pointer hover:border-primary hover:bg-primary/5 transition-all select-none">
+                        <span class="material-symbols-outlined text-3xl text-gray-400 mb-1 block">cloud_upload</span>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">Kéo thả ảnh vào đây hoặc <span
+                                class="text-primary font-semibold">nhấn để chọn</span></p>
+                        <p class="text-xs text-gray-400 mt-1">JPG, PNG, WebP — tối đa 5MB mỗi ảnh</p>
+                        <input type="file" id="prj-img-input" multiple accept="image/*" class="hidden">
+                    </div>
+
+                    <!-- Preview grid -->
+                    <div id="prj-img-previews" class="mt-3 grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-2">
+                        <p class="text-xs text-gray-400 text-center py-3 col-span-full">Chưa có ảnh nào — kéo thả hoặc
+                            nhấn chọn</p>
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="flex flex-col sm:flex-row justify-end gap-2 pt-2">
+                    <button type="button" onclick="window.closeModal('project-modal')"
+                        class="w-full sm:w-auto px-5 py-2.5 text-sm font-medium bg-gray-100 dark:bg-slate-800 rounded-xl hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors">
+                        Hủy
+                    </button>
+                    <button type="submit" id="prj-save-btn"
+                        class="w-full sm:w-auto order-first sm:order-last px-5 py-2.5 text-sm font-bold text-white bg-primary rounded-xl shadow-md hover:opacity-90 active:scale-95 transition-all flex items-center justify-center gap-1">
+                        <span class="material-symbols-outlined text-sm mr-1">save</span> Lưu dự án
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+    <!-- ========================================== -->
+    <!-- MODAL: CHI TIẾT DỰ ÁN + LIGHTBOX          -->
+    <!-- ========================================== -->
+    <div id="project-detail-modal"
+        class="fixed inset-0 z-[130] flex items-center justify-center bg-black/80 backdrop-blur-md hidden opacity-0 transition-opacity p-0 sm:p-4">
+        <div id="project-detail-modal-content"
+            class="bg-white dark:bg-slate-900 w-full sm:max-w-5xl h-full sm:h-auto sm:max-h-[90vh] rounded-none sm:rounded-2xl shadow-2xl border-0 sm:border border-gray-200 dark:border-slate-700 transform scale-95 transition-transform flex flex-col overflow-hidden">
+
+            <!-- Header modal -->
+            <div
+                class="p-4 border-b border-gray-200 dark:border-slate-800 flex items-center justify-between shrink-0 bg-white dark:bg-slate-900">
+                <div class="flex items-center gap-2 min-w-0">
+                    <span class="material-symbols-outlined text-primary shrink-0">folder_special</span>
+                    <h3 class="font-bold text-base truncate" id="pdm-name">Tên dự án</h3>
+                </div>
+                <div class="flex items-center gap-2 shrink-0">
+                    <button id="pdm-edit-btn"
+                        class="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 dark:bg-amber-900/20 text-amber-600 hover:bg-amber-500 hover:text-white text-xs font-semibold rounded-lg transition-all active:scale-90">
+                        <span class="material-symbols-outlined text-[14px]">edit</span>
+                        <span class="hidden sm:inline">Sửa</span>
+                    </button>
+                    <button onclick="window.closeModal('project-detail-modal')"
+                        class="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 dark:bg-slate-800 text-gray-400 hover:text-red-500 transition-colors">
+                        <span class="material-symbols-outlined text-[18px]">close</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Body -->
+            <div class="flex-1 overflow-y-auto">
+                <div class="flex flex-col lg:flex-row h-full">
+
+                    <!-- LEFT: Ảnh Lightbox -->
+                    <div class="lg:w-[58%] bg-black flex flex-col shrink-0">
+                        <!-- Main image area -->
+                        <div
+                            class="relative flex-1 flex items-center justify-center min-h-[240px] sm:min-h-[340px] lg:min-h-0 overflow-hidden">
+                            <!-- No image placeholder -->
+                            <div id="pdm-no-img"
+                                class="hidden flex flex-col items-center justify-center text-gray-600 gap-2">
+                                <span class="material-symbols-outlined text-5xl">hide_image</span>
+                                <span class="text-sm">Không có ảnh</span>
+                            </div>
+
+                            <!-- Main image -->
+                            <img id="pdm-main-img" src="" alt="Ảnh dự án" loading="lazy"
+                                class="hidden max-w-full max-h-[60vh] lg:max-h-[70vh] object-contain transition-opacity duration-300 select-none"
+                                style="transition: opacity 0.25s ease;">
+
+                            <!-- Prev / Next -->
+                            <button id="pdm-nav-prev" onclick="window.prjLbGo(window.prjLbIdx-1)"
+                                class="hidden absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/50 hover:bg-black/80 text-white flex items-center justify-center transition-all active:scale-90 z-10 backdrop-blur-sm"
+                                onclick="window.prjLbGo(lightboxIdx-1)">
+                                <span class="material-symbols-outlined">chevron_left</span>
+                            </button>
+                            <button id="pdm-nav-next"
+                                class="hidden absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/50 hover:bg-black/80 text-white flex items-center justify-center transition-all active:scale-90 z-10 backdrop-blur-sm"
+                                onclick="window.prjLbGo(lightboxIdx+1)">
+                                <span class="material-symbols-outlined">chevron_right</span>
+                            </button>
+
+                            <!-- Counter -->
+                            <div id="pdm-counter"
+                                class="hidden absolute bottom-3 right-3 bg-black/50 text-white text-xs px-2.5 py-1 rounded-full backdrop-blur-sm font-mono">
+                                1 / 1
+                            </div>
+                        </div>
+
+                        <!-- Thumbnails strip -->
+                        <div id="pdm-thumbs-wrap" class="hidden border-t border-white/10 bg-black p-2 shrink-0">
+                            <div id="pdm-thumbs" class="flex gap-2 overflow-x-auto pb-0.5 scrollbar-thin"></div>
+                        </div>
+                    </div>
+
+                    <!-- RIGHT: Thông tin dự án -->
+                    <div class="lg:w-[42%] p-5 flex flex-col gap-4 overflow-y-auto">
+                        <!-- Sector badge + image count -->
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <span class="text-xs font-semibold bg-primary/10 text-primary px-3 py-1 rounded-full"
+                                id="pdm-sector">—</span>
+                            <span class="text-xs text-gray-500 flex items-center gap-1" id="pdm-imgcount">
+                                <span class="material-symbols-outlined text-[13px]">photo_library</span> 0 ảnh
+                            </span>
+                        </div>
+
+                        <!-- Giá -->
+                        <div class="glass rounded-xl p-3 border border-primary/20">
+                            <p class="text-xs text-gray-500 mb-0.5">Giá dự án</p>
+                            <p class="text-xl font-bold text-primary" id="pdm-price">—</p>
+                        </div>
+
+                        <!-- Mô tả -->
+                        <div>
+                            <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Mô tả dự án</p>
+                            <p class="text-sm text-gray-700 dark:text-gray-300 leading-relaxed" id="pdm-desc">—</p>
+                        </div>
+
+                        <!-- Meta timestamps -->
+                        <div
+                            class="mt-auto pt-4 border-t border-gray-100 dark:border-slate-800 space-y-1.5 text-xs text-gray-400">
+                            <div class="flex justify-between">
+                                <span class="flex items-center gap-1"><span
+                                        class="material-symbols-outlined text-[13px]">add_circle</span> Tạo lúc</span>
+                                <span id="pdm-created" class="font-medium text-gray-600 dark:text-gray-300">—</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="flex items-center gap-1"><span
+                                        class="material-symbols-outlined text-[13px]">update</span> Cập nhật</span>
+                                <span id="pdm-updated" class="font-medium text-gray-600 dark:text-gray-300">—</span>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Modal: Lead -->
     <div id="lead-modal"
         class="fixed inset-0 z-[110] flex items-center justify-center bg-black/50 backdrop-blur-sm hidden opacity-0 transition-opacity p-4">
@@ -2047,6 +2360,7 @@
         class="fixed bottom-5 right-5 lg:bottom-5 lg:right-5 z-[150] flex flex-col gap-2 pointer-events-none w-[calc(100%-40px)] sm:w-auto max-w-sm">
     </div>
 
+    <script type="module" src="projects.js"></script>
     <script type="module" src="app.js"></script>
 </body>
 
