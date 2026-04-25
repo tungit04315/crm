@@ -1,7 +1,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, onAuthStateChanged, signOut, updateProfile, updatePassword } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 import { getFirestore, collection, doc, setDoc, getDoc, onSnapshot, addDoc, updateDoc, deleteDoc, query, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-import { getStorage, ref as sRef, uploadString, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
+import { getStorage, ref as sRef, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyBqdX8HpUSP_atbFPQEDur_lQsjMI3TPXo",
@@ -646,6 +646,55 @@ window.renderLeads = () => {
     document.getElementById(id)?.addEventListener('input', () => { PG.leads = 1; renderLeads(); });
 });
 
+// ==============================================
+// LEADS CRUD — Thêm / Sửa / Xóa / Chuyển đổi
+// ==============================================
+document.getElementById('lead-form')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const id = document.getElementById('lead-id').value;
+    const data = {
+        name: document.getElementById('lead-name').value.trim(),
+        phone: document.getElementById('lead-phone').value.trim(),
+        email: document.getElementById('lead-email').value.trim(),
+        source: document.getElementById('lead-source').value.trim(),
+        type: document.getElementById('lead-type').value,
+        note: document.getElementById('lead-note').value.trim(),
+    };
+    const btn = e.target.querySelector('[type="submit"]');
+    if (btn) { btn.disabled = true; btn.textContent = 'Đang lưu...'; }
+    try {
+        if (id) await updateDoc(doc(db, 'artifacts', app_id, 'public', 'data', 'leads', id), data);
+        else await addDoc(getCollectionPath('leads'), { ...data, createdAt: new Date() });
+        showToast(id ? 'Cập nhật Lead thành công' : 'Đã thêm Lead mới');
+        closeModal('lead-modal');
+    } catch (err) { showToast('Lỗi: ' + err.message, 'error'); }
+    finally { if (btn) { btn.disabled = false; btn.textContent = 'Lưu'; } }
+});
+
+window.editLead = (data) => openModal('lead-modal', data);
+
+window.deleteLead = async (id) => {
+    if (confirm('Xóa Lead này?')) {
+        try {
+            await deleteDoc(doc(db, 'artifacts', app_id, 'public', 'data', 'leads', id));
+            showToast('Đã xóa Lead');
+        } catch (err) { showToast('Lỗi: ' + err.message, 'error'); }
+    }
+};
+
+window.convertLeadToCustomer = (leadId) => {
+    const lead = leadsData.find(l => l.id === leadId);
+    if (!lead) return;
+    openModal('customer-modal', {
+        name: lead.name,
+        phone: lead.phone,
+        email: lead.email,
+        source: lead.source,
+        note: lead.note,
+        'convert-lead-id': lead.id
+    });
+    showToast('Bổ sung thêm thông tin để hoàn tất chuyển đổi', 'info');
+};
 
 // ==============================================
 // CUSTOMERS LOGIC — với responsive card + pagination
@@ -723,37 +772,7 @@ window.renderCustomers = () => {
     document.getElementById(id)?.addEventListener('input', () => { PG.customers = 1; renderCustomers(); });
 });
 
-// --- CUSTOMERS LOGIC ---
-window.renderCustomers = () => {
-    const txt = document.getElementById('search-customer').value.toLowerCase();
-    const dt = document.getElementById('filter-customer-date').value;
-
-    const filtered = customersData.filter(c => {
-        const matchTxt = c.name.toLowerCase().includes(txt) || (c.phone && c.phone.includes(txt));
-        const matchDt = !dt || getISODate(c.createdAt) === dt;
-        return matchTxt && matchDt;
-    });
-
-    const tbody = document.getElementById('customers-list');
-    if (filtered.length === 0) return tbody.innerHTML = `<tr><td colspan="5" class="py-6 text-center text-gray-500">Chưa có dữ liệu</td></tr>`;
-
-    tbody.innerHTML = filtered.map(cus => {
-        const bankInfoStr = cus.bankName ? `${cus.bankName}<br><span class="text-gray-400 font-mono text-[10px]">${cus.bankAccount || ''}</span>` : '<span class="text-gray-300 italic">Chưa có</span>';
-        return `
-                <tr class="hover:bg-gray-50/50 dark:hover:bg-slate-800/30 border-b border-gray-100 dark:border-slate-800/50 transition-colors">
-                    <td class="py-3 font-semibold text-primary max-w-[150px] sm:max-w-[200px] truncate pl-2">${cus.name}</td>
-                    <td class="py-3"><div class="text-xs font-mono font-bold">${cus.phone}</div><div class="text-[11px] text-gray-500 max-w-[120px] truncate">${cus.email || ''}</div></td>
-                    <td class="py-3 text-xs leading-tight whitespace-nowrap">${bankInfoStr}</td>
-                    <td class="py-3"><div class="text-[11px] text-gray-500 truncate max-w-[100px]">${cus.source || 'N/A'}</div><div class="text-[10px] text-gray-400 mt-0.5 whitespace-nowrap">${formatDateStr(cus.createdAt)}</div></td>
-                    <td class="py-3 text-right pr-2 whitespace-nowrap">
-                        <button onclick="previewCustomer('${cus.id}')" class="p-2 lg:p-1 text-blue-500 hover:text-blue-700 mr-1 bg-blue-50 lg:bg-transparent rounded" title="Xem chi tiết"><span class="material-symbols-outlined text-base lg:text-sm">visibility</span></button>
-                        <button onclick='editCustomer(${JSON.stringify(cus).replace(/'/g, "&#39;")})' class="p-2 lg:p-1 text-gray-400 hover:text-primary mr-1 bg-gray-100 lg:bg-transparent rounded" title="Sửa"><span class="material-symbols-outlined text-base lg:text-sm">edit</span></button>
-                        <button onclick="deleteCustomer('${cus.id}')" class="p-2 lg:p-1 text-gray-400 hover:text-red-500 bg-gray-100 lg:bg-transparent rounded" title="Xóa"><span class="material-symbols-outlined text-base lg:text-sm">delete</span></button>
-                    </td>
-                </tr>
-            `}).join('');
-};
-['search-customer', 'filter-customer-date'].forEach(id => document.getElementById(id).addEventListener('input', renderCustomers));
+// --- CUSTOMERS LOGIC --- (định nghĩa duy nhất — bản đầy đủ với mobile cards ở trên)
 
 document.getElementById('customer-form').addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -1129,86 +1148,178 @@ window.renderJobsTable = () => {
 
 window.deleteJob = async (id) => { if (confirm('Xoá công việc này?')) await deleteDoc(doc(db, 'artifacts', app_id, 'public', 'data', 'jobs', id)); };
 
-// -> Kanban Board Logic
+// -> Kanban Board Logic — Slideshow / Carousel
+let _kanbanCols = [];         // [{id, name}]
+let _kanbanJobMap = {};       // {colId: [{job, cus, assigneeStr}]}
+let _kanbanColCounts = {};
+let _kanbanSlideIdx = 0;      // current slide index
+
 window.renderJobsKanban = () => {
     const wfId = document.getElementById('kanban-workflow-select').value;
     const container = document.getElementById('kanban-board');
     if (!wfId) {
-        container.innerHTML = `<div class="w-full text-center py-10 text-gray-500">Vui lòng chọn 1 Quy trình để xem bảng Kanban</div>`;
+        container.innerHTML = `<div class="w-full text-center py-10 text-gray-500 flex flex-col items-center gap-2">
+            <span class="material-symbols-outlined text-4xl text-gray-300">account_tree</span>
+            <p>Vui lòng chọn 1 Quy trình để xem bảng Kanban</p></div>`;
         return;
     }
 
     const wf = workflowsData.find(w => w.id === wfId);
     if (!wf || !wf.steps) return;
 
-    // Define columns: Workflow steps + 'Done All'
-    const cols = [...wf.steps.sort((a, b) => a.order - b.order), { id: 'col_done', name: 'Hoàn Thành (Done)' }];
+    _kanbanCols = [...wf.steps.sort((a, b) => a.order - b.order), { id: 'col_done', name: '✅ Hoàn Thành' }];
+    _kanbanJobMap = {};
+    _kanbanColCounts = {};
+    _kanbanCols.forEach(c => { _kanbanJobMap[c.id] = []; _kanbanColCounts[c.id] = 0; });
 
-    // Filter jobs for this workflow
     const relevantJobs = jobsData.filter(j => j.workflowId === wfId);
-
-    // Generate Columns HTML
-    let html = '';
-    cols.forEach(col => {
-        html += `
-                    <div class="kanban-col" data-col-id="${col.id}" ondragover="allowDrop(event)" ondrop="dropKanban(event)">
-                        <div class="p-3 border-b border-gray-200 dark:border-slate-700 bg-white/50 dark:bg-slate-800/50 rounded-t-xl font-bold flex justify-between items-center">
-                            <span class="text-sm truncate pr-2">${col.name}</span>
-                            <span class="bg-gray-200 dark:bg-slate-700 text-gray-600 dark:text-gray-300 text-xs px-2 py-0.5 rounded-full" id="count-${col.id}">0</span>
-                        </div>
-                        <div class="kanban-cards-container" id="cards-${col.id}"></div>
-                    </div>
-                `;
-    });
-    container.innerHTML = html;
-
-    // Distribute Jobs into Columns
-    const colCounts = {}; cols.forEach(c => colCounts[c.id] = 0);
-
     relevantJobs.forEach(job => {
         let currentStepId = 'col_done';
         if (job.status !== 'done') {
-            // Find first step that is not done
             const activeStep = (job.steps || []).sort((a, b) => a.order - b.order).find(s => s.status !== 'done');
             if (activeStep) currentStepId = activeStep.id;
         }
-
-        // If somehow step not found in cols, put to first
-        if (!document.getElementById(`cards-${currentStepId}`)) currentStepId = cols[0].id;
-
-        colCounts[currentStepId]++;
-
+        if (!_kanbanJobMap[currentStepId]) currentStepId = _kanbanCols[0].id;
+        _kanbanColCounts[currentStepId]++;
         const cus = customersData.find(c => c.id === job.customerId);
         const activeStepObj = (job.steps || []).find(s => s.id === currentStepId);
-        const assigneeStr = activeStepObj && activeStepObj.assignee ? `<div class="mt-2 text-[10px] bg-blue-50 text-blue-600 px-2 py-1 rounded inline-block"><span class="material-symbols-outlined text-[10px] align-middle mr-1">person</span>${activeStepObj.assignee}</div>` : '';
-
-        const cardHtml = `
-                    <div class="kanban-card" draggable="true" ondragstart="dragStartKanban(event)" data-job-id="${job.id}" onclick="openJobDetail('${job.id}')">
-                        <div class="text-[10px] text-gray-400 mb-1 flex justify-between"><span>#${job.id.slice(-5)}</span> <span>${formatDateStr(job.createdAt).split(' ')[0]}</span></div>
-                        <h5 class="font-bold text-sm text-gray-800 dark:text-gray-200 leading-tight mb-1">${job.name}</h5>
-                        <p class="text-xs text-primary font-medium truncate mb-2"><span class="material-symbols-outlined text-[12px] align-middle">business</span> ${cus ? cus.name : 'Unknown'}</p>
-                        ${assigneeStr}
-                    </div>
-                `;
-        document.getElementById(`cards-${currentStepId}`).innerHTML += cardHtml;
+        const assigneeStr = activeStepObj?.assignee
+            ? `<div class="mt-2 text-[10px] bg-blue-50 dark:bg-blue-900/30 text-blue-600 px-2 py-1 rounded-full inline-flex items-center gap-1">
+                <span class="material-symbols-outlined text-[10px]">person</span>${activeStepObj.assignee}</div>`
+            : '';
+        _kanbanJobMap[currentStepId].push({ job, cus, assigneeStr });
     });
 
-    // Update counts
-    cols.forEach(c => { document.getElementById(`count-${c.id}`).innerText = colCounts[c.id]; });
+    // Clamp slide index
+    if (_kanbanSlideIdx >= _kanbanCols.length) _kanbanSlideIdx = 0;
+
+    // Build HTML
+    const totalCols = _kanbanCols.length;
+    const dotsHtml = _kanbanCols.map((col, i) => `
+        <button class="kanban-dot ${i === _kanbanSlideIdx ? 'active' : ''}" onclick="kanbanGoSlide(${i})" title="${col.name}"></button>`).join('');
+
+    const slidesHtml = _kanbanCols.map((col, i) => {
+        const cards = _kanbanJobMap[col.id].map(({ job, cus, assigneeStr }) => `
+            <div class="kanban-card" draggable="true" ondragstart="dragStartKanban(event)"
+                 data-job-id="${job.id}" onclick="openJobDetail('${job.id}')">
+                <div class="text-[10px] text-gray-400 mb-1.5 flex justify-between">
+                    <span class="font-mono">#${job.id.slice(-5)}</span>
+                    <span>${formatDateStr(job.createdAt).split(' ')[0]}</span>
+                </div>
+                <h5 class="font-bold text-sm text-gray-800 dark:text-gray-200 leading-snug mb-1">${job.name}</h5>
+                <p class="text-xs text-primary font-medium truncate">
+                    <span class="material-symbols-outlined text-[12px] align-middle">business</span> ${cus ? cus.name : 'Unknown'}
+                </p>
+                ${assigneeStr}
+            </div>`).join('') || `<div class="text-center text-gray-400 dark:text-gray-600 py-10 text-sm">
+                <span class="material-symbols-outlined text-3xl block mb-2">inbox</span>Không có job nào</div>`;
+
+        return `<div class="kanban-slide ${i === _kanbanSlideIdx ? 'active' : ''}"
+                     data-col-id="${col.id}"
+                     ondragover="allowDrop(event)" ondrop="dropKanban(event)">
+            <div class="kanban-cards-container" id="cards-${col.id}">${cards}</div>
+        </div>`;
+    }).join('');
+
+    const prevCol = _kanbanCols[_kanbanSlideIdx - 1];
+    const nextCol = _kanbanCols[_kanbanSlideIdx + 1];
+    const curCol  = _kanbanCols[_kanbanSlideIdx];
+    const curCount = _kanbanColCounts[curCol.id] || 0;
+
+    container.innerHTML = `
+        <div class="kanban-slider-wrapper">
+            <!-- Navigation header -->
+            <div class="kanban-slider-nav">
+                <button class="kanban-nav-btn ${_kanbanSlideIdx === 0 ? 'opacity-30 cursor-not-allowed' : ''}"
+                        onclick="kanbanGoSlide(${_kanbanSlideIdx - 1})" ${_kanbanSlideIdx === 0 ? 'disabled' : ''}>
+                    <span class="material-symbols-outlined">chevron_left</span>
+                </button>
+
+                <div class="kanban-step-info">
+                    <div class="kanban-step-label">
+                        <span class="kanban-step-num">${_kanbanSlideIdx + 1}/${totalCols}</span>
+                        <span class="kanban-step-name">${curCol.name}</span>
+                        <span class="kanban-step-count">${curCount} job</span>
+                    </div>
+                    <div class="kanban-step-sub">
+                        ${prevCol ? `<span class="kanban-adjacent prev">← ${prevCol.name}</span>` : ''}
+                        ${nextCol ? `<span class="kanban-adjacent next">${nextCol.name} →</span>` : ''}
+                    </div>
+                </div>
+
+                <button class="kanban-nav-btn ${_kanbanSlideIdx === totalCols - 1 ? 'opacity-30 cursor-not-allowed' : ''}"
+                        onclick="kanbanGoSlide(${_kanbanSlideIdx + 1})" ${_kanbanSlideIdx === totalCols - 1 ? 'disabled' : ''}>
+                    <span class="material-symbols-outlined">chevron_right</span>
+                </button>
+            </div>
+
+            <!-- Progress bar -->
+            <div class="kanban-progress-bar">
+                <div class="kanban-progress-fill" style="width:${((_kanbanSlideIdx + 1) / totalCols) * 100}%"></div>
+            </div>
+
+            <!-- Slides -->
+            <div class="kanban-slides-viewport" id="kanban-slides-viewport">
+                <div class="kanban-slides-track" id="kanban-slides-track"
+                     style="transform: translateX(-${_kanbanSlideIdx * 100}%)">
+                    ${slidesHtml}
+                </div>
+            </div>
+
+            <!-- Dots -->
+            <div class="kanban-dots-row">${dotsHtml}</div>
+        </div>`;
+
+    // Bind swipe gestures
+    _bindKanbanSwipe();
 };
 
-// Drag & Drop Handlers
-window.allowDrop = (ev) => { ev.preventDefault(); ev.currentTarget.classList.add('drag-over'); };
+window.kanbanGoSlide = (idx) => {
+    if (idx < 0 || idx >= _kanbanCols.length) return;
+    _kanbanSlideIdx = idx;
+    // Update track position
+    const track = document.getElementById('kanban-slides-track');
+    if (track) track.style.transform = `translateX(-${idx * 100}%)`;
+    // Re-render nav header only (full re-render causes flicker)
+    window.renderJobsKanban();
+};
+
+// Swipe gesture binding
+function _bindKanbanSwipe() {
+    const viewport = document.getElementById('kanban-slides-viewport');
+    if (!viewport) return;
+    let startX = 0, isDragging = false;
+    viewport.addEventListener('touchstart', e => { startX = e.touches[0].clientX; isDragging = true; }, { passive: true });
+    viewport.addEventListener('touchend', e => {
+        if (!isDragging) return;
+        const diff = startX - e.changedTouches[0].clientX;
+        if (Math.abs(diff) > 50) diff > 0 ? kanbanGoSlide(_kanbanSlideIdx + 1) : kanbanGoSlide(_kanbanSlideIdx - 1);
+        isDragging = false;
+    }, { passive: true });
+    // Mouse drag (desktop)
+    viewport.addEventListener('mousedown', e => { startX = e.clientX; isDragging = true; });
+    viewport.addEventListener('mouseup', e => {
+        if (!isDragging) return;
+        const diff = startX - e.clientX;
+        if (Math.abs(diff) > 60) diff > 0 ? kanbanGoSlide(_kanbanSlideIdx + 1) : kanbanGoSlide(_kanbanSlideIdx - 1);
+        isDragging = false;
+    });
+    viewport.addEventListener('mouseleave', () => { isDragging = false; });
+}
+
+
+window.allowDrop = (ev) => {
+    ev.preventDefault();
+    const slide = ev.currentTarget.closest ? ev.currentTarget.closest('.kanban-slide') : ev.currentTarget;
+    if (slide) slide.classList.add('drag-over');
+};
 window.dragStartKanban = (ev) => { ev.dataTransfer.setData("jobId", ev.currentTarget.dataset.jobId); };
 window.dropKanban = async (ev) => {
     ev.preventDefault();
-    const colElement = ev.currentTarget;
-    colElement.classList.remove('drag-over');
-    // Remove highlight from all cols just in case
-    document.querySelectorAll('.kanban-col').forEach(el => el.classList.remove('drag-over'));
+    document.querySelectorAll('.kanban-slide').forEach(el => el.classList.remove('drag-over'));
 
-    const jobId = ev.dataTransfer.getData("jobId");
-    const targetStepId = colElement.dataset.colId;
+    const slide = ev.currentTarget.closest ? ev.currentTarget.closest('.kanban-slide') : ev.currentTarget;
+    const targetStepId = slide ? slide.dataset.colId : ev.currentTarget.dataset.colId;
 
     if (!jobId || !targetStepId) return;
 
@@ -2514,7 +2625,7 @@ function loadAvatarInSettings(avatarUrl, username) {
         uploadPendingImages(function (urls) {
             // Xóa ảnh cũ trên Storage
             var delPromises = imagesToDelete.map(function (url) {
-                try { return deleteObject(sRef(storage, url)).catch(function () {}); } catch (e) { return Promise.resolve(); }
+                try { return deleteObject(_storageRefFromURL(url)).catch(function () {}); } catch (e) { return Promise.resolve(); }
             });
 
             Promise.all(delPromises).then(function () {
@@ -2556,15 +2667,43 @@ function loadAvatarInSettings(avatarUrl, username) {
         newImgs.forEach(function (item) {
             var path    = 'projects/' + app_id + '/' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
             var fileRef = sRef(storage, path);
-            uploadString(fileRef, item.img.previewUrl, 'data_url')
-                .then(function () { return getDownloadURL(fileRef); })
+
+            // Chuyển data URL → Blob (uploadBytes ổn định hơn uploadString)
+            var blob;
+            try {
+                var parts  = item.img.previewUrl.split(',');
+                var mime   = parts[0].match(/:(.*?);/)[1];
+                var bstr   = atob(parts[1]);
+                var buf    = new Uint8Array(bstr.length);
+                for (var i = 0; i < bstr.length; i++) buf[i] = bstr.charCodeAt(i);
+                blob = new Blob([buf], { type: mime });
+            } catch (e) {
+                if (!failed) { failed = true; onError(new Error('Không đọc được file ảnh: ' + e.message)); }
+                return;
+            }
+
+            uploadBytes(fileRef, blob)
+                .then(function (snapshot) { return getDownloadURL(snapshot.ref); })
                 .then(function (url) {
                     result[item.pos] = url;
                     uploaded++;
                     if (uploaded === newImgs.length && !failed) onDone(result.filter(Boolean));
                 })
-                .catch(function (err) { if (!failed) { failed = true; onError(err); } });
+                .catch(function (err) {
+                    console.error('[Projects] Upload lỗi:', err);
+                    if (!failed) { failed = true; onError(err); }
+                });
         });
+    }
+
+    // Helper: lấy storage ref từ HTTPS download URL (Modular SDK không tự parse)
+    function _storageRefFromURL(url) {
+        try {
+            // Firebase Storage URL: .../o/{encoded-path}?...
+            var match = url.match(/\/o\/([^?#]+)/);
+            if (match) return sRef(storage, decodeURIComponent(match[1]));
+        } catch (e) { /* fallback */ }
+        return sRef(storage, url);
     }
 
     // ════════════════════════════════
@@ -2577,7 +2716,7 @@ function loadAvatarInSettings(avatarUrl, username) {
         var delImgs = imgs
             .filter(function (u) { return u && u.startsWith('https://'); })
             .map(function (url) {
-                try { return deleteObject(sRef(storage, url)).catch(function () {}); } catch (e) { return Promise.resolve(); }
+                try { return deleteObject(_storageRefFromURL(url)).catch(function () {}); } catch (e) { return Promise.resolve(); }
             });
         Promise.all(delImgs)
             .then(function () { return deleteDoc(prjDocRef(id)); })
