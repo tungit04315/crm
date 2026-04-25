@@ -1,7 +1,7 @@
-
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, onAuthStateChanged, signOut, updateProfile, updatePassword } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-import { getFirestore, collection, doc, setDoc, getDoc, onSnapshot, addDoc, updateDoc, deleteDoc, query } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { getFirestore, collection, doc, setDoc, getDoc, onSnapshot, addDoc, updateDoc, deleteDoc, query, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { getStorage, ref as sRef, uploadString, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyBqdX8HpUSP_atbFPQEDur_lQsjMI3TPXo",
@@ -17,6 +17,7 @@ const app_id = typeof __app_id !== 'undefined' ? __app_id : 'demo-marketing-crm-
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
+const storage = getStorage(app);
 
 /*
 ========================================================
@@ -264,7 +265,7 @@ window.toggleMobileMenu = () => {
     }
 };
 
-const views = ['dashboard', 'leads', 'customers', 'services', 'webfeatures', 'jobs', 'quotes', 'history', 'settings']; // ADDED 'jobs'
+const views = ['dashboard', 'leads', 'customers', 'services', 'webfeatures', 'projects', 'jobs', 'quotes', 'history', 'settings']; // ADDED 'jobs'
 
 const originalNavigate = (target) => {
     views.forEach(v => {
@@ -279,7 +280,7 @@ const originalNavigate = (target) => {
     const tgtEl = document.getElementById(`view-${target}`);
     if (tgtEl) tgtEl.classList.remove('hidden');
 
-    const titles = { dashboard: 'Tổng quan', leads: 'Quản lý Lead', customers: 'Quản lý Khách hàng', services: 'Dịch vụ', webfeatures: 'Tính năng Website', jobs: 'Quy trình & Công việc', quotes: 'Báo giá & Hợp đồng', history: 'Lịch sử xuất', settings: 'Cài đặt hệ thống' };
+    const titles = { dashboard: 'Tổng quan', leads: 'Quản lý Lead', customers: 'Quản lý Khách hàng', services: 'Dịch vụ', webfeatures: 'Tính năng Website', projects: 'Quản lý Dự Án', jobs: 'Quy trình & Công việc', quotes: 'Báo giá & Hợp đồng', history: 'Lịch sử xuất', settings: 'Cài đặt hệ thống' };
     document.getElementById('page-title').innerText = titles[target] || 'CRM';
 
     if (window.innerWidth < 1024) {
@@ -333,9 +334,11 @@ function initAppLogic() {
     //unsubscribes.push(onSnapshot(query(getCollectionPath('jobs')), snap => { jobsData = snap.docs.map(d => ({ id: d.id, ...d.data() })); renderJobsTable(); renderJobsKanban(); updateDashboardStats(); renderJobReports(); }));
     unsubscribes.push(onSnapshot(query(getCollectionPath('jobs')), snap => { jobsData = snap.docs.map(d => ({ id: d.id, ...d.data() })); renderJobsTable(); renderJobsKanban(); updateDashboardStats(); renderJobReports(); if (myChart) initChart(); }));
 
+    initProjectsModule();
     initChart();
     setupImageDropzone('cus-gpkd'); setupImageDropzone('cus-cccd'); setupImageDropzone('cus-store');
 }
+
 
 // --- COMMON UI LOGIC ---
 window.openModal = (id, data = null) => {
@@ -512,8 +515,8 @@ function buildPagination(key, totalItems, container, infoEl, perPage) {
     if (PG[key] > totalPages) PG[key] = totalPages;
 
     const paginEl = document.getElementById(`${key}-pagination`);
-    if (totalItems <= perPage) { if(paginEl) paginEl.classList.add('hidden'); }
-    else { if(paginEl) paginEl.classList.remove('hidden'); }
+    if (totalItems <= perPage) { if (paginEl) paginEl.classList.add('hidden'); }
+    else { if (paginEl) paginEl.classList.remove('hidden'); }
 
     const from = (PG[key] - 1) * perPage + 1;
     const to = Math.min(PG[key] * perPage, totalItems);
@@ -522,20 +525,20 @@ function buildPagination(key, totalItems, container, infoEl, perPage) {
     if (!container) return;
     let html = '';
     // Prev
-    html += `<button class="pagination-btn arrow" onclick="goPage('${key}',${PG[key]-1})" ${PG[key]===1?'disabled':''}><span class="material-symbols-outlined text-[18px]">chevron_left</span></button>`;
+    html += `<button class="pagination-btn arrow" onclick="goPage('${key}',${PG[key] - 1})" ${PG[key] === 1 ? 'disabled' : ''}><span class="material-symbols-outlined text-[18px]">chevron_left</span></button>`;
     // Pages
     const delta = 1;
     let pages = new Set([1, totalPages]);
-    for (let i = Math.max(2, PG[key]-delta); i <= Math.min(totalPages-1, PG[key]+delta); i++) pages.add(i);
-    const sorted = [...pages].sort((a,b)=>a-b);
+    for (let i = Math.max(2, PG[key] - delta); i <= Math.min(totalPages - 1, PG[key] + delta); i++) pages.add(i);
+    const sorted = [...pages].sort((a, b) => a - b);
     let prev = 0;
     sorted.forEach(p => {
         if (prev && p - prev > 1) html += `<span class="text-gray-400 px-1 text-sm">…</span>`;
-        html += `<button class="pagination-btn ${PG[key]===p?'active':''}" onclick="goPage('${key}',${p})">${p}</button>`;
+        html += `<button class="pagination-btn ${PG[key] === p ? 'active' : ''}" onclick="goPage('${key}',${p})">${p}</button>`;
         prev = p;
     });
     // Next
-    html += `<button class="pagination-btn arrow" onclick="goPage('${key}',${PG[key]+1})" ${PG[key]===totalPages?'disabled':''}><span class="material-symbols-outlined text-[18px]">chevron_right</span></button>`;
+    html += `<button class="pagination-btn arrow" onclick="goPage('${key}',${PG[key] + 1})" ${PG[key] === totalPages ? 'disabled' : ''}><span class="material-symbols-outlined text-[18px]">chevron_right</span></button>`;
     container.innerHTML = html;
 }
 
@@ -550,7 +553,7 @@ window.goPage = (key, page) => {
     if (totalMap[key]) totalMap[key]();
     // Scroll top of list area
     const el = document.getElementById(`view-${key === 'webfeatures' ? 'webfeatures' : key}`);
-    if(el) el.querySelector('.overflow-auto')?.scrollTo(0,0);
+    if (el) el.querySelector('.overflow-auto')?.scrollTo(0, 0);
 };
 
 function getPageSlice(arr, key, perPage) {
@@ -566,13 +569,13 @@ const LEADS_PER_PAGE = 10;
 
 window.renderLeads = () => {
     const txt = document.getElementById('search-lead').value.toLowerCase();
-    const dt  = document.getElementById('filter-lead-date').value;
-    const tp  = document.getElementById('filter-lead-type').value;
+    const dt = document.getElementById('filter-lead-date').value;
+    const tp = document.getElementById('filter-lead-type').value;
 
     const filtered = leadsData.filter(l => {
         const matchTxt = l.name.toLowerCase().includes(txt) || l.phone.includes(txt);
-        const matchDt  = !dt || getISODate(l.createdAt) === dt;
-        const matchTp  = !tp || l.type === tp;
+        const matchDt = !dt || getISODate(l.createdAt) === dt;
+        const matchTp = !tp || l.type === tp;
         return matchTxt && matchDt && matchTp;
     });
 
@@ -590,8 +593,8 @@ window.renderLeads = () => {
     } else {
         tbody.innerHTML = paged.map(l => {
             let badgeClass = 'badge-lead-normal';
-            if(l.type === 'Tiềm năng') badgeClass = 'badge-lead-potential';
-            if(l.type === 'VIP') badgeClass = 'badge-lead-vip';
+            if (l.type === 'Tiềm năng') badgeClass = 'badge-lead-potential';
+            if (l.type === 'VIP') badgeClass = 'badge-lead-vip';
             return `
             <tr class="hover:bg-gray-50/50 dark:hover:bg-slate-800/30 border-b border-gray-100 dark:border-slate-800/50 transition-colors">
                 <td class="py-3 font-semibold text-orange-600 max-w-[150px] sm:max-w-[200px] truncate pl-2">${l.name}</td>
@@ -614,8 +617,8 @@ window.renderLeads = () => {
     } else {
         cardList.innerHTML = paged.map(l => {
             let badgeClass = 'badge-lead-normal';
-            if(l.type === 'Tiềm năng') badgeClass = 'badge-lead-potential';
-            if(l.type === 'VIP') badgeClass = 'badge-lead-vip';
+            if (l.type === 'Tiềm năng') badgeClass = 'badge-lead-potential';
+            if (l.type === 'VIP') badgeClass = 'badge-lead-vip';
             return `
             <div class="mobile-card-item">
                 <span class="card-badge ${badgeClass}">${l.type || 'Thường'}</span>
@@ -639,7 +642,7 @@ window.renderLeads = () => {
         document.getElementById('leads-page-info'), LEADS_PER_PAGE);
 };
 
-['search-lead','filter-lead-date','filter-lead-type'].forEach(id => {
+['search-lead', 'filter-lead-date', 'filter-lead-type'].forEach(id => {
     document.getElementById(id)?.addEventListener('input', () => { PG.leads = 1; renderLeads(); });
 });
 
@@ -651,11 +654,11 @@ const CUSTOMERS_PER_PAGE = 10;
 
 window.renderCustomers = () => {
     const txt = document.getElementById('search-customer').value.toLowerCase();
-    const dt  = document.getElementById('filter-customer-date').value;
+    const dt = document.getElementById('filter-customer-date').value;
 
     const filtered = customersData.filter(c => {
         const matchTxt = c.name.toLowerCase().includes(txt) || (c.phone && c.phone.includes(txt));
-        const matchDt  = !dt || getISODate(c.createdAt) === dt;
+        const matchDt = !dt || getISODate(c.createdAt) === dt;
         return matchTxt && matchDt;
     });
 
@@ -716,7 +719,7 @@ window.renderCustomers = () => {
         document.getElementById('customers-page-info'), CUSTOMERS_PER_PAGE);
 };
 
-['search-customer','filter-customer-date'].forEach(id => {
+['search-customer', 'filter-customer-date'].forEach(id => {
     document.getElementById(id)?.addEventListener('input', () => { PG.customers = 1; renderCustomers(); });
 });
 
@@ -890,7 +893,7 @@ const SERVICES_PER_PAGE = 9; // 3x3 trên desktop
 
 function renderServices() {
     const searchEl = document.getElementById('search-service');
-    const keyword  = searchEl ? searchEl.value.toLowerCase() : '';
+    const keyword = searchEl ? searchEl.value.toLowerCase() : '';
     const filtered = servicesData.filter(s =>
         s.name.toLowerCase().includes(keyword)
     );
@@ -899,7 +902,7 @@ function renderServices() {
     if (badge) badge.textContent = `${filtered.length} dịch vụ`;
 
     const paged = getPageSlice(filtered, 'services', SERVICES_PER_PAGE);
-    const grid  = document.getElementById('services-grid');
+    const grid = document.getElementById('services-grid');
 
     if (filtered.length === 0) {
         grid.innerHTML = `<div class="col-span-full text-center py-12 text-gray-400">
@@ -1459,7 +1462,7 @@ const WEBFEATURES_PER_PAGE = 8; // 4x2 trên desktop
 
 function renderWebfeatures() {
     const searchEl = document.getElementById('search-webfeature');
-    const keyword  = searchEl ? searchEl.value.toLowerCase() : '';
+    const keyword = searchEl ? searchEl.value.toLowerCase() : '';
     const filtered = webfeaturesData.filter(wf =>
         wf.name.toLowerCase().includes(keyword) ||
         (wf.desc || '').toLowerCase().includes(keyword)
@@ -1469,7 +1472,7 @@ function renderWebfeatures() {
     if (badge) badge.textContent = `${filtered.length} tính năng`;
 
     const paged = getPageSlice(filtered, 'webfeatures', WEBFEATURES_PER_PAGE);
-    const grid  = document.getElementById('webfeatures-grid');
+    const grid = document.getElementById('webfeatures-grid');
 
     if (filtered.length === 0) {
         grid.innerHTML = `<div class="col-span-full text-center py-12 text-gray-400">
@@ -1481,8 +1484,8 @@ function renderWebfeatures() {
             <div class="bg-white dark:bg-slate-800 rounded-xl border border-gray-100 dark:border-slate-700 shadow-sm overflow-hidden flex flex-col relative group">
                 <div class="h-36 sm:h-32 bg-gray-100 dark:bg-slate-700 relative flex-shrink-0">
                     ${wf.image
-                        ? `<img src="${wf.image}" class="w-full h-full object-cover" onerror="this.src='https://placehold.co/400x200/e2e8f0/64748b?text=No+Image'">`
-                        : `<div class="flex items-center justify-center h-full text-gray-400"><span class="material-symbols-outlined text-4xl">image</span></div>`}
+                ? `<img src="${wf.image}" class="w-full h-full object-cover" onerror="this.src='https://placehold.co/400x200/e2e8f0/64748b?text=No+Image'">`
+                : `<div class="flex items-center justify-center h-full text-gray-400"><span class="material-symbols-outlined text-4xl">image</span></div>`}
                     <div class="absolute inset-0 bg-black/50 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
                         <button onclick="viewWebfeature('${wf.id}')" class="w-11 h-11 lg:w-9 lg:h-9 rounded-full bg-white text-gray-900 flex items-center justify-center hover:scale-110 shadow"><span class="material-symbols-outlined text-base lg:text-sm">visibility</span></button>
                         ${wf.demo ? `<a href="${wf.demo}" target="_blank" class="w-11 h-11 lg:w-9 lg:h-9 rounded-full bg-blue-500 text-white flex items-center justify-center hover:scale-110 shadow"><span class="material-symbols-outlined text-base lg:text-sm">open_in_new</span></a>` : ''}
@@ -1761,7 +1764,7 @@ const HISTORY_PER_PAGE = 15;
 
 function renderHistory() {
     const searchEl = document.getElementById('search-history');
-    const keyword  = searchEl ? searchEl.value.toLowerCase() : '';
+    const keyword = searchEl ? searchEl.value.toLowerCase() : '';
 
     const sortedHistory = [...historyData].sort((a, b) => {
         const ta = a.createdAt ? (a.createdAt.seconds || a.createdAt) : 0;
@@ -2109,3 +2112,517 @@ function loadAvatarInSettings(avatarUrl, username) {
         if (cache) cache.value = '';
     }
 }
+
+// code mới 23/4/26
+
+// ════════════════════════════════════════════════════════════════
+//  PROJECTS MODULE — inlined từ projects.js, chuyển đổi sang
+//  Firebase Modular SDK v10 (không cần file projects.js riêng)
+// ════════════════════════════════════════════════════════════════
+(function () {
+    'use strict';
+
+    // ── State
+    let projectsData   = [];
+    let filteredData   = [];
+    let currentPage    = 1;
+    const PER_PAGE     = 6;
+    let lightboxImages = [];
+    let lightboxIdx    = 0;
+    let editingId      = null;
+    let pendingImages  = [];
+    let imagesToDelete = [];
+
+    // ── Collection helpers (Modular SDK)
+    function prjColRef()    { return collection(db, 'artifacts', app_id, 'public', 'data', 'projects'); }
+    function prjDocRef(id)  { return doc(db, 'artifacts', app_id, 'public', 'data', 'projects', id); }
+
+    // ── Shorthand helpers
+    function el(id) { return document.getElementById(id); }
+    function toast(msg, type) { if (window.showToast) window.showToast(msg, type || 'success'); }
+    function fmtCurrency(n)  { return window.formatCurrency ? window.formatCurrency(n) : n; }
+    function fmtDate(ts)     { return window.formatDateStr  ? window.formatDateStr(ts)  : ts; }
+    function esc(s) {
+        return String(s || '')
+            .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+            .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    // ── Public init — gọi từ initAppLogic()
+    window.initProjectsModule = function () {
+        startRealtimeListener();
+        bindForm();
+        bindFilters();
+        bindLightboxKeys();
+        bindDropzone();
+    };
+
+    // ════════════════════════════════
+    //  FIRESTORE REALTIME LISTENER
+    // ════════════════════════════════
+    function startRealtimeListener() {
+        onSnapshot(prjColRef(), function (snap) {
+            projectsData = snap.docs.map(function (d) {
+                return Object.assign({ id: d.id }, d.data());
+            });
+            applyFilters();
+        }, function (err) {
+            console.error('[Projects] Firestore error:', err);
+            toast('Lỗi kết nối database: ' + err.message, 'error');
+        });
+    }
+
+    // ════════════════════════════════
+    //  FILTER + SORT + PAGINATE
+    // ════════════════════════════════
+    function applyFilters() {
+        var q      = (el('prj-search')       ? el('prj-search').value       : '').toLowerCase().trim();
+        var sector = (el('prj-filter-sector') ? el('prj-filter-sector').value : '');
+        var minP   = parseFloat(el('prj-filter-min') ? el('prj-filter-min').value : 0) || 0;
+        var rawMax = parseFloat(el('prj-filter-max') ? el('prj-filter-max').value : 0) || 0;
+        var maxP   = rawMax > 0 ? rawMax : Infinity;
+        var sort   = el('prj-sort') ? el('prj-sort').value : 'newest';
+
+        filteredData = projectsData.filter(function (p) {
+            var price = parseFloat(p.price) || 0;
+            return (!q      || (p.name || '').toLowerCase().includes(q))
+                && (!sector || (p.sector || '') === sector)
+                && price >= minP && price <= maxP;
+        });
+
+        filteredData.sort(function (a, b) {
+            var ts = function (x) { return x.createdAt && x.createdAt.seconds ? x.createdAt.seconds : 0; };
+            if (sort === 'newest')     return ts(b) - ts(a);
+            if (sort === 'oldest')     return ts(a) - ts(b);
+            if (sort === 'price_asc')  return (parseFloat(a.price)||0) - (parseFloat(b.price)||0);
+            if (sort === 'price_desc') return (parseFloat(b.price)||0) - (parseFloat(a.price)||0);
+            return 0;
+        });
+
+        var maxPage = Math.max(1, Math.ceil(filteredData.length / PER_PAGE));
+        if (currentPage > maxPage) currentPage = maxPage;
+
+        renderGrid();
+        renderPagination();
+        refreshSectorOptions();
+        updateCounters();
+    }
+
+    function updateCounters() {
+        if (el('prj-count')) el('prj-count').textContent = filteredData.length;
+        if (el('prj-total')) el('prj-total').textContent = projectsData.length;
+    }
+
+    function refreshSectorOptions() {
+        var sel = el('prj-filter-sector');
+        if (!sel) return;
+        var cur  = sel.value;
+        var opts = [];
+        projectsData.forEach(function (p) { if (p.sector && !opts.includes(p.sector)) opts.push(p.sector); });
+        opts.sort();
+        sel.innerHTML = '<option value="">Tất cả ngành nghề</option>'
+            + opts.map(function (s) {
+                return '<option value="' + esc(s) + '"' + (s === cur ? ' selected' : '') + '>' + esc(s) + '</option>';
+            }).join('');
+    }
+
+    // ════════════════════════════════
+    //  RENDER CARDS
+    // ════════════════════════════════
+    function renderGrid() {
+        var grid  = el('projects-grid');
+        var empty = el('prj-empty');
+        if (!grid) return;
+        if (filteredData.length === 0) {
+            grid.innerHTML = '';
+            if (empty) empty.classList.remove('hidden');
+            return;
+        }
+        if (empty) empty.classList.add('hidden');
+        var start = (currentPage - 1) * PER_PAGE;
+        grid.innerHTML = filteredData.slice(start, start + PER_PAGE).map(cardHTML).join('');
+    }
+
+    function cardHTML(p) {
+        var imgs  = Array.isArray(p.images) ? p.images : [];
+        var thumb = imgs[0] || '';
+        var price = parseFloat(p.price) || 0;
+        var desc  = (p.desc || '').length > 100 ? p.desc.slice(0, 100) + '…' : (p.desc || '');
+        var id    = p.id;
+        var name  = esc(p.name || 'Chưa đặt tên');
+
+        return '<div class="prj-card glass rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col border border-gray-200/60 dark:border-slate-700/60 group">'
+            + '<div class="relative overflow-hidden bg-gray-100 dark:bg-slate-800 aspect-video cursor-pointer flex-shrink-0" onclick="window.openProjectDetail(\'' + id + '\')">'
+            + (thumb
+                ? '<img src="' + thumb + '" alt="' + name + '" loading="lazy" class="w-full h-full object-contain transition-transform duration-500 group-hover:scale-105" onerror="this.parentElement.innerHTML=\'<div class=\\\'flex items-center justify-center h-full text-gray-300 dark:text-slate-600\\\'><span class=\\\'material-symbols-outlined text-4xl\\\'>broken_image</span></div>\'">'
+                : '<div class="flex flex-col items-center justify-center h-full text-gray-300 dark:text-slate-600 gap-1"><span class="material-symbols-outlined text-4xl">add_photo_alternate</span><span class="text-xs">Chưa có ảnh</span></div>')
+            + (imgs.length > 1
+                ? '<div class="absolute top-2 right-2 bg-black/50 text-white text-[11px] font-semibold px-2 py-0.5 rounded-full flex items-center gap-1 backdrop-blur-sm"><span class="material-symbols-outlined text-[13px]">photo_library</span>' + imgs.length + '</div>'
+                : '')
+            + '</div>'
+            + '<div class="p-4 flex flex-col flex-1 gap-2.5">'
+            + '<div class="flex items-start gap-2">'
+            + '<h3 class="font-bold text-sm leading-snug flex-1 line-clamp-2 cursor-pointer hover:text-primary transition-colors" onclick="window.openProjectDetail(\'' + id + '\')">' + name + '</h3>'
+            + (p.sector ? '<span class="shrink-0 mt-0.5 text-[10px] font-bold bg-primary/10 text-primary px-2 py-0.5 rounded-full whitespace-nowrap">' + esc(p.sector) + '</span>' : '')
+            + '</div>'
+            + (desc ? '<p class="text-xs text-gray-500 dark:text-gray-400 leading-relaxed line-clamp-2">' + esc(desc) + '</p>' : '')
+            + '<div class="mt-auto pt-3 flex items-center justify-between gap-2 border-t border-gray-100 dark:border-slate-800">'
+            + '<span class="font-bold text-sm text-primary">'
+            + (price > 0 ? fmtCurrency(price) : '<span class="font-normal text-xs text-gray-400">Liên hệ</span>')
+            + '</span>'
+            + '<div class="flex items-center gap-1.5">'
+            + '<button onclick="window.openProjectDetail(\'' + id + '\')" title="Chi tiết" class="w-8 h-8 rounded-lg bg-primary/10 text-primary hover:bg-primary hover:text-white flex items-center justify-center transition-all active:scale-90"><span class="material-symbols-outlined text-[16px]">visibility</span></button>'
+            + '<button onclick="window.editProject(\'' + id + '\')" title="Sửa" class="w-8 h-8 rounded-lg bg-amber-50 dark:bg-amber-900/20 text-amber-600 hover:bg-amber-500 hover:text-white flex items-center justify-center transition-all active:scale-90"><span class="material-symbols-outlined text-[16px]">edit</span></button>'
+            + '<button onclick="window.deleteProject(\'' + id + '\',\'' + name.replace(/'/g, "\\'") + '\')" title="Xoá" class="w-8 h-8 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-500 hover:bg-red-500 hover:text-white flex items-center justify-center transition-all active:scale-90"><span class="material-symbols-outlined text-[16px]">delete</span></button>'
+            + '</div></div></div></div>';
+    }
+
+    // ════════════════════════════════
+    //  PAGINATION
+    // ════════════════════════════════
+    function renderPagination() {
+        var wrap  = el('prj-pagination');
+        if (!wrap) return;
+        var total = Math.ceil(filteredData.length / PER_PAGE);
+        if (total <= 1) { wrap.innerHTML = ''; return; }
+        var range = pageRange(currentPage, total);
+        var html  = '<button class="pagination-btn arrow" onclick="window.prjPage(' + (currentPage - 1) + ')" '
+            + (currentPage === 1 ? 'disabled' : '') + '><span class="material-symbols-outlined text-[18px]">chevron_left</span></button>';
+        range.forEach(function (n) {
+            html += n === '…'
+                ? '<span class="px-1 text-gray-400 self-end pb-1 text-sm">…</span>'
+                : '<button class="pagination-btn' + (n === currentPage ? ' active' : '') + '" onclick="window.prjPage(' + n + ')">' + n + '</button>';
+        });
+        html += '<button class="pagination-btn arrow" onclick="window.prjPage(' + (currentPage + 1) + ')" '
+            + (currentPage === total ? 'disabled' : '') + '><span class="material-symbols-outlined text-[18px]">chevron_right</span></button>';
+        wrap.innerHTML = html;
+    }
+
+    function pageRange(cur, total) {
+        if (total <= 7) { var r = []; for (var i = 1; i <= total; i++) r.push(i); return r; }
+        if (cur <= 4)         return [1, 2, 3, 4, 5, '…', total];
+        if (cur >= total - 3) return [1, '…', total-4, total-3, total-2, total-1, total];
+        return [1, '…', cur-1, cur, cur+1, '…', total];
+    }
+
+    window.prjPage = function (page) {
+        var total = Math.ceil(filteredData.length / PER_PAGE);
+        if (page < 1 || page > total) return;
+        currentPage = page;
+        renderGrid();
+        renderPagination();
+        if (el('view-projects')) el('view-projects').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    };
+
+    // ════════════════════════════════
+    //  CHI TIẾT + LIGHTBOX
+    // ════════════════════════════════
+    window.openProjectDetail = function (id) {
+        var p = projectsData.find(function (x) { return x.id === id; });
+        if (!p) return;
+
+        lightboxImages = Array.isArray(p.images) ? p.images : [];
+        lightboxIdx    = 0;
+
+        setText('pdm-name',     p.name    || '—');
+        setText('pdm-sector',   p.sector  || '—');
+        setText('pdm-price',    p.price   ? fmtCurrency(p.price) : 'Liên hệ');
+        setText('pdm-desc',     p.desc    || 'Không có mô tả.');
+        setText('pdm-created',  fmtDate(p.createdAt));
+        setText('pdm-updated',  fmtDate(p.updatedAt));
+        setText('pdm-imgcount', lightboxImages.length + ' ảnh');
+
+        var editBtn = el('pdm-edit-btn');
+        if (editBtn) editBtn.onclick = function () { prjCloseModal('project-detail-modal'); window.editProject(id); };
+
+        updateLightboxImg();
+
+        var strip = el('pdm-thumbs');
+        if (strip) {
+            strip.innerHTML = lightboxImages.map(function (url, i) {
+                return '<button onclick="window.prjLbGo(' + i + ')" data-lbthumb="' + i
+                    + '" class="prj-thumb shrink-0 w-14 h-14 rounded-lg overflow-hidden border-2 transition-all '
+                    + (i === 0 ? 'border-primary' : 'border-transparent opacity-50 hover:opacity-100')
+                    + ' bg-gray-100 dark:bg-slate-800"><img src="' + url + '" class="w-full h-full object-cover" loading="lazy"></button>';
+            }).join('');
+        }
+
+        var multi = lightboxImages.length > 1;
+        ['pdm-nav-prev','pdm-nav-next','pdm-counter','pdm-thumbs-wrap'].forEach(function (eid) {
+            var e = el(eid); if (!e) return;
+            if (multi) e.classList.remove('hidden'); else e.classList.add('hidden');
+        });
+
+        window.openModal('project-detail-modal');
+    };
+
+    function setText(id, val) { var e = el(id); if (e) e.textContent = val; }
+
+    function updateLightboxImg() {
+        var img   = el('pdm-main-img');
+        var noImg = el('pdm-no-img');
+        var cnt   = el('pdm-counter');
+
+        if (!lightboxImages.length) {
+            if (img)   img.classList.add('hidden');
+            if (noImg) noImg.classList.remove('hidden');
+            return;
+        }
+        if (noImg) noImg.classList.add('hidden');
+        if (img) {
+            img.style.opacity = '0';
+            img.src = lightboxImages[lightboxIdx];
+            img.onload  = function () { img.style.opacity = '1'; };
+            img.onerror = function () { img.style.opacity = '1'; };
+            img.classList.remove('hidden');
+        }
+        if (cnt) cnt.textContent = (lightboxIdx + 1) + ' / ' + lightboxImages.length;
+
+        document.querySelectorAll('[data-lbthumb]').forEach(function (e) {
+            var i = parseInt(e.getAttribute('data-lbthumb'));
+            e.classList.toggle('border-primary',     i === lightboxIdx);
+            e.classList.toggle('opacity-50',         i !== lightboxIdx);
+            e.classList.toggle('border-transparent', i !== lightboxIdx);
+        });
+    }
+
+    window.prjLbGo = function (idx) {
+        if (!lightboxImages.length) return;
+        lightboxIdx = ((idx % lightboxImages.length) + lightboxImages.length) % lightboxImages.length;
+        updateLightboxImg();
+    };
+
+    function bindLightboxKeys() {
+        document.addEventListener('keydown', function (e) {
+            var m = el('project-detail-modal');
+            if (!m || m.classList.contains('hidden')) return;
+            if (e.key === 'ArrowLeft')  window.prjLbGo(lightboxIdx - 1);
+            if (e.key === 'ArrowRight') window.prjLbGo(lightboxIdx + 1);
+            if (e.key === 'Escape')     prjCloseModal('project-detail-modal');
+        });
+    }
+
+    // ════════════════════════════════
+    //  MODAL THÊM / SỬA
+    // ════════════════════════════════
+    window.openAddProject = function () {
+        editingId = null; pendingImages = []; imagesToDelete = [];
+        resetForm();
+        setText('project-modal-title', 'Thêm Dự Án Mới');
+        window.openModal('project-modal');
+    };
+
+    window.editProject = function (id) {
+        var p = projectsData.find(function (x) { return x.id === id; });
+        if (!p) return;
+        editingId = id; imagesToDelete = [];
+        if (el('prj-form-name'))   el('prj-form-name').value   = p.name   || '';
+        if (el('prj-form-sector')) el('prj-form-sector').value = p.sector || '';
+        if (el('prj-form-price'))  el('prj-form-price').value  = p.price  || '';
+        if (el('prj-form-desc'))   el('prj-form-desc').value   = p.desc   || '';
+        var imgs = Array.isArray(p.images) ? p.images : [];
+        pendingImages = imgs.map(function (url) { return { isExisting: true, storageUrl: url, previewUrl: url }; });
+        renderPreviews();
+        setText('project-modal-title', 'Sửa Dự Án');
+        window.openModal('project-modal');
+    };
+
+    function resetForm() {
+        ['prj-form-name','prj-form-sector','prj-form-price','prj-form-desc'].forEach(function (id) {
+            if (el(id)) el(id).value = '';
+        });
+        pendingImages = [];
+        renderPreviews();
+    }
+
+    // ════════════════════════════════
+    //  IMAGE DROPZONE
+    // ════════════════════════════════
+    function bindDropzone() {
+        var zone  = el('prj-dropzone');
+        var input = el('prj-img-input');
+        if (!zone || !input) return;
+        zone.addEventListener('click',     function () { input.click(); });
+        zone.addEventListener('dragover',  function (e) { e.preventDefault(); zone.classList.add('border-primary', 'bg-primary/5'); });
+        zone.addEventListener('dragleave', function ()  { zone.classList.remove('border-primary', 'bg-primary/5'); });
+        zone.addEventListener('drop', function (e) {
+            e.preventDefault();
+            zone.classList.remove('border-primary', 'bg-primary/5');
+            addFiles(Array.from(e.dataTransfer.files));
+        });
+        input.addEventListener('change', function () { addFiles(Array.from(input.files)); input.value = ''; });
+    }
+
+    function addFiles(files) {
+        files.filter(function (f) { return f.type.startsWith('image/'); }).forEach(function (file) {
+            if (file.size > 5 * 1024 * 1024) { toast('"' + file.name + '" vượt 5MB', 'error'); return; }
+            var r = new FileReader();
+            r.onload = function (e) {
+                pendingImages.push({ file: file, previewUrl: e.target.result, isExisting: false });
+                renderPreviews();
+            };
+            r.readAsDataURL(file);
+        });
+    }
+
+    function renderPreviews() {
+        var wrap = el('prj-img-previews');
+        if (!wrap) return;
+        if (!pendingImages.length) {
+            wrap.innerHTML = '<p class="text-xs text-gray-400 text-center py-3 col-span-full">Chưa có ảnh nào — kéo thả hoặc nhấn chọn</p>';
+            return;
+        }
+        wrap.innerHTML = pendingImages.map(function (img, i) {
+            return '<div class="relative group/img rounded-xl overflow-hidden border border-gray-200 dark:border-slate-700 aspect-square bg-gray-50 dark:bg-slate-800">'
+                + '<img src="' + img.previewUrl + '" class="w-full h-full object-contain" loading="lazy">'
+                + '<div class="absolute inset-0 bg-black/0 group-hover/img:bg-black/50 transition-all flex items-center justify-center">'
+                + '<button type="button" onclick="window.prjRemoveImg(' + i + ')" class="opacity-0 group-hover/img:opacity-100 w-8 h-8 rounded-full bg-red-500 hover:bg-red-600 text-white flex items-center justify-center transition-all active:scale-90"><span class="material-symbols-outlined text-[15px]">delete</span></button>'
+                + '</div>'
+                + (i === 0 ? '<span class="absolute top-1.5 left-1.5 bg-primary text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full">ĐẠI DIỆN</span>' : '')
+                + '</div>';
+        }).join('');
+    }
+
+    window.prjRemoveImg = function (idx) {
+        var img = pendingImages[idx];
+        if (img && img.isExisting && img.storageUrl && img.storageUrl.startsWith('https://')) {
+            imagesToDelete.push(img.storageUrl);
+        }
+        pendingImages.splice(idx, 1);
+        renderPreviews();
+    };
+
+    // ════════════════════════════════
+    //  LƯU DỰ ÁN
+    // ════════════════════════════════
+    function bindForm() {
+        var form = el('project-form');
+        if (!form) return;
+        form.addEventListener('submit', function (e) { e.preventDefault(); e.stopPropagation(); saveProject(); });
+    }
+
+    function saveProject() {
+        var name   = (el('prj-form-name')   ? el('prj-form-name').value   : '').trim();
+        var sector = (el('prj-form-sector') ? el('prj-form-sector').value : '').trim();
+        var price  = parseFloat(el('prj-form-price') ? el('prj-form-price').value : 0) || 0;
+        var desc   = (el('prj-form-desc')   ? el('prj-form-desc').value   : '').trim();
+        if (!name) { toast('Vui lòng nhập tên dự án!', 'error'); return; }
+
+        var btn = el('prj-save-btn');
+        if (btn) { btn.disabled = true; btn.innerHTML = '<span class="material-symbols-outlined text-sm animate-spin mr-1">refresh</span> Đang lưu...'; }
+
+        uploadPendingImages(function (urls) {
+            // Xóa ảnh cũ trên Storage
+            var delPromises = imagesToDelete.map(function (url) {
+                try { return deleteObject(sRef(storage, url)).catch(function () {}); } catch (e) { return Promise.resolve(); }
+            });
+
+            Promise.all(delPromises).then(function () {
+                var payload = { name: name, sector: sector, price: price, desc: desc, images: urls, updatedAt: serverTimestamp() };
+                var done = function () {
+                    if (btn) { btn.disabled = false; btn.innerHTML = '<span class="material-symbols-outlined text-sm mr-1">save</span> Lưu dự án'; }
+                };
+                var savePromise;
+                if (editingId) {
+                    savePromise = updateDoc(prjDocRef(editingId), payload).then(function () { toast('Đã cập nhật dự án!'); });
+                } else {
+                    payload.createdAt = serverTimestamp();
+                    savePromise = addDoc(prjColRef(), payload).then(function () { toast('Đã thêm dự án mới!'); });
+                }
+                savePromise
+                    .then(function () { done(); prjCloseModal('project-modal'); })
+                    .catch(function (err) { console.error(err); toast('Lỗi lưu: ' + err.message, 'error'); done(); });
+            });
+        }, function (err) {
+            toast('Lỗi upload ảnh: ' + err.message, 'error');
+            if (btn) { btn.disabled = false; btn.innerHTML = '<span class="material-symbols-outlined text-sm mr-1">save</span> Lưu dự án'; }
+        });
+    }
+
+    function uploadPendingImages(onDone, onError) {
+        var result  = new Array(pendingImages.length);
+        var newImgs = [];
+
+        pendingImages.forEach(function (img, i) {
+            if (img.isExisting) result[i] = img.storageUrl;
+            else newImgs.push({ img: img, pos: i });
+        });
+
+        if (newImgs.length === 0) { onDone(result.filter(Boolean)); return; }
+
+        var uploaded = 0;
+        var failed   = false;
+
+        newImgs.forEach(function (item) {
+            var path    = 'projects/' + app_id + '/' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
+            var fileRef = sRef(storage, path);
+            uploadString(fileRef, item.img.previewUrl, 'data_url')
+                .then(function () { return getDownloadURL(fileRef); })
+                .then(function (url) {
+                    result[item.pos] = url;
+                    uploaded++;
+                    if (uploaded === newImgs.length && !failed) onDone(result.filter(Boolean));
+                })
+                .catch(function (err) { if (!failed) { failed = true; onError(err); } });
+        });
+    }
+
+    // ════════════════════════════════
+    //  XOÁ DỰ ÁN
+    // ════════════════════════════════
+    window.deleteProject = function (id, name) {
+        if (!confirm('Xác nhận xoá dự án:\n"' + name + '"?\n\nHành động này không thể hoàn tác.')) return;
+        var p    = projectsData.find(function (x) { return x.id === id; });
+        var imgs = (p && Array.isArray(p.images)) ? p.images : [];
+        var delImgs = imgs
+            .filter(function (u) { return u && u.startsWith('https://'); })
+            .map(function (url) {
+                try { return deleteObject(sRef(storage, url)).catch(function () {}); } catch (e) { return Promise.resolve(); }
+            });
+        Promise.all(delImgs)
+            .then(function () { return deleteDoc(prjDocRef(id)); })
+            .then(function () { toast('Đã xoá dự án!'); })
+            .catch(function (err) { toast('Lỗi xoá: ' + err.message, 'error'); });
+    };
+
+    // ════════════════════════════════
+    //  FILTER EVENTS
+    // ════════════════════════════════
+    function bindFilters() {
+        ['prj-search','prj-filter-sector','prj-filter-min','prj-filter-max','prj-sort'].forEach(function (id) {
+            var e = el(id); if (!e) return;
+            var handler = function () { currentPage = 1; applyFilters(); };
+            e.addEventListener('input',  handler);
+            e.addEventListener('change', handler);
+        });
+    }
+
+    window.resetProjectFilters = function () {
+        ['prj-search','prj-filter-min','prj-filter-max'].forEach(function (id) { if (el(id)) el(id).value = ''; });
+        if (el('prj-filter-sector')) el('prj-filter-sector').value = '';
+        if (el('prj-sort'))          el('prj-sort').value = 'newest';
+        currentPage = 1;
+        applyFilters();
+        toast('Đã đặt lại bộ lọc', 'info');
+    };
+
+    // ════════════════════════════════
+    //  MODAL CLOSE HELPER
+    // ════════════════════════════════
+    function prjCloseModal(id) {
+        var modal   = el(id);
+        var content = el(id + '-content');
+        if (!modal) return;
+        modal.classList.add('opacity-0');
+        if (content) content.classList.add('scale-95');
+        setTimeout(function () {
+            modal.classList.add('hidden');
+            if (id === 'project-modal' && typeof window.navigate === 'function') {
+                window.navigate('projects');
+            }
+        }, 200);
+    }
+
+    window.prjCloseModal = prjCloseModal;
+
+}());
