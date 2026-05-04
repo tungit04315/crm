@@ -353,7 +353,7 @@ body {
 /* ==========================================
            [ADD CSS] MOBILE OPTIMIZATION OVERRIDES
            ========================================== */
-@media (max-width: 1023px) {
+@media (max-width: 1920px) {
 
     /* Tăng kích thước vùng chạm (Thumb-friendly) */
     button,
@@ -375,6 +375,7 @@ body {
         overflow-x: auto;
         -webkit-overflow-scrolling: touch;
         padding-bottom: 10px;
+        min-height: 1000px;
     }
 
     /* Đảm bảo modal không bị tràn sát viền màn hình */
