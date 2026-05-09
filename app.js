@@ -60,6 +60,20 @@ let isLoginMode = true;
 
 const getCollectionPath = (name) => collection(db, 'artifacts', app_id, 'public', 'data', name);
 
+// Global helper: cho phép cb-module.js (regular script, ngoài module scope)
+// lưu lịch sử xuất tài liệu vào Firestore export_history
+window.saveExportHistory = async (name, htmlContent) => {
+    try {
+        await addDoc(getCollectionPath('export_history'), {
+            name,
+            htmlContent: htmlContent || '',
+            createdAt: new Date()
+        });
+    } catch (e) {
+        console.error('[saveExportHistory]', e);
+    }
+};
+
 // Utilities
 window.showToast = (msg, type = 'success') => {
     const toast = document.createElement('div');
@@ -265,7 +279,7 @@ window.toggleMobileMenu = () => {
     }
 };
 
-const views = ['dashboard', 'leads', 'customers', 'services', 'webfeatures', 'projects', 'jobs', 'quotes', 'history', 'settings']; // ADDED 'jobs'
+const views = ['dashboard', 'leads', 'customers', 'services', 'webfeatures', 'projects', 'jobs', 'quotes', 'history', 'settings', 'contract-builder']; // ADDED 'jobs'
 
 const originalNavigate = (target) => {
     views.forEach(v => {
@@ -280,7 +294,7 @@ const originalNavigate = (target) => {
     const tgtEl = document.getElementById(`view-${target}`);
     if (tgtEl) tgtEl.classList.remove('hidden');
 
-    const titles = { dashboard: 'Tổng quan', leads: 'Quản lý Lead', customers: 'Quản lý Khách hàng', services: 'Dịch vụ', webfeatures: 'Tính năng Website', projects: 'Quản lý Dự Án', jobs: 'Quy trình & Công việc', quotes: 'Báo giá & Hợp đồng', history: 'Lịch sử xuất', settings: 'Cài đặt hệ thống' };
+    const titles = { dashboard: 'Tổng quan', leads: 'Quản lý Lead', customers: 'Quản lý Khách hàng', services: 'Dịch vụ', webfeatures: 'Tính năng Website', projects: 'Quản lý Dự Án', jobs: 'Quy trình & Công việc', quotes: 'Báo giá & Hợp đồng', history: 'Lịch sử xuất', settings: 'Cài đặt hệ thống', 'contract-builder': 'Contract Builder' };
     document.getElementById('page-title').innerText = titles[target] || 'CRM';
 
     if (window.innerWidth < 1024) {
@@ -323,7 +337,7 @@ function initAppLogic() {
     //unsubscribes.push(onSnapshot(query(getCollectionPath('leads')), snap => { leadsData = snap.docs.map(d => ({ id: d.id, ...d.data() })); renderLeads(); updateDashboardStats(); updateQuoteCustomerSelect(); }));
     unsubscribes.push(onSnapshot(query(getCollectionPath('leads')), snap => { leadsData = snap.docs.map(d => ({ id: d.id, ...d.data() })); renderLeads(); updateDashboardStats(); updateQuoteCustomerSelect(); if (myChart) initChart(); }));
     //unsubscribes.push(onSnapshot(query(getCollectionPath('customers')), snap => { customersData = snap.docs.map(d => ({ id: d.id, ...d.data() })); renderCustomers(); updateDashboardStats(); updateQuoteCustomerSelect(); updateJobCustomerSelect(); }));
-    unsubscribes.push(onSnapshot(query(getCollectionPath('customers')), snap => { customersData = snap.docs.map(d => ({ id: d.id, ...d.data() })); renderCustomers(); updateDashboardStats(); updateQuoteCustomerSelect(); updateJobCustomerSelect(); if (myChart) initChart(); }));
+    unsubscribes.push(onSnapshot(query(getCollectionPath('customers')), snap => { customersData = snap.docs.map(d => ({ id: d.id, ...d.data() })); window.customersData = customersData; renderCustomers(); updateDashboardStats(); updateQuoteCustomerSelect(); updateJobCustomerSelect(); if (myChart) initChart(); }));
     unsubscribes.push(onSnapshot(query(getCollectionPath('services')), snap => { servicesData = snap.docs.map(d => ({ id: d.id, ...d.data() })); renderServices(); updateDashboardStats(); updateWorkflowServiceSelect(); }));
     unsubscribes.push(onSnapshot(query(getCollectionPath('webfeatures')), snap => { webfeaturesData = snap.docs.map(d => ({ id: d.id, ...d.data() })); renderWebfeatures(); updateDashboardStats(); }));
     unsubscribes.push(onSnapshot(query(getCollectionPath('templates')), snap => { templatesData = snap.docs.map(d => ({ id: d.id, ...d.data() })); renderTemplatesList(); updateTemplateSelector(); updateDashboardStats(); }));
@@ -436,74 +450,6 @@ function setupImageDropzone(prefix) {
 function loadExistingImageToZone(prefix, b64) { document.getElementById(`${prefix}-data`).value = b64; const p = document.getElementById(`${prefix}-preview`); p.src = b64; p.classList.remove('hidden'); document.getElementById(`${prefix}-placeholder`).classList.add('hidden'); document.getElementById(`${prefix}-clear`).classList.remove('hidden'); }
 
 
-// --- LEADS LOGIC ---
-// window.renderLeads = () => {
-//     const txt = document.getElementById('search-lead').value.toLowerCase();
-//     const dt = document.getElementById('filter-lead-date').value;
-//     const tp = document.getElementById('filter-lead-type').value;
-
-//     const filtered = leadsData.filter(l => {
-//         const matchTxt = l.name.toLowerCase().includes(txt) || l.phone.includes(txt);
-//         const matchDt = !dt || getISODate(l.createdAt) === dt;
-//         const matchTp = !tp || l.type === tp;
-//         return matchTxt && matchDt && matchTp;
-//     });
-
-//     const tbody = document.getElementById('leads-list');
-//     if (filtered.length === 0) return tbody.innerHTML = `<tr><td colspan="5" class="py-6 text-center text-gray-500">Chưa có Lead phù hợp</td></tr>`;
-
-//     tbody.innerHTML = filtered.map(l => {
-//         let badgeClass = 'badge-lead-normal';
-//         if (l.type === 'Tiềm năng') badgeClass = 'badge-lead-potential';
-//         if (l.type === 'VIP') badgeClass = 'badge-lead-vip';
-
-//         return `
-//                 <tr class="hover:bg-gray-50/50 dark:hover:bg-slate-800/30 border-b border-gray-100 dark:border-slate-800/50 transition-colors">
-//                     <td class="py-3 font-semibold text-orange-600 max-w-[150px] sm:max-w-[200px] truncate pl-2">${l.name}</td>
-//                     <td class="py-3"><div class="text-xs font-mono font-bold">${l.phone}</div><div class="text-[11px] text-gray-500 max-w-[120px] truncate">${l.email || ''}</div></td>
-//                     <td class="py-3 text-center"><span class="px-2 py-1 text-[10px] uppercase font-bold rounded-full whitespace-nowrap ${badgeClass}">${l.type}</span></td>
-//                     <td class="py-3"><div class="text-xs font-medium max-w-[100px] truncate">${l.source || 'N/A'}</div><div class="text-[10px] text-gray-400 whitespace-nowrap">${formatDateStr(l.createdAt)}</div></td>
-//                     <td class="py-3 text-right pr-2 whitespace-nowrap">
-//                         <button onclick="convertLeadToCustomer('${l.id}')" class="p-2 lg:p-1 text-green-500 hover:text-green-600 mr-1 bg-green-50 lg:bg-transparent rounded" title="Chuyển sang Khách Hàng"><span class="material-symbols-outlined text-base lg:text-sm">person_add</span></button>
-//                         <button onclick='editLead(${JSON.stringify(l).replace(/'/g, "&#39;")})' class="p-2 lg:p-1 text-gray-400 hover:text-primary mr-1 bg-gray-100 lg:bg-transparent rounded" title="Sửa"><span class="material-symbols-outlined text-base lg:text-sm">edit</span></button>
-//                         <button onclick="deleteLead('${l.id}')" class="p-2 lg:p-1 text-gray-400 hover:text-red-500 bg-gray-100 lg:bg-transparent rounded" title="Xóa"><span class="material-symbols-outlined text-base lg:text-sm">delete</span></button>
-//                     </td>
-//                 </tr>
-//             `}).join('');
-// };
-// ['search-lead', 'filter-lead-date', 'filter-lead-type'].forEach(id => document.getElementById(id).addEventListener('input', renderLeads));
-
-// document.getElementById('lead-form').addEventListener('submit', async (e) => {
-//     e.preventDefault();
-//     const id = document.getElementById('lead-id').value;
-//     const data = {
-//         name: document.getElementById('lead-name').value.trim(),
-//         phone: document.getElementById('lead-phone').value.trim(),
-//         email: document.getElementById('lead-email').value.trim(),
-//         source: document.getElementById('lead-source').value.trim(),
-//         type: document.getElementById('lead-type').value,
-//         note: document.getElementById('lead-note').value.trim(),
-//     };
-//     try {
-//         if (id) await updateDoc(doc(db, 'artifacts', app_id, 'public', 'data', 'leads', id), data);
-//         else await addDoc(getCollectionPath('leads'), { ...data, createdAt: new Date() });
-//         showToast(id ? 'Cập nhật Lead thành công' : 'Đã thêm Lead mới');
-//         closeModal('lead-modal');
-//     } catch (err) { showToast('Lỗi: ' + err.message, 'error'); }
-// });
-
-// window.editLead = (data) => openModal('lead-modal', data);
-// window.deleteLead = async (id) => { if (confirm('Xóa Lead này?')) await deleteDoc(doc(db, 'artifacts', app_id, 'public', 'data', 'leads', id)); };
-
-// window.convertLeadToCustomer = (leadId) => {
-//     const lead = leadsData.find(l => l.id === leadId);
-//     if (!lead) return;
-//     openModal('customer-modal', {
-//         name: lead.name, phone: lead.phone, email: lead.email, source: lead.source, note: lead.note, 'convert-lead-id': lead.id
-//     });
-//     showToast('Vui lòng bổ sung thêm thông tin để hoàn tất chuyển đổi', 'info');
-// };
-
 // ==============================================
 // PAGINATION ENGINE (dùng chung cho tất cả)
 // ==============================================
@@ -565,7 +511,7 @@ function getPageSlice(arr, key, perPage) {
 // ==============================================
 // LEADS LOGIC — với responsive card + pagination
 // ==============================================
-const LEADS_PER_PAGE = 10;
+const LEADS_PER_PAGE = 6;
 
 window.renderLeads = () => {
     const txt = document.getElementById('search-lead').value.toLowerCase();
@@ -699,7 +645,7 @@ window.convertLeadToCustomer = (leadId) => {
 // ==============================================
 // CUSTOMERS LOGIC — với responsive card + pagination
 // ==============================================
-const CUSTOMERS_PER_PAGE = 10;
+const CUSTOMERS_PER_PAGE = 6;
 
 window.renderCustomers = () => {
     const txt = document.getElementById('search-customer').value.toLowerCase();
@@ -1223,7 +1169,7 @@ window.renderJobsKanban = () => {
 
     const prevCol = _kanbanCols[_kanbanSlideIdx - 1];
     const nextCol = _kanbanCols[_kanbanSlideIdx + 1];
-    const curCol  = _kanbanCols[_kanbanSlideIdx];
+    const curCol = _kanbanCols[_kanbanSlideIdx];
     const curCount = _kanbanColCounts[curCol.id] || 0;
 
     container.innerHTML = `
@@ -2234,29 +2180,29 @@ function loadAvatarInSettings(avatarUrl, username) {
     'use strict';
 
     // ── State
-    let projectsData   = [];
-    let filteredData   = [];
-    let currentPage    = 1;
-    const PER_PAGE     = 6;
+    let projectsData = [];
+    let filteredData = [];
+    let currentPage = 1;
+    const PER_PAGE = 6;
     let lightboxImages = [];
-    let lightboxIdx    = 0;
-    let editingId      = null;
-    let pendingImages  = [];
+    let lightboxIdx = 0;
+    let editingId = null;
+    let pendingImages = [];
     let imagesToDelete = [];
 
     // ── Collection helpers (Modular SDK)
-    function prjColRef()    { return collection(db, 'artifacts', app_id, 'public', 'data', 'projects'); }
-    function prjDocRef(id)  { return doc(db, 'artifacts', app_id, 'public', 'data', 'projects', id); }
+    function prjColRef() { return collection(db, 'artifacts', app_id, 'public', 'data', 'projects'); }
+    function prjDocRef(id) { return doc(db, 'artifacts', app_id, 'public', 'data', 'projects', id); }
 
     // ── Shorthand helpers
     function el(id) { return document.getElementById(id); }
     function toast(msg, type) { if (window.showToast) window.showToast(msg, type || 'success'); }
-    function fmtCurrency(n)  { return window.formatCurrency ? window.formatCurrency(n) : n; }
-    function fmtDate(ts)     { return window.formatDateStr  ? window.formatDateStr(ts)  : ts; }
+    function fmtCurrency(n) { return window.formatCurrency ? window.formatCurrency(n) : n; }
+    function fmtDate(ts) { return window.formatDateStr ? window.formatDateStr(ts) : ts; }
     function esc(s) {
         return String(s || '')
-            .replace(/&/g,'&amp;').replace(/</g,'&lt;')
-            .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     }
 
     // ── Public init — gọi từ initAppLogic()
@@ -2287,26 +2233,26 @@ function loadAvatarInSettings(avatarUrl, username) {
     //  FILTER + SORT + PAGINATE
     // ════════════════════════════════
     function applyFilters() {
-        var q      = (el('prj-search')       ? el('prj-search').value       : '').toLowerCase().trim();
+        var q = (el('prj-search') ? el('prj-search').value : '').toLowerCase().trim();
         var sector = (el('prj-filter-sector') ? el('prj-filter-sector').value : '');
-        var minP   = parseFloat(el('prj-filter-min') ? el('prj-filter-min').value : 0) || 0;
+        var minP = parseFloat(el('prj-filter-min') ? el('prj-filter-min').value : 0) || 0;
         var rawMax = parseFloat(el('prj-filter-max') ? el('prj-filter-max').value : 0) || 0;
-        var maxP   = rawMax > 0 ? rawMax : Infinity;
-        var sort   = el('prj-sort') ? el('prj-sort').value : 'newest';
+        var maxP = rawMax > 0 ? rawMax : Infinity;
+        var sort = el('prj-sort') ? el('prj-sort').value : 'newest';
 
         filteredData = projectsData.filter(function (p) {
             var price = parseFloat(p.price) || 0;
-            return (!q      || (p.name || '').toLowerCase().includes(q))
+            return (!q || (p.name || '').toLowerCase().includes(q))
                 && (!sector || (p.sector || '') === sector)
                 && price >= minP && price <= maxP;
         });
 
         filteredData.sort(function (a, b) {
             var ts = function (x) { return x.createdAt && x.createdAt.seconds ? x.createdAt.seconds : 0; };
-            if (sort === 'newest')     return ts(b) - ts(a);
-            if (sort === 'oldest')     return ts(a) - ts(b);
-            if (sort === 'price_asc')  return (parseFloat(a.price)||0) - (parseFloat(b.price)||0);
-            if (sort === 'price_desc') return (parseFloat(b.price)||0) - (parseFloat(a.price)||0);
+            if (sort === 'newest') return ts(b) - ts(a);
+            if (sort === 'oldest') return ts(a) - ts(b);
+            if (sort === 'price_asc') return (parseFloat(a.price) || 0) - (parseFloat(b.price) || 0);
+            if (sort === 'price_desc') return (parseFloat(b.price) || 0) - (parseFloat(a.price) || 0);
             return 0;
         });
 
@@ -2327,7 +2273,7 @@ function loadAvatarInSettings(avatarUrl, username) {
     function refreshSectorOptions() {
         var sel = el('prj-filter-sector');
         if (!sel) return;
-        var cur  = sel.value;
+        var cur = sel.value;
         var opts = [];
         projectsData.forEach(function (p) { if (p.sector && !opts.includes(p.sector)) opts.push(p.sector); });
         opts.sort();
@@ -2341,7 +2287,7 @@ function loadAvatarInSettings(avatarUrl, username) {
     //  RENDER CARDS
     // ════════════════════════════════
     function renderGrid() {
-        var grid  = el('projects-grid');
+        var grid = el('projects-grid');
         var empty = el('prj-empty');
         if (!grid) return;
         if (filteredData.length === 0) {
@@ -2355,12 +2301,12 @@ function loadAvatarInSettings(avatarUrl, username) {
     }
 
     function cardHTML(p) {
-        var imgs  = Array.isArray(p.images) ? p.images : [];
+        var imgs = Array.isArray(p.images) ? p.images : [];
         var thumb = imgs[0] || '';
         var price = parseFloat(p.price) || 0;
-        var desc  = (p.desc || '').length > 100 ? p.desc.slice(0, 100) + '…' : (p.desc || '');
-        var id    = p.id;
-        var name  = esc(p.name || 'Chưa đặt tên');
+        var desc = (p.desc || '').length > 100 ? p.desc.slice(0, 100) + '…' : (p.desc || '');
+        var id = p.id;
+        var name = esc(p.name || 'Chưa đặt tên');
 
         return '<div class="prj-card glass rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col border border-gray-200/60 dark:border-slate-700/60 group">'
             + '<div class="relative overflow-hidden bg-gray-100 dark:bg-slate-800 aspect-video cursor-pointer flex-shrink-0" onclick="window.openProjectDetail(\'' + id + '\')">'
@@ -2392,12 +2338,12 @@ function loadAvatarInSettings(avatarUrl, username) {
     //  PAGINATION
     // ════════════════════════════════
     function renderPagination() {
-        var wrap  = el('prj-pagination');
+        var wrap = el('prj-pagination');
         if (!wrap) return;
         var total = Math.ceil(filteredData.length / PER_PAGE);
         if (total <= 1) { wrap.innerHTML = ''; return; }
         var range = pageRange(currentPage, total);
-        var html  = '<button class="pagination-btn arrow" onclick="window.prjPage(' + (currentPage - 1) + ')" '
+        var html = '<button class="pagination-btn arrow" onclick="window.prjPage(' + (currentPage - 1) + ')" '
             + (currentPage === 1 ? 'disabled' : '') + '><span class="material-symbols-outlined text-[18px]">chevron_left</span></button>';
         range.forEach(function (n) {
             html += n === '…'
@@ -2411,9 +2357,9 @@ function loadAvatarInSettings(avatarUrl, username) {
 
     function pageRange(cur, total) {
         if (total <= 7) { var r = []; for (var i = 1; i <= total; i++) r.push(i); return r; }
-        if (cur <= 4)         return [1, 2, 3, 4, 5, '…', total];
-        if (cur >= total - 3) return [1, '…', total-4, total-3, total-2, total-1, total];
-        return [1, '…', cur-1, cur, cur+1, '…', total];
+        if (cur <= 4) return [1, 2, 3, 4, 5, '…', total];
+        if (cur >= total - 3) return [1, '…', total - 4, total - 3, total - 2, total - 1, total];
+        return [1, '…', cur - 1, cur, cur + 1, '…', total];
     }
 
     window.prjPage = function (page) {
@@ -2433,14 +2379,14 @@ function loadAvatarInSettings(avatarUrl, username) {
         if (!p) return;
 
         lightboxImages = Array.isArray(p.images) ? p.images : [];
-        lightboxIdx    = 0;
+        lightboxIdx = 0;
 
-        setText('pdm-name',     p.name    || '—');
-        setText('pdm-sector',   p.sector  || '—');
-        setText('pdm-price',    p.price   ? fmtCurrency(p.price) : 'Liên hệ');
-        setText('pdm-desc',     p.desc    || 'Không có mô tả.');
-        setText('pdm-created',  fmtDate(p.createdAt));
-        setText('pdm-updated',  fmtDate(p.updatedAt));
+        setText('pdm-name', p.name || '—');
+        setText('pdm-sector', p.sector || '—');
+        setText('pdm-price', p.price ? fmtCurrency(p.price) : 'Liên hệ');
+        setText('pdm-desc', p.desc || 'Không có mô tả.');
+        setText('pdm-created', fmtDate(p.createdAt));
+        setText('pdm-updated', fmtDate(p.updatedAt));
         setText('pdm-imgcount', lightboxImages.length + ' ảnh');
 
         var editBtn = el('pdm-edit-btn');
@@ -2459,7 +2405,7 @@ function loadAvatarInSettings(avatarUrl, username) {
         }
 
         var multi = lightboxImages.length > 1;
-        ['pdm-nav-prev','pdm-nav-next','pdm-counter','pdm-thumbs-wrap'].forEach(function (eid) {
+        ['pdm-nav-prev', 'pdm-nav-next', 'pdm-counter', 'pdm-thumbs-wrap'].forEach(function (eid) {
             var e = el(eid); if (!e) return;
             if (multi) e.classList.remove('hidden'); else e.classList.add('hidden');
         });
@@ -2470,12 +2416,12 @@ function loadAvatarInSettings(avatarUrl, username) {
     function setText(id, val) { var e = el(id); if (e) e.textContent = val; }
 
     function updateLightboxImg() {
-        var img   = el('pdm-main-img');
+        var img = el('pdm-main-img');
         var noImg = el('pdm-no-img');
-        var cnt   = el('pdm-counter');
+        var cnt = el('pdm-counter');
 
         if (!lightboxImages.length) {
-            if (img)   img.classList.add('hidden');
+            if (img) img.classList.add('hidden');
             if (noImg) noImg.classList.remove('hidden');
             return;
         }
@@ -2483,7 +2429,7 @@ function loadAvatarInSettings(avatarUrl, username) {
         if (img) {
             img.style.opacity = '0';
             img.src = lightboxImages[lightboxIdx];
-            img.onload  = function () { img.style.opacity = '1'; };
+            img.onload = function () { img.style.opacity = '1'; };
             img.onerror = function () { img.style.opacity = '1'; };
             img.classList.remove('hidden');
         }
@@ -2491,8 +2437,8 @@ function loadAvatarInSettings(avatarUrl, username) {
 
         document.querySelectorAll('[data-lbthumb]').forEach(function (e) {
             var i = parseInt(e.getAttribute('data-lbthumb'));
-            e.classList.toggle('border-primary',     i === lightboxIdx);
-            e.classList.toggle('opacity-50',         i !== lightboxIdx);
+            e.classList.toggle('border-primary', i === lightboxIdx);
+            e.classList.toggle('opacity-50', i !== lightboxIdx);
             e.classList.toggle('border-transparent', i !== lightboxIdx);
         });
     }
@@ -2507,9 +2453,9 @@ function loadAvatarInSettings(avatarUrl, username) {
         document.addEventListener('keydown', function (e) {
             var m = el('project-detail-modal');
             if (!m || m.classList.contains('hidden')) return;
-            if (e.key === 'ArrowLeft')  window.prjLbGo(lightboxIdx - 1);
+            if (e.key === 'ArrowLeft') window.prjLbGo(lightboxIdx - 1);
             if (e.key === 'ArrowRight') window.prjLbGo(lightboxIdx + 1);
-            if (e.key === 'Escape')     prjCloseModal('project-detail-modal');
+            if (e.key === 'Escape') prjCloseModal('project-detail-modal');
         });
     }
 
@@ -2527,10 +2473,10 @@ function loadAvatarInSettings(avatarUrl, username) {
         var p = projectsData.find(function (x) { return x.id === id; });
         if (!p) return;
         editingId = id; imagesToDelete = [];
-        if (el('prj-form-name'))   el('prj-form-name').value   = p.name   || '';
+        if (el('prj-form-name')) el('prj-form-name').value = p.name || '';
         if (el('prj-form-sector')) el('prj-form-sector').value = p.sector || '';
-        if (el('prj-form-price'))  el('prj-form-price').value  = p.price  || '';
-        if (el('prj-form-desc'))   el('prj-form-desc').value   = p.desc   || '';
+        if (el('prj-form-price')) el('prj-form-price').value = p.price || '';
+        if (el('prj-form-desc')) el('prj-form-desc').value = p.desc || '';
         var imgs = Array.isArray(p.images) ? p.images : [];
         pendingImages = imgs.map(function (url) { return { isExisting: true, storageUrl: url, previewUrl: url }; });
         renderPreviews();
@@ -2539,7 +2485,7 @@ function loadAvatarInSettings(avatarUrl, username) {
     };
 
     function resetForm() {
-        ['prj-form-name','prj-form-sector','prj-form-price','prj-form-desc'].forEach(function (id) {
+        ['prj-form-name', 'prj-form-sector', 'prj-form-price', 'prj-form-desc'].forEach(function (id) {
             if (el(id)) el(id).value = '';
         });
         pendingImages = [];
@@ -2550,12 +2496,12 @@ function loadAvatarInSettings(avatarUrl, username) {
     //  IMAGE DROPZONE
     // ════════════════════════════════
     function bindDropzone() {
-        var zone  = el('prj-dropzone');
+        var zone = el('prj-dropzone');
         var input = el('prj-img-input');
         if (!zone || !input) return;
-        zone.addEventListener('click',     function () { input.click(); });
-        zone.addEventListener('dragover',  function (e) { e.preventDefault(); zone.classList.add('border-primary', 'bg-primary/5'); });
-        zone.addEventListener('dragleave', function ()  { zone.classList.remove('border-primary', 'bg-primary/5'); });
+        zone.addEventListener('click', function () { input.click(); });
+        zone.addEventListener('dragover', function (e) { e.preventDefault(); zone.classList.add('border-primary', 'bg-primary/5'); });
+        zone.addEventListener('dragleave', function () { zone.classList.remove('border-primary', 'bg-primary/5'); });
         zone.addEventListener('drop', function (e) {
             e.preventDefault();
             zone.classList.remove('border-primary', 'bg-primary/5');
@@ -2613,10 +2559,10 @@ function loadAvatarInSettings(avatarUrl, username) {
     }
 
     function saveProject() {
-        var name   = (el('prj-form-name')   ? el('prj-form-name').value   : '').trim();
+        var name = (el('prj-form-name') ? el('prj-form-name').value : '').trim();
         var sector = (el('prj-form-sector') ? el('prj-form-sector').value : '').trim();
-        var price  = parseFloat(el('prj-form-price') ? el('prj-form-price').value : 0) || 0;
-        var desc   = (el('prj-form-desc')   ? el('prj-form-desc').value   : '').trim();
+        var price = parseFloat(el('prj-form-price') ? el('prj-form-price').value : 0) || 0;
+        var desc = (el('prj-form-desc') ? el('prj-form-desc').value : '').trim();
         if (!name) { toast('Vui lòng nhập tên dự án!', 'error'); return; }
 
         var btn = el('prj-save-btn');
@@ -2625,7 +2571,7 @@ function loadAvatarInSettings(avatarUrl, username) {
         uploadPendingImages(function (urls) {
             // Xóa ảnh cũ trên Storage
             var delPromises = imagesToDelete.map(function (url) {
-                try { return deleteObject(_storageRefFromURL(url)).catch(function () {}); } catch (e) { return Promise.resolve(); }
+                try { return deleteObject(_storageRefFromURL(url)).catch(function () { }); } catch (e) { return Promise.resolve(); }
             });
 
             Promise.all(delPromises).then(function () {
@@ -2651,7 +2597,7 @@ function loadAvatarInSettings(avatarUrl, username) {
     }
 
     function uploadPendingImages(onDone, onError) {
-        var result  = new Array(pendingImages.length);
+        var result = new Array(pendingImages.length);
         var newImgs = [];
 
         pendingImages.forEach(function (img, i) {
@@ -2662,19 +2608,19 @@ function loadAvatarInSettings(avatarUrl, username) {
         if (newImgs.length === 0) { onDone(result.filter(Boolean)); return; }
 
         var uploaded = 0;
-        var failed   = false;
+        var failed = false;
 
         newImgs.forEach(function (item) {
-            var path    = 'projects/' + app_id + '/' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
+            var path = 'projects/' + app_id + '/' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
             var fileRef = sRef(storage, path);
 
             // Chuyển data URL → Blob (uploadBytes ổn định hơn uploadString)
             var blob;
             try {
-                var parts  = item.img.previewUrl.split(',');
-                var mime   = parts[0].match(/:(.*?);/)[1];
-                var bstr   = atob(parts[1]);
-                var buf    = new Uint8Array(bstr.length);
+                var parts = item.img.previewUrl.split(',');
+                var mime = parts[0].match(/:(.*?);/)[1];
+                var bstr = atob(parts[1]);
+                var buf = new Uint8Array(bstr.length);
                 for (var i = 0; i < bstr.length; i++) buf[i] = bstr.charCodeAt(i);
                 blob = new Blob([buf], { type: mime });
             } catch (e) {
@@ -2711,12 +2657,12 @@ function loadAvatarInSettings(avatarUrl, username) {
     // ════════════════════════════════
     window.deleteProject = function (id, name) {
         if (!confirm('Xác nhận xoá dự án:\n"' + name + '"?\n\nHành động này không thể hoàn tác.')) return;
-        var p    = projectsData.find(function (x) { return x.id === id; });
+        var p = projectsData.find(function (x) { return x.id === id; });
         var imgs = (p && Array.isArray(p.images)) ? p.images : [];
         var delImgs = imgs
             .filter(function (u) { return u && u.startsWith('https://'); })
             .map(function (url) {
-                try { return deleteObject(_storageRefFromURL(url)).catch(function () {}); } catch (e) { return Promise.resolve(); }
+                try { return deleteObject(_storageRefFromURL(url)).catch(function () { }); } catch (e) { return Promise.resolve(); }
             });
         Promise.all(delImgs)
             .then(function () { return deleteDoc(prjDocRef(id)); })
@@ -2728,18 +2674,18 @@ function loadAvatarInSettings(avatarUrl, username) {
     //  FILTER EVENTS
     // ════════════════════════════════
     function bindFilters() {
-        ['prj-search','prj-filter-sector','prj-filter-min','prj-filter-max','prj-sort'].forEach(function (id) {
+        ['prj-search', 'prj-filter-sector', 'prj-filter-min', 'prj-filter-max', 'prj-sort'].forEach(function (id) {
             var e = el(id); if (!e) return;
             var handler = function () { currentPage = 1; applyFilters(); };
-            e.addEventListener('input',  handler);
+            e.addEventListener('input', handler);
             e.addEventListener('change', handler);
         });
     }
 
     window.resetProjectFilters = function () {
-        ['prj-search','prj-filter-min','prj-filter-max'].forEach(function (id) { if (el(id)) el(id).value = ''; });
+        ['prj-search', 'prj-filter-min', 'prj-filter-max'].forEach(function (id) { if (el(id)) el(id).value = ''; });
         if (el('prj-filter-sector')) el('prj-filter-sector').value = '';
-        if (el('prj-sort'))          el('prj-sort').value = 'newest';
+        if (el('prj-sort')) el('prj-sort').value = 'newest';
         currentPage = 1;
         applyFilters();
         toast('Đã đặt lại bộ lọc', 'info');
@@ -2749,7 +2695,7 @@ function loadAvatarInSettings(avatarUrl, username) {
     //  MODAL CLOSE HELPER
     // ════════════════════════════════
     function prjCloseModal(id) {
-        var modal   = el(id);
+        var modal = el(id);
         var content = el(id + '-content');
         if (!modal) return;
         modal.classList.add('opacity-0');
