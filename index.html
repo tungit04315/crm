@@ -1254,6 +1254,34 @@
                                                 <option value="">-- Chọn --</option>
                                             </select>
                                         </div>
+
+                                        <!-- PANEL KHÁCH HÀNG MỚI (hiện khi chọn "Khách hàng mới…") -->
+                                        <div id="new-customer-panel"
+                                            class="hidden space-y-3 p-3 bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-700 rounded-lg">
+                                            <p
+                                                class="text-xs font-semibold text-indigo-600 dark:text-indigo-400 flex items-center gap-1">
+                                                <span class="material-symbols-outlined text-[15px]">person_add</span>
+                                                Thông tin khách hàng mới
+                                            </p>
+                                            <div>
+                                                <label class="block text-xs font-medium text-gray-500 mb-1">Họ và tên
+                                                    <span class="text-red-500">*</span></label>
+                                                <input id="new-cus-name" type="text" placeholder="Nguyễn Văn A"
+                                                    class="w-full px-3 py-2 text-sm bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-indigo-400 outline-none">
+                                            </div>
+                                            <div>
+                                                <label class="block text-xs font-medium text-gray-500 mb-1">Số điện
+                                                    thoại</label>
+                                                <input id="new-cus-phone" type="tel" placeholder="0901 234 567"
+                                                    class="w-full px-3 py-2 text-sm bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-indigo-400 outline-none">
+                                            </div>
+                                            <div>
+                                                <label
+                                                    class="block text-xs font-medium text-gray-500 mb-1">Email</label>
+                                                <input id="new-cus-email" type="email" placeholder="example@email.com"
+                                                    class="w-full px-3 py-2 text-sm bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-indigo-400 outline-none">
+                                            </div>
+                                        </div>
                                         <div>
                                             <label class="block text-xs font-semibold text-gray-500 mb-1">Chọn Dịch
                                                 Vụ</label>
@@ -1544,6 +1572,91 @@
                                             class="w-full sm:w-auto bg-primary text-white px-6 py-3 lg:py-2 rounded-lg font-bold shadow-md hover:opacity-90">Áp
                                             Dụng Màu</button>
                                     </div>
+                                </div>
+                            </div>
+
+                            <!-- Signature Section -->
+                            <div>
+                                <h3 class="text-xl font-bold mb-4 flex items-center gap-2">
+                                    <span class="material-symbols-outlined text-primary">draw</span>
+                                    Chữ Ký & Đại Diện Công Ty
+                                </h3>
+                                <div
+                                    class="bg-white dark:bg-slate-800 p-4 lg:p-6 rounded-xl border border-gray-100 dark:border-slate-700 shadow-sm space-y-5">
+
+                                    <!-- Tên người đại diện -->
+                                    <div>
+                                        <label class="block text-sm font-semibold mb-1">Tên người ký / Đại diện công
+                                            ty</label>
+                                        <input type="text" id="sys-sig-name" placeholder="Ví dụ: Nguyễn Văn Giám Đốc"
+                                            class="w-full px-4 py-3 lg:py-2 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-primary outline-none">
+                                        <p class="text-xs text-gray-400 mt-1">Tên này sẽ hiển thị dưới chữ ký trong báo
+                                            giá.</p>
+                                    </div>
+
+                                    <!-- Upload chữ ký -->
+                                    <div>
+                                        <label class="block text-sm font-semibold mb-2">Ảnh chữ ký</label>
+                                        <div class="flex items-start gap-4">
+                                            <!-- Preview box -->
+                                            <div
+                                                class="w-40 h-20 rounded-lg border-2 border-dashed border-gray-200 dark:border-slate-600 bg-gray-50 dark:bg-slate-900 flex items-center justify-center overflow-hidden shrink-0 relative">
+                                                <img id="sys-sig-preview" src="" alt="Chữ ký"
+                                                    class="w-full h-full object-contain hidden absolute inset-0">
+                                                <div id="sys-sig-placeholder"
+                                                    class="flex flex-col items-center gap-1 text-gray-400">
+                                                    <span class="material-symbols-outlined text-3xl">signature</span>
+                                                    <span class="text-[10px]">Chưa có ảnh</span>
+                                                </div>
+                                            </div>
+                                            <!-- Controls -->
+                                            <div class="flex-1 space-y-2">
+                                                <label for="sys-sig-file-input"
+                                                    class="flex items-center gap-2 cursor-pointer w-full sm:w-auto px-4 py-2.5 bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-700 text-indigo-600 dark:text-indigo-400 rounded-lg text-sm font-medium hover:bg-indigo-100 transition-colors">
+                                                    <span class="material-symbols-outlined text-base">upload</span>
+                                                    Tải ảnh lên
+                                                </label>
+                                                <input type="file" id="sys-sig-file-input" accept="image/*"
+                                                    class="hidden">
+                                                <input type="hidden" id="sys-sig-cache">
+                                                <button onclick="clearSysSignature()"
+                                                    class="flex items-center gap-1 text-xs text-red-400 hover:text-red-600 transition-colors">
+                                                    <span class="material-symbols-outlined text-sm">delete</span> Xóa
+                                                    ảnh
+                                                </button>
+                                                <p class="text-xs text-gray-400">PNG/JPG nền trong suốt, tối đa 1MB.</p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Kích thước chữ ký -->
+                                    <div>
+                                        <label class="block text-sm font-semibold mb-2">
+                                            Kích thước chữ ký trong báo giá:
+                                            <span id="sys-sig-size-label" class="text-primary font-bold">130px</span>
+                                        </label>
+                                        <div class="flex items-center gap-3">
+                                            <button type="button" onclick="sigSizeStep(-10)"
+                                                class="w-8 h-8 rounded-full bg-gray-100 dark:bg-slate-700 flex items-center justify-center text-lg font-bold hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors shrink-0">−</button>
+                                            <input type="range" id="sys-sig-size" min="60" max="300" step="10"
+                                                value="130" oninput="sigSizePreview(this.value)"
+                                                class="flex-1 accent-primary cursor-pointer">
+                                            <button type="button" onclick="sigSizeStep(10)"
+                                                class="w-8 h-8 rounded-full bg-gray-100 dark:bg-slate-700 flex items-center justify-center text-lg font-bold hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors shrink-0">+</button>
+                                        </div>
+                                        <p class="text-xs text-gray-400 mt-1">Phạm vi 60px – 300px. Thay đổi áp dụng từ
+                                            lần tạo báo giá tiếp theo.</p>
+                                    </div>
+
+                                    <!-- Save button -->
+                                    <div class="pt-2 flex justify-end">
+                                        <button id="btn-save-sig" onclick="saveSystemSignature()"
+                                            class="flex items-center gap-2 bg-primary text-white px-6 py-3 lg:py-2.5 rounded-lg font-bold shadow-md hover:opacity-90 transition-all">
+                                            <span class="material-symbols-outlined text-sm">save</span>
+                                            Lưu Cài Đặt Chữ Ký
+                                        </button>
+                                    </div>
+
                                 </div>
                             </div>
 
@@ -3368,6 +3481,7 @@
     <script src="cb-module.js"></script>
     <script type="module" src="app.js"></script>
 
+    <script type="module" src="quote-upgrade.js"></script>
     <script type="module" src="cb-backend.js"></script>
     <script type="module" src="cb-module-patch.js"></script>
     <script type="module" src="cb-autocode.js"></script>
