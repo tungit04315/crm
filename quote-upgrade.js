@@ -317,9 +317,7 @@ function _overrideGenerateQuote() {
                 <tr>
                     <td style="border:1px solid #cbd5e1;padding:7px 10px;text-align:center;">${i + 1}</td>
                     <td style="border:1px solid #cbd5e1;padding:7px 10px;">${cell}</td>
-                    <td style="border:1px solid #cbd5e1;padding:7px 10px;text-align:right;white-space:nowrap;">
-                        ${price.toLocaleString('vi-VN')} đ
-                    </td>
+                    
                 </tr>`;
         });
 
@@ -364,7 +362,7 @@ function _overrideGenerateQuote() {
         <tr style="background:#f1f5f9;">
             <th style="border:1px solid #cbd5e1;padding:8px;width:40px;text-align:center;">STT</th>
             <th style="border:1px solid #cbd5e1;padding:8px;text-align:left;">Nội dung dịch vụ</th>
-            <th style="border:1px solid #cbd5e1;padding:8px;text-align:right;white-space:nowrap;">Thành tiền (VNĐ)</th>
+            
         </tr>
     </thead>
     <tbody>${rowsHtml}</tbody>
