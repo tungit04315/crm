@@ -758,6 +758,29 @@ function _overrideGlobals() {
         if (id === 'service-modal') _destroyCKEditor();
         origClose(id);
     };
+
+    // ── Patch 1: navigate('services') → trigger enhanced render ──────
+    // Nguyên nhân bug: navigate() chỉ show/hide view, KHÔNG gọi renderServices()
+    // → Card cũ của app.js còn nguyên khi user switch sang tab Services
+    const _origNav = window.navigate;
+    window.navigate = function (target) {
+        _origNav?.apply(this, arguments);
+        if (target === 'services') {
+            // View vừa được bỏ hidden → có thể gọi _renderEnhancedGrid ngay
+            requestAnimationFrame(() => {
+                if (_servicesCache.length) _renderEnhancedGrid();
+            });
+        }
+    };
+
+    // ── Patch 2: renderServices() (search / pagination) → dùng enhanced grid ──
+    // Khi user search hoặc đổi trang, app.js gọi renderServices() → render card cũ
+    // Patch này hook vào sau để replace ngay bằng enhanced cards
+    const _origRS = window.renderServices;
+    window.renderServices = function () {
+        _origRS?.apply(this, arguments); // GIỮ NGUYÊN: badge count, pagination, quote-list
+        requestAnimationFrame(_renderEnhancedGrid);
+    };
 }
 
 // ─────────────────────────────────────────────────────────────────
