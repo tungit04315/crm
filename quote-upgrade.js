@@ -199,8 +199,9 @@ function _enhanceServicesList(container) {
 
     container.innerHTML = services.map(srv => {
         const price = Number(srv.price) || 0;
-        const safeDesc = (srv.shortDesc || srv.desc?.replace(/<[^>]+>/g, '') || '').trim().replace(/\"/g, '&quot;').replace(/</g, '&lt;');
-        const hasDesc = safeDesc.trim().length > 0;
+        const safeFullDesc  = (srv.desc || '').replace(/\"/g, '&quot;').replace(/</g, '&lt;'); // → PDF
+        const shortDescText = srv.shortDesc || '';                                               // → preview text
+        const hasDesc = shortDescText.length > 0 || safeFullDesc.length > 0;
         const fmtPrice = window.formatCurrency
             ? window.formatCurrency(price)
             : price.toLocaleString('vi-VN') + ' đ';
@@ -219,7 +220,7 @@ function _enhanceServicesList(container) {
                     value="${srv.id}"
                     data-name="${(srv.name || '').replace(/"/g, '&quot;')}"
                     data-price="${price}"
-                    data-desc="${safeDesc}"
+                    data-desc="${safeFullDesc}"
                     onchange="_srvToggle(this)"
                     ${isSrvChecked}>
                 <div class="flex-1 min-w-0">
@@ -239,8 +240,8 @@ function _enhanceServicesList(container) {
                     </span>
                 </label>
                 <p class="mt-1 text-[11px] text-gray-400 italic leading-snug line-clamp-2 pl-5">
-                      ${srv.shortDesc || ''}
-               </p>
+                   ${shortDescText}
+                </p>
             </div>` : ''}
         </div>`;
     }).join('');
