@@ -1779,7 +1779,7 @@ window.exportPDF = async () => {
         docName = `Hợp đồng - ${tplName}`;
     }
 
-    const opt = { margin: 10, filename: `${docName}_${new Date().getTime()}.pdf`, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2, useCORS: true }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } };
+    const opt = { margin: 0, filename: `${docName}_${new Date().getTime()}.pdf`, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2, useCORS: true, windowWidth: 794 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } };
     const htmlToSave = element.innerHTML;
 
     const btn = document.querySelector('button[onclick="exportPDF()"]');
