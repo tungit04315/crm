@@ -199,7 +199,7 @@ function _enhanceServicesList(container) {
 
     container.innerHTML = services.map(srv => {
         const price = Number(srv.price) || 0;
-        const safeDesc = (srv.desc || '').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+        const safeDesc = (srv.shortDesc || srv.desc?.replace(/<[^>]+>/g, '') || '').trim().replace(/\"/g, '&quot;').replace(/</g, '&lt;');
         const hasDesc = safeDesc.trim().length > 0;
         const fmtPrice = window.formatCurrency
             ? window.formatCurrency(price)
@@ -238,7 +238,9 @@ function _enhanceServicesList(container) {
                         Kèm mô tả dịch vụ
                     </span>
                 </label>
-                <p class="mt-1 text-[11px] text-gray-400 italic leading-snug line-clamp-2 pl-5">${srv.desc}</p>
+                <p class="mt-1 text-[11px] text-gray-400 italic leading-snug line-clamp-2 pl-5">
+                      ${srv.shortDesc || srv.desc?.replace(/<[^>]+>/g, '').slice(0, 150) || ''}
+                </p>
             </div>` : ''}
         </div>`;
     }).join('');
