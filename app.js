@@ -1779,13 +1779,30 @@ window.exportPDF = async () => {
         docName = `Hợp đồng - ${tplName}`;
     }
 
-    const opt = { margin: 0, filename: `${docName}_${new Date().getTime()}.pdf`, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2, useCORS: true, windowWidth: 794 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } };
+    // ── THÊM: reset transform trước khi capture ──────────────
+    const _savedTransform = element.style.transform;
+    const _savedOrigin    = element.style.transformOrigin;
+    element.style.transform       = 'none';
+    element.style.transformOrigin = 'initial';
+    // ─────────────────────────────────────────────────────────
+
+    const opt = {
+        margin: 10,                                              // giữ nguyên margin: 10
+        filename: `${docName}_${new Date().getTime()}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true, scrollX: 0, scrollY: 0 }, // thêm scrollX/Y
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
     const htmlToSave = element.innerHTML;
 
     const btn = document.querySelector('button[onclick="exportPDF()"]');
     const oldText = btn.innerHTML; btn.innerHTML = `Đang tạo...`;
 
     html2pdf().set(opt).from(element).save().then(async () => {
+        // ── THÊM: restore transform sau khi xong ─────────────
+        element.style.transform       = _savedTransform;
+        element.style.transformOrigin = _savedOrigin;
+        // ─────────────────────────────────────────────────────
         btn.innerHTML = oldText;
         try { await addDoc(getCollectionPath('export_history'), { name: docName, htmlContent: htmlToSave, createdAt: new Date() }); showToast('Đã xuất PDF và lưu lịch sử'); } catch (e) { }
     });
