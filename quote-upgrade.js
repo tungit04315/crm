@@ -238,9 +238,7 @@ function _enhanceServicesList(container) {
                         Kèm mô tả dịch vụ
                     </span>
                 </label>
-                <p class="mt-1 text-[11px] text-gray-400 italic leading-snug line-clamp-2 pl-5">
-                      ${srv.shortDesc || srv.desc?.replace(/<[^>]+>/g, '').slice(0, 150) || ''}
-                </p>
+                <p class="mt-1 text-[11px] text-gray-400 italic leading-snug line-clamp-2 pl-5">${srv.desc}</p>
             </div>` : ''}
         </div>`;
     }).join('');
