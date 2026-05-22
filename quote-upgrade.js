@@ -324,10 +324,29 @@ function _overrideGenerateQuote() {
                 </tr>`;
         });
 
+        // ── Detect điều kiện ghi chú ──
+        const hasZeroPrice = checks.some(cb => Number(cb.dataset.price) === 0);
+        const hasZeroVat   = vatPct === 0;
         const vatAmt = subtotal * (vatPct / 100);
         const total = subtotal + vatAmt;
         const fmt = n => n.toLocaleString('vi-VN');
 
+        // ── Block chú ý (chỉ hiện khi có điều kiện) ──
+        const notesItems = [];
+        if (hasZeroPrice) notesItems.push('Giá thương lượng theo nhu cầu');
+        if (hasZeroVat)   notesItems.push('Giá trên chưa gồm thuế VAT');
+
+        const notesHtml = notesItems.length ? `
+<div style="margin-bottom:28px;padding:12px 16px;border-left:3px solid #6366f1;background:#f5f3ff;border-radius:0 8px 8px 0;">
+    <p style="font-size:12px;font-weight:700;color:#4338ca;margin:0 0 6px;text-transform:uppercase;letter-spacing:0.5px;">
+        Chú ý
+    </p>
+    ${notesItems.map(txt => `
+    <p style="font-size:12px;color:#374151;margin:3px 0;display:flex;align-items:center;gap:6px;">
+        <span style="color:#6366f1;font-size:15px;line-height:1;">✔</span> ${txt}
+    </p>`).join('')}
+</div>` : '';
+       
         /* ── Chữ ký công ty từ Cài đặt hệ thống ── */
         const sig = window._sysSignature || {};
         const sigName = sig.name || '................................';
@@ -382,7 +401,7 @@ function _overrideGenerateQuote() {
         </div>
     </div>
 </div>
-
+${notesHtml}\n
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;text-align:center;margin-top:40px;font-size:13px;">
     <div>
         <strong>ĐẠI DIỆN KHÁCH HÀNG</strong>
