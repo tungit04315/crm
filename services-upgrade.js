@@ -38,6 +38,12 @@ const cat = val => CATEGORIES.find(c => c.value === val) || CATEGORIES[CATEGORIE
 const fmt = n => window.formatCurrency
     ? window.formatCurrency(n)
     : new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(n || 0);
+const fmtPrice = (price, unit = '') => {
+    if (!price || Number(price) === 0) {
+        return '<span class="price-negotiable">Giá thương lượng theo nhu cầu</span>';
+    }
+    return fmt(price) + (unit ? `<span class="text-xs font-normal text-gray-400 ml-1">${unit}</span>` : '');
+};
 const toast = (msg, type = 'success') => window.showToast?.(msg, type);
 
 // ─────────────────────────────────────────────────────────────────
@@ -399,7 +405,7 @@ async function _handleServiceSubmit(e) {
     };
 
     if (!data.name) { toast('Vui lòng nhập tên dịch vụ', 'error'); return; }
-    if (!data.price) { toast('Vui lòng nhập giá dịch vụ', 'error'); return; }
+    
 
     try {
         const col = collection(_db, 'artifacts', APP_ID, 'public', 'data', 'services');
@@ -530,11 +536,17 @@ function _openServiceDetail(srvId) {
     // Name + price
     $('sdm-name').textContent = srv.name;
     const priceEl = $('sdm-price');
-    priceEl.textContent = fmt(srv.price) + (unit ? `  ${unit}` : '');
-    priceEl.style.background = `linear-gradient(135deg, ${c.color}, ${c.color}bb)`;
-    priceEl.style.webkitBackgroundClip = 'text';
-    priceEl.style.webkitTextFillColor = 'transparent';
-    priceEl.style.backgroundClip = 'text';
+    if (!srv.price || Number(srv.price) === 0) {
+        priceEl.innerHTML = '<span class="price-negotiable">Giá thương lượng theo nhu cầu</span>';
+        priceEl.style.background = 'none';
+        priceEl.style.webkitTextFillColor = '';
+    } else {
+        priceEl.textContent = fmt(srv.price) + (unit ? `  ${unit}` : '');
+        priceEl.style.background = `linear-gradient(135deg, ${c.color}, ${c.color}bb)`;
+        priceEl.style.webkitBackgroundClip = 'text';
+        priceEl.style.webkitTextFillColor = 'transparent';
+        priceEl.style.backgroundClip = 'text';
+    }
 
     // Meta row
     const metas = [];
@@ -671,7 +683,7 @@ function _renderEnhancedGrid() {
                 <h4 class="font-bold text-sm leading-snug mb-2 line-clamp-2">${_esc(srv.name)}</h4>
 
                 <!-- Price -->
-                <p class="text-lg font-black mb-1" style="color:${c.color}">${fmt(srv.price)}<span class="text-xs font-normal text-gray-400 ml-1">${unit}</span></p>
+                <p class=\"text-lg font-black mb-1\" style=\"color:${c.color}\">${fmtPrice(srv.price, unit)}</p>
 
                 <!-- Short description -->
                 ${desc
