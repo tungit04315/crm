@@ -130,3 +130,13 @@
     -webkit-text-fill-color: transparent;
     background-clip: text;
 }
+
+.price-negotiable {
+    font-size: 0.85rem;
+    font-weight: 600;
+    font-style: italic;
+    color: #94a3b8; /* slate-400 */
+}
+.dark .price-negotiable {
+    color: #64748b; /* slate-500 */
+}
