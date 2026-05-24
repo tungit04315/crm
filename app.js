@@ -177,9 +177,9 @@ onAuthStateChanged(auth, async (user) => {
         document.getElementById('profile-username').value = user.displayName || user.email.split('@')[0];
 
         ls.classList.add('opacity-0');
-        setTimeout(() => { ls.classList.add('hidden'); as.classList.remove('hidden'); setTimeout(() => as.classList.remove('opacity-0'), 50); initAppLogic(); }, 500);
+        setTimeout(() => { ls.classList.add('hidden'); as.classList.remove('hidden'); setTimeout(() => as.classList.remove('opacity-0'), 50); initAppLogic(); if (typeof window.startDeadlineWatcher === 'function') { window._deadlineCleanup = window.startDeadlineWatcher(); } }, 500);
     } else {
-        window.currentUser = null; unsubscribes.forEach(fn => fn()); unsubscribes = [];
+        window.currentUser = null; if (typeof window._deadlineCleanup === 'function') { window._deadlineCleanup(); window._deadlineCleanup = null; } unsubscribes.forEach(fn => fn()); unsubscribes = [];
         as.classList.add('opacity-0');
         setTimeout(() => { as.classList.add('hidden'); ls.classList.remove('hidden'); setTimeout(() => ls.classList.remove('opacity-0'), 50); }, 500);
     }
@@ -347,6 +347,12 @@ function initAppLogic() {
     unsubscribes.push(onSnapshot(query(getCollectionPath('workflows')), snap => { workflowsData = snap.docs.map(d => ({ id: d.id, ...d.data() })); renderWorkflows(); updateJobWorkflowSelect(); updateKanbanWorkflowSelect(); }));
     //unsubscribes.push(onSnapshot(query(getCollectionPath('jobs')), snap => { jobsData = snap.docs.map(d => ({ id: d.id, ...d.data() })); renderJobsTable(); renderJobsKanban(); updateDashboardStats(); renderJobReports(); }));
     unsubscribes.push(onSnapshot(query(getCollectionPath('jobs')), snap => { jobsData = snap.docs.map(d => ({ id: d.id, ...d.data() })); renderJobsTable(); renderJobsKanban(); updateDashboardStats(); renderJobReports(); if (myChart) initChart(); }));
+
+    // ── Email Contacts Realtime Listener ──────────────────────
+    unsubscribes.push(onSnapshot(query(getCollectionPath('email_contacts')), snap => {
+        window.emailContactsData = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        if (typeof window.renderEmailContactsList === 'function') renderEmailContactsList();
+    }));
 
     initProjectsModule();
     initChart();
@@ -1299,6 +1305,8 @@ window.dropKanban = async (ev) => {
 
 // -> Job Detail Modal
 let currentEditingJobId = null;
+let currentEditingStepId = null;
+
 window.openJobDetail = (jobId) => {
     const job = jobsData.find(j => j.id === jobId);
     if (!job) return;
@@ -1311,46 +1319,157 @@ window.openJobDetail = (jobId) => {
     document.getElementById('jd-customer').innerText = cus ? cus.name : 'Unknown';
     document.getElementById('jd-workflow').innerText = wf ? wf.name : 'Unknown';
 
-    // Progress
-    const steps = job.steps || [];
-    const doneSteps = steps.filter(s => s.status === 'done').length;
-    const percent = steps.length === 0 ? 0 : Math.round((doneSteps / steps.length) * 100);
-    document.getElementById('jd-progress-text').innerText = `${percent}% (${doneSteps}/${steps.length})`;
-    document.getElementById('jd-progress-bar').style.width = `${percent}%`;
+    // Sắp xếp steps theo thứ tự workflow
+    const steps = (job.steps || []).slice().sort((a, b) => a.order - b.order);
 
-    // Steps List Render
-    const container = document.getElementById('jd-steps-container');
-    container.innerHTML = steps.sort((a, b) => a.order - b.order).map((s, i) => `
-                <div class="border border-gray-200 dark:border-slate-700 rounded-xl p-4 ${s.status === 'done' ? 'bg-green-50/50 dark:bg-green-900/10' : s.status === 'doing' ? 'bg-blue-50/50 dark:bg-blue-900/10' : 'bg-white dark:bg-slate-800'} transition-colors">
-                    <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-3 mb-3 pb-3 border-b border-gray-100 dark:border-slate-700">
-                        <div class="font-bold flex items-center gap-2">
-                            <span class="w-6 h-6 rounded-full bg-gray-200 dark:bg-slate-700 text-xs flex items-center justify-center">${i + 1}</span>
-                            ${s.name}
-                        </div>
-                        <select onchange="updateSingleStepStatus('${s.id}', this.value)" class="px-3 py-1.5 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-600 rounded-lg text-sm font-semibold outline-none focus:ring-2 ${s.status === 'done' ? 'text-green-600 border-green-200' : s.status === 'doing' ? 'text-blue-600 border-blue-200' : ''}">
-                            <option value="pending" ${s.status === 'pending' ? 'selected' : ''}>⏳ Chờ xử lý</option>
-                            <option value="doing" ${s.status === 'doing' ? 'selected' : ''}>🚀 Đang làm</option>
-                            <option value="done" ${s.status === 'done' ? 'selected' : ''}>✅ Hoàn thành</option>
-                        </select>
-                    </div>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-xs font-semibold text-gray-500 mb-1">Người phụ trách (Assignee)</label>
-                            <input type="text" id="js_ass_${s.id}" value="${s.assignee || ''}" onblur="saveStepInfo('${s.id}')" placeholder="Tên NV..." class="w-full px-3 py-2 bg-transparent border border-gray-200 dark:border-slate-600 rounded text-sm outline-none focus:border-primary">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-semibold text-gray-500 mb-1">Hạn chót (Deadline)</label>
-                            <input type="date" id="js_dead_${s.id}" value="${s.deadline || ''}" onblur="saveStepInfo('${s.id}')" class="w-full px-3 py-2 bg-transparent border border-gray-200 dark:border-slate-600 rounded text-sm outline-none focus:border-primary">
-                        </div>
-                        <div class="sm:col-span-2">
-                            <label class="block text-xs font-semibold text-gray-500 mb-1">Ghi chú nội bộ</label>
-                            <textarea id="js_note_${s.id}" rows="2" onblur="saveStepInfo('${s.id}')" placeholder="Tiến độ, link file, v.v..." class="w-full px-3 py-2 bg-transparent border border-gray-200 dark:border-slate-600 rounded text-sm outline-none focus:border-primary">${s.note || ''}</textarea>
-                        </div>
-                    </div>
-                </div>
-            `).join('');
+    // Cập nhật progress bar
+    _updateJobProgress(steps);
+
+    // Build combobox — icon theo trạng thái
+    const statusIcon = { pending: '⏳', doing: '🚀', done: '✅' };
+    const stepSelect = document.getElementById('jd-step-select');
+    stepSelect.innerHTML = steps.map((s, i) =>
+        `<option value="${s.id}">${statusIcon[s.status] || '⏳'} Bước ${i + 1}: ${s.name}</option>`
+    ).join('');
+
+    // Tự động chọn bước đầu tiên chưa hoàn thành, hoặc bước 1
+    const activeStep = steps.find(s => s.status !== 'done') || steps[0];
+    if (activeStep) {
+        stepSelect.value = activeStep.id;
+        currentEditingStepId = activeStep.id;
+        _renderStepForm(job, activeStep.id);
+    }
 
     openModal('job-detail-modal');
+};
+
+// Cập nhật progress bar (dùng chung)
+function _updateJobProgress(steps) {
+    const doneCount = steps.filter(s => s.status === 'done').length;
+    const pct = steps.length === 0 ? 0 : Math.round((doneCount / steps.length) * 100);
+    document.getElementById('jd-progress-text').innerText = `${pct}% (${doneCount}/${steps.length})`;
+    document.getElementById('jd-progress-bar').style.width = `${pct}%`;
+}
+
+// Render form 1 bước duy nhất
+function _renderStepForm(job, stepId) {
+    const steps = (job.steps || []).slice().sort((a, b) => a.order - b.order);
+    const s = steps.find(st => st.id === stepId);
+    if (!s) return;
+    currentEditingStepId = stepId;
+
+    const _emailOpts = (window.emailContactsData || [])
+        .map(c => `<option value="${c.email}" ${(s.assigneeEmail || '') === c.email ? 'selected' : ''}>
+            ${c.name ? c.name + ' — ' : ''}${c.email}${c.role ? ' (' + c.role + ')' : ''}
+        </option>`).join('');
+
+    let deadlineVal = s.deadline || '';
+    if (deadlineVal && deadlineVal.length === 10) deadlineVal += 'T09:00';
+
+    const borderColor = s.status === 'done' ? 'border-green-300 dark:border-green-700'
+        : s.status === 'doing' ? 'border-blue-300 dark:border-blue-700'
+            : 'border-gray-200 dark:border-slate-700';
+
+    const bgColor = s.status === 'done' ? 'bg-green-50/60 dark:bg-green-900/10'
+        : s.status === 'doing' ? 'bg-blue-50/60 dark:bg-blue-900/10'
+            : 'bg-white dark:bg-slate-800';
+
+    const PRESETS = [
+        { label: '5 phút', min: 5 }, { label: '15 phút', min: 15 },
+        { label: '30 phút', min: 30 }, { label: '1 giờ', min: 60 },
+        { label: '3 giờ', min: 180 }, { label: '1 ngày', min: 1440 },
+        { label: '3 ngày', min: 4320 }, { label: '1 tuần', min: 10080 },
+    ];
+
+    document.getElementById('jd-steps-container').innerHTML = `
+    <div class="border rounded-xl p-4 lg:p-5 transition-colors ${bgColor} ${borderColor}">
+
+        <!-- Trạng thái bước -->
+        <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-3 mb-5 pb-4 border-b border-gray-100 dark:border-slate-700">
+            <span class="text-sm font-semibold text-gray-500">Trạng thái bước này</span>
+            <select onchange="updateSingleStepStatus('${s.id}', this.value)"
+                class="px-3 py-2 bg-white dark:bg-slate-900 border rounded-xl text-sm font-bold outline-none focus:ring-2 transition-all
+                ${s.status === 'done' ? 'text-green-600 border-green-300 focus:ring-green-200' :
+            s.status === 'doing' ? 'text-blue-600 border-blue-300 focus:ring-blue-200' :
+                'text-gray-600 border-gray-200 focus:ring-gray-200'}">
+                <option value="pending" ${s.status === 'pending' ? 'selected' : ''}>⏳ Chờ xử lý</option>
+                <option value="doing"   ${s.status === 'doing' ? 'selected' : ''}>🚀 Đang làm</option>
+                <option value="done"    ${s.status === 'done' ? 'selected' : ''}>✅ Hoàn thành</option>
+            </select>
+        </div>
+
+        <div class="space-y-4">
+
+            <!-- Người phụ trách + Email -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-semibold text-gray-500 mb-1">Người phụ trách</label>
+                    <input type="text" id="js_ass_${s.id}" value="${s.assignee || ''}"
+                        onblur="saveStepInfo('${s.id}')"
+                        placeholder="Tên nhân viên..."
+                        class="w-full px-3 py-2.5 bg-transparent border border-gray-200 dark:border-slate-600 rounded-xl text-sm outline-none focus:border-primary transition-colors">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-500 mb-1 flex items-center gap-1">
+                        <span class="material-symbols-outlined text-[13px] text-indigo-400">mail</span>
+                        Email nhận thông báo
+                    </label>
+                    <select id="js_email_${s.id}"
+                        class="w-full px-3 py-2.5 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-600 rounded-xl text-sm outline-none focus:border-primary transition-colors">
+                        <option value="">— Chọn email —</option>
+                        ${_emailOpts}
+                    </select>
+                </div>
+            </div>
+
+            <!-- Deadline -->
+            <div>
+                <label class="block text-xs font-semibold text-gray-500 mb-2">Hạn chót (Deadline)</label>
+                <div class="flex flex-wrap gap-1.5 mb-2">
+                    ${PRESETS.map(p => `
+                    <button type="button"
+                        data-preset-step="${s.id}" data-preset-min="${p.min}"
+                        onclick="setDeadlinePreset('${s.id}', ${p.min})"
+                        class="px-2.5 py-1 text-[11px] font-semibold rounded-lg border border-gray-200 dark:border-slate-600
+                               bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-gray-300
+                               hover:bg-indigo-500 hover:text-white hover:border-indigo-500 transition-all active:scale-95">
+                        ${p.label}
+                    </button>`).join('')}
+                </div>
+                <input type="datetime-local" id="js_dead_${s.id}" value="${deadlineVal}"
+                    onblur="saveStepInfo('${s.id}')"
+                    class="w-full px-3 py-2.5 bg-transparent border border-gray-200 dark:border-slate-600 rounded-xl text-sm outline-none focus:border-primary transition-colors">
+            </div>
+
+            <!-- Ghi chú — rows="7" để viết thoải mái -->
+            <div>
+                <label class="block text-xs font-semibold text-gray-500 mb-1">Ghi chú nội bộ</label>
+                <textarea id="js_note_${s.id}" rows="7"
+                    onblur="saveStepInfo('${s.id}')"
+                    placeholder="Tiến độ, link file, nội dung bàn giao, lưu ý quan trọng..."
+                    class="w-full px-3 py-2.5 bg-transparent border border-gray-200 dark:border-slate-600 rounded-xl text-sm outline-none focus:border-primary resize-y transition-colors">${s.note || ''}</textarea>
+            </div>
+
+            <!-- Gửi thông báo -->
+            <div class="flex justify-end pt-2 border-t border-gray-100 dark:border-slate-700">
+                <button id="js_notify_btn_${s.id}"
+                    onclick="sendJobStepNotification('${job.id}', '${s.id}')"
+                    class="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-500 text-white text-sm font-bold shadow-md hover:bg-indigo-600 active:scale-95 transition-all">
+                    <span class="material-symbols-outlined text-sm">send</span>
+                    Gửi thông báo deadline
+                </button>
+            </div>
+
+        </div>
+    </div>`;
+}
+
+// Người dùng chọn bước khác từ combobox
+window.switchJobStep = () => {
+    const job = jobsData.find(j => j.id === currentEditingJobId);
+    if (!job) return;
+    const stepId = document.getElementById('jd-step-select').value;
+    _renderStepForm(job, stepId);
 };
 
 window.updateSingleStepStatus = async (stepId, newStatus) => {
@@ -1360,12 +1479,28 @@ window.updateSingleStepStatus = async (stepId, newStatus) => {
     const allDone = updatedSteps.every(s => s.status === 'done');
 
     try {
-        await updateDoc(doc(db, 'artifacts', app_id, 'public', 'data', 'jobs', job.id), { steps: updatedSteps, status: allDone ? 'done' : 'doing' });
-        // Do not close modal, it will re-render via onSnapshot but input focus might be lost. 
-        // Because onSnapshot fires, jobsData updates, but we need to re-call openJobDetail to update UI
-        // A better UX is silent update, let the DB sync. We re-render only progress.
-        setTimeout(() => openJobDetail(job.id), 100);
-    } catch (e) { showToast('Lỗi', 'error'); }
+        await updateDoc(doc(db, 'artifacts', app_id, 'public', 'data', 'jobs', job.id), {
+            steps: updatedSteps, status: allDone ? 'done' : 'doing'
+        });
+
+        // Sync local cache — KHÔNG gọi lại openJobDetail
+        job.steps = updatedSteps;
+        const sortedSteps = updatedSteps.slice().sort((a, b) => a.order - b.order);
+
+        // Cập nhật progress bar
+        _updateJobProgress(sortedSteps);
+
+        // Cập nhật icon trong combobox
+        const statusIcon = { pending: '⏳', doing: '🚀', done: '✅' };
+        const stepSelect = document.getElementById('jd-step-select');
+        stepSelect.innerHTML = sortedSteps.map((s, i) =>
+            `<option value="${s.id}" ${s.id === stepId ? 'selected' : ''}>${statusIcon[s.status] || '⏳'} Bước ${i + 1}: ${s.name}</option>`
+        ).join('');
+
+        // Re-render form bước hiện tại (chỉ để đổi màu nền)
+        _renderStepForm(job, stepId);
+
+    } catch (e) { showToast('Lỗi cập nhật trạng thái', 'error'); }
 };
 
 window.saveStepInfo = async (stepId) => {
@@ -1374,11 +1509,16 @@ window.saveStepInfo = async (stepId) => {
     const ass = document.getElementById(`js_ass_${stepId}`).value;
     const dead = document.getElementById(`js_dead_${stepId}`).value;
     const note = document.getElementById(`js_note_${stepId}`).value;
-
-    const updatedSteps = job.steps.map(s => s.id === stepId ? { ...s, assignee: ass, deadline: dead, note: note } : s);
-    // Check if actually changed to avoid spamming writes
+    const emailEl = document.getElementById(`js_email_${stepId}`);
+    const assigneeEmail = emailEl ? emailEl.value : '';
+    const updatedSteps = job.steps.map(s => s.id === stepId ? { ...s, assignee: ass, deadline: dead, note, assigneeEmail } : s);
     const oldStep = job.steps.find(s => s.id === stepId);
-    if (oldStep.assignee === ass && oldStep.deadline === dead && oldStep.note === note) return;
+    if (oldStep.assignee === ass && oldStep.deadline === dead && oldStep.note === note && (oldStep.assigneeEmail || '') === assigneeEmail) return;
+
+    //const updatedSteps = job.steps.map(s => s.id === stepId ? { ...s, assignee: ass, deadline: dead, note: note } : s);
+    // Check if actually changed to avoid spamming writes
+    //const oldStep = job.steps.find(s => s.id === stepId);
+    //if (oldStep.assignee === ass && oldStep.deadline === dead && oldStep.note === note) return;
 
     try { await updateDoc(doc(db, 'artifacts', app_id, 'public', 'data', 'jobs', job.id), { steps: updatedSteps }); } catch (e) { }
 };
@@ -1779,46 +1919,15 @@ window.exportPDF = async () => {
         docName = `Hợp đồng - ${tplName}`;
     }
 
-    // ── Snapshot trạng thái gốc ───────────────────────────────
-    const _savedTransform = element.style.transform;
-    const _savedOrigin    = element.style.transformOrigin;
-    const _savedWidth     = element.style.width;
-    const _savedMinH      = element.style.minHeight;
-
-    // ── Reset để html2canvas capture sạch, khớp PDF usable area ──
-    // A4 = 210mm, margin 10mm mỗi bên → usable = 190mm
-    element.style.transform       = 'none';
-    element.style.transformOrigin = 'initial';
-    element.style.width           = '190mm';
-    element.style.minHeight       = 'auto';
-
-    const opt = {
-        margin:     10,
-        filename:   `${docName}_${new Date().getTime()}.pdf`,
-        image:      { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true, scrollX: 0, scrollY: 0 },
-        jsPDF:      { unit: 'mm', format: 'a4', orientation: 'portrait' },
-    };
+    const opt = { margin: 10, filename: `${docName}_${new Date().getTime()}.pdf`, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2, useCORS: true }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } };
     const htmlToSave = element.innerHTML;
 
     const btn = document.querySelector('button[onclick="exportPDF()"]');
-    const oldText = btn.innerHTML;
-    btn.innerHTML = `Đang tạo...`;
+    const oldText = btn.innerHTML; btn.innerHTML = `Đang tạo...`;
 
     html2pdf().set(opt).from(element).save().then(async () => {
-        // ── Restore trạng thái gốc ────────────────────────────
-        element.style.transform       = _savedTransform;
-        element.style.transformOrigin = _savedOrigin;
-        element.style.width           = _savedWidth;
-        element.style.minHeight       = _savedMinH;
-
         btn.innerHTML = oldText;
-        try {
-            await addDoc(getCollectionPath('export_history'), {
-                name: docName, htmlContent: htmlToSave, createdAt: new Date()
-            });
-            showToast('Đã xuất PDF và lưu lịch sử');
-        } catch (e) { }
+        try { await addDoc(getCollectionPath('export_history'), { name: docName, htmlContent: htmlToSave, createdAt: new Date() }); showToast('Đã xuất PDF và lưu lịch sử'); } catch (e) { }
     });
 };
 
@@ -2740,5 +2849,241 @@ function loadAvatarInSettings(avatarUrl, username) {
     }
 
     window.prjCloseModal = prjCloseModal;
+
+
+    // ================================================================
+    //  EMAIL CONTACTS — Quản lý danh sách email nội bộ
+    // ================================================================
+
+    window.renderEmailContactsList = function () {
+        const tbody = document.getElementById('email-contacts-list');
+        if (!tbody) return;
+        const data = window.emailContactsData || [];
+        if (!data.length) {
+            tbody.innerHTML = `<tr><td colspan="4" class="py-8 text-center text-gray-400">
+            <span class="material-symbols-outlined text-3xl block mb-2">mail_off</span>Chưa có email nào</td></tr>`;
+            return;
+        }
+        tbody.innerHTML = data.map(c => `
+        <tr class="border-b border-gray-100 dark:border-slate-800 hover:bg-gray-50/50 dark:hover:bg-slate-800/30 transition-colors">
+            <td class="py-3 pl-2 font-semibold text-sm">${c.name || '—'}</td>
+            <td class="py-3 text-sm font-mono text-primary">${c.email}</td>
+            <td class="py-3 text-xs text-gray-500">${c.role || '—'}</td>
+            <td class="py-3 pr-2 text-right">
+                <button onclick="deleteEmailContact('${c.id}')"
+                    class="p-1.5 text-gray-400 hover:text-red-500 rounded-lg bg-gray-100 dark:bg-slate-700 transition-colors">
+                    <span class="material-symbols-outlined text-sm">delete</span>
+                </button>
+            </td>
+        </tr>`).join('');
+    };
+
+    document.getElementById('email-contact-form')?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const name = document.getElementById('ec-name').value.trim();
+        const email = document.getElementById('ec-email').value.trim();
+        const role = document.getElementById('ec-role').value.trim();
+        if (!email) return showToast('Vui lòng nhập email', 'error');
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) return showToast('Email không hợp lệ', 'error');
+        try {
+            await addDoc(getCollectionPath('email_contacts'), { name, email, role, createdAt: new Date() });
+            showToast('✅ Đã thêm email liên lạc');
+            ['ec-name', 'ec-email', 'ec-role'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+        } catch (err) { showToast('Lỗi: ' + err.message, 'error'); }
+    });
+
+    window.deleteEmailContact = async (id) => {
+        if (!confirm('Xóa email này?')) return;
+        try {
+            await deleteDoc(doc(db, 'artifacts', app_id, 'public', 'data', 'email_contacts', id));
+            showToast('Đã xóa');
+        } catch (err) { showToast('Lỗi: ' + err.message, 'error'); }
+    };
+
+    // ── Deadline Presets: đặt deadline nhanh từ thời điểm hiện tại ──
+    window.setDeadlinePreset = function (stepId, minutesFromNow) {
+        const dt = new Date(Date.now() + minutesFromNow * 60 * 1000);
+        // Dùng giờ local của máy (đúng múi giờ VN UTC+7), KHÔNG dùng toISOString() vì nó trả UTC
+        const pad = n => String(n).padStart(2, '0');
+        const iso = `${dt.getFullYear()}-${pad(dt.getMonth() + 1)}-${pad(dt.getDate())}T${pad(dt.getHours())}:${pad(dt.getMinutes())}`;
+        const el = document.getElementById(`js_dead_${stepId}`);
+        if (el) { el.value = iso; saveStepInfo(stepId); }
+        // Highlight nút được chọn
+        document.querySelectorAll(`[data-preset-step="${stepId}"]`).forEach(btn => {
+            btn.classList.remove('bg-indigo-500', 'text-white');
+            btn.classList.add('bg-gray-100', 'dark:bg-slate-700', 'text-gray-600', 'dark:text-gray-300');
+        });
+        const chosen = document.querySelector(`[data-preset-step="${stepId}"][data-preset-min="${minutesFromNow}"]`);
+        if (chosen) {
+            chosen.classList.add('bg-indigo-500', 'text-white');
+            chosen.classList.remove('bg-gray-100', 'dark:bg-slate-700', 'text-gray-600', 'dark:text-gray-300');
+        }
+    };
+
+    window.sendJobStepNotification = async function (jobId, stepId) {
+        const job = jobsData.find(j => j.id === jobId);
+        if (!job) return;
+        const step = (job.steps || []).find(s => s.id === stepId);
+        if (!step) return;
+
+        const emailEl = document.getElementById(`js_email_${stepId}`);
+        const targetEmail = emailEl?.value?.trim();
+        if (!targetEmail) return showToast('Vui lòng chọn email người nhận', 'error');
+
+        const deadlineEl = document.getElementById(`js_dead_${stepId}`);
+        const deadlineVal = deadlineEl?.value;
+        if (!deadlineVal) return showToast('Vui lòng đặt deadline trước khi gửi', 'error');
+
+        const contact = (window.emailContactsData || []).find(c => c.email === targetEmail);
+        const assigneeName = contact?.name || step.assignee || targetEmail;
+        const deadlineDate = new Date(deadlineVal);
+        const deadlineStr = deadlineDate.toLocaleString('vi-VN', {
+            day: '2-digit', month: '2-digit', year: 'numeric',
+            hour: '2-digit', minute: '2-digit'
+        });
+
+        const btn = document.getElementById(`js_notify_btn_${stepId}`);
+        const originalHTML = btn?.innerHTML;
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<span class="material-symbols-outlined text-sm animate-spin">refresh</span><span>Đang gửi...</span>';
+        }
+
+        try {
+            await emailjs.send(
+                'hnta mtvn ywyd bxzs',
+                'template_wli5rfd',
+                {
+                    to_email: targetEmail,
+                    assignee_name: assigneeName,
+                    job_name: job.name,
+                    step_name: step.name,
+                    deadline: deadlineStr,
+                    note: document.getElementById(`js_note_${stepId}`)?.value || '(không có)',
+                }
+            );
+
+            showToast(`📧 Đã gửi thông báo đến ${targetEmail}`, 'success');
+
+            if (btn) {
+                btn.innerHTML = '<span class="material-symbols-outlined text-sm">check_circle</span><span>Đã gửi</span>';
+                btn.classList.replace('bg-indigo-500', 'bg-green-500');
+                setTimeout(() => {
+                    btn.disabled = false;
+                    btn.innerHTML = originalHTML;
+                    btn.classList.replace('bg-green-500', 'bg-indigo-500');
+                }, 3000);
+            }
+        } catch (err) {
+            console.error('[EmailJS]', err);
+            showToast('Lỗi gửi mail: ' + (err?.text || err?.message || 'Kiểm tra cấu hình EmailJS'), 'error');
+            if (btn) { btn.disabled = false; btn.innerHTML = originalHTML; }
+        }
+    };
+
+
+    // ── Tự động kiểm tra deadline và gửi mail ──────────────────────
+    // FIX 1: Dùng đúng Service ID & Template ID (giống nút gửi thủ công)
+    // FIX 2: Lưu log đã gửi vào Firestore thay vì localStorage để đồng bộ đa thiết bị
+    // FIX 3: Hàm được gọi qua window.startDeadlineWatcher() từ initAppLogic() sau khi data load
+    // FIX 4: sentKey bao gồm deadline để phát hiện khi deadline được gia hạn
+    const DEADLINE_SERVICE_ID = 'hnta mtvn ywyd bxzs';
+    const DEADLINE_TEMPLATE_ID = 'template_wli5rfd';
+
+    // Cache in-memory để tránh đọc Firestore mỗi giây (sync khi markSent)
+    let _sentCache = null;
+
+    async function _getSentLog() {
+        if (_sentCache) return _sentCache;
+        try {
+            const snap = await getDoc(doc(db, 'artifacts', app_id, 'public', 'data', 'deadline_sent_log', 'log'));
+            _sentCache = snap.exists() ? (snap.data().entries || {}) : {};
+        } catch { _sentCache = {}; }
+        return _sentCache;
+    }
+
+    async function _markSent(key) {
+        const log = await _getSentLog();
+        log[key] = Date.now();
+        _sentCache = log;
+        try {
+            await setDoc(
+                doc(db, 'artifacts', app_id, 'public', 'data', 'deadline_sent_log', 'log'),
+                { entries: log },
+                { merge: true }
+            );
+        } catch (err) { console.warn('[DeadlineWatcher] Không lưu được log:', err); }
+    }
+
+    async function _alreadySent(key) {
+        const log = await _getSentLog();
+        return !!log[key];
+    }
+
+    async function checkDeadlines() {
+        if (!jobsData || jobsData.length === 0) return; // chờ data load
+        const now = new Date();
+        for (const job of jobsData) {
+            if (job.status === 'done') continue;
+            for (const step of (job.steps || [])) {
+                if (step.status === 'done' || !step.deadline || !step.assigneeEmail) continue;
+
+                const deadline = new Date(step.deadline);
+                const diffMin = (deadline - now) / 60000;
+
+                // FIX 4: sentKey gồm deadline để phát hiện khi deadline được gia hạn
+                const deadlineSlug = step.deadline.replace(/[^0-9]/g, '');
+                const sentKey = `${job.id}_${step.id}_${deadlineSlug}`;
+
+                if (diffMin <= 0 && !(await _alreadySent(sentKey))) {
+                    await _markSent(sentKey);
+                    console.log(`[DeadlineWatcher] Gửi mail tự động → ${step.assigneeEmail}`);
+
+                    const contact = (window.emailContactsData || []).find(c => c.email === step.assigneeEmail);
+                    const assigneeName = contact?.name || step.assignee || step.assigneeEmail;
+                    const deadlineStr = deadline.toLocaleString('vi-VN', {
+                        day: '2-digit', month: '2-digit', year: 'numeric',
+                        hour: '2-digit', minute: '2-digit'
+                    });
+
+                    try {
+                        // FIX 1: Dùng đúng credentials như nút gửi thủ công
+                        await emailjs.send(
+                            DEADLINE_SERVICE_ID,
+                            DEADLINE_TEMPLATE_ID,
+                            {
+                                to_email: step.assigneeEmail,
+                                assignee_name: assigneeName,
+                                job_name: job.name,
+                                step_name: step.name,
+                                deadline: deadlineStr,
+                                note: step.note || '(không có)',
+                            }
+                        );
+                        showToast(`⏰ Tự động gửi nhắc deadline: ${step.name}`, 'info');
+                    } catch (err) {
+                        console.error('[DeadlineWatcher] Lỗi gửi mail:', err);
+                        // Rollback để thử lại lần sau nếu gửi thất bại
+                        const log = await _getSentLog();
+                        delete log[sentKey];
+                        _sentCache = log;
+                    }
+                }
+            }
+        }
+    }
+
+    // FIX 3: Expose để gọi từ initAppLogic() sau khi Firestore data load
+    window.startDeadlineWatcher = function () {
+        // Reset cache khi watcher khởi động
+        _sentCache = null;
+        // Kiểm tra ngay sau 3s (data đã có sẵn vì gọi sau initAppLogic)
+        setTimeout(checkDeadlines, 3000);
+        // Kiểm tra mỗi 60 giây
+        const _intervalId = setInterval(checkDeadlines, 60 * 1000);
+        // Trả về hàm cleanup để dùng khi logout
+        return () => clearInterval(_intervalId);
+    };
 
 }());
