@@ -1107,6 +1107,11 @@
                                                 <!-- Rendered via JS -->
                                             </select>
                                         </div>
+                                        <button onclick="openModal('email-contacts-modal')"
+                                            class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold border border-indigo-200 dark:border-indigo-700 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-colors">
+                                            <span class="material-symbols-outlined text-sm">contact_mail</span>
+                                            Danh sách Email
+                                        </button>
                                         <button onclick="openModal('job-modal')"
                                             class="bg-primary text-white px-4 py-2 rounded-lg text-sm font-bold shadow-md hover:opacity-90 flex items-center justify-center gap-2">
                                             <span class="material-symbols-outlined text-sm">add_task</span> Tạo Job Mới
@@ -3410,6 +3415,90 @@
             </div>
         </div>
     </div>
+    <!-- Modal: Email Contacts Management -->
+    <div id="email-contacts-modal"
+        class="fixed inset-0 z-[120] flex items-center justify-center bg-black/60 backdrop-blur-sm hidden opacity-0 transition-opacity p-4">
+        <div id="email-contacts-modal-content"
+            class="bg-white dark:bg-slate-900 w-full max-w-2xl rounded-2xl shadow-2xl border border-gray-200 dark:border-slate-700 transform scale-95 transition-transform flex flex-col modal-mobile-safe max-h-[85vh]">
+
+            <!-- Header -->
+            <div class="p-4 lg:p-5 border-b border-gray-200 dark:border-slate-800 flex items-center gap-3 shrink-0">
+                <div class="w-9 h-9 rounded-xl bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center">
+                    <span class="material-symbols-outlined text-indigo-500 text-[20px]">contact_mail</span>
+                </div>
+                <div class="flex-1">
+                    <h3 class="font-bold text-base">Danh sách Email nội bộ</h3>
+                    <p class="text-xs text-gray-400 mt-0.5">Quản lý email dùng để gửi thông báo deadline</p>
+                </div>
+                <button onclick="closeModal('email-contacts-modal')"
+                    class="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 dark:bg-slate-800 text-gray-400 hover:text-red-500 transition-colors">
+                    <span class="material-symbols-outlined text-[18px]">close</span>
+                </button>
+            </div>
+
+            <!-- Form thêm mới -->
+            <form id="email-contact-form" class="p-4 border-b border-gray-100 dark:border-slate-800 shrink-0">
+                <p class="text-xs font-bold text-gray-500 uppercase tracking-wide mb-3">Thêm email mới</p>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-500 mb-1">Tên hiển thị</label>
+                        <input type="text" id="ec-name" placeholder="Nguyễn Văn A"
+                            class="w-full px-3 py-2.5 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg text-sm outline-none focus:border-indigo-400 transition-colors">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-500 mb-1">Email <span
+                                class="text-red-400">*</span></label>
+                        <input type="email" id="ec-email" placeholder="email@company.com" required
+                            class="w-full px-3 py-2.5 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg text-sm outline-none focus:border-indigo-400 transition-colors">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-500 mb-1">Vai trò / Bộ phận</label>
+                        <input type="text" id="ec-role" placeholder="Dev, Designer, PM..."
+                            class="w-full px-3 py-2.5 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg text-sm outline-none focus:border-indigo-400 transition-colors">
+                    </div>
+                </div>
+                <div class="flex justify-end mt-3">
+                    <button type="submit"
+                        class="flex items-center gap-2 px-5 py-2.5 bg-indigo-500 text-white text-sm font-bold rounded-xl hover:bg-indigo-600 shadow-md shadow-indigo-200 dark:shadow-indigo-900/30 transition-all active:scale-95">
+                        <span class="material-symbols-outlined text-sm">add</span>
+                        Thêm email
+                    </button>
+                </div>
+            </form>
+
+            <!-- Danh sách -->
+            <div class="flex-1 overflow-y-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead class="sticky top-0">
+                        <tr
+                            class="text-xs text-gray-500 uppercase border-b border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/80">
+                            <th class="py-3 pl-4 font-semibold">Tên</th>
+                            <th class="py-3 font-semibold">Email</th>
+                            <th class="py-3 font-semibold hidden sm:table-cell">Vai trò</th>
+                            <th class="py-3 pr-4 font-semibold text-right">Xóa</th>
+                        </tr>
+                    </thead>
+                    <tbody id="email-contacts-list">
+                        <tr>
+                            <td colspan="4" class="py-8 text-center text-gray-400">
+                                <span class="material-symbols-outlined text-3xl block mb-2">mail_off</span>Chưa có email
+                                nào
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Footer -->
+            <div
+                class="p-3 border-t border-gray-100 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-800/30 rounded-b-2xl shrink-0">
+                <p class="text-xs text-gray-400 text-center">
+                    <span class="material-symbols-outlined text-[13px] align-middle">info</span>
+                    Email này sẽ xuất hiện trong dropdown khi cài đặt thông báo deadline cho từng bước công việc
+                </p>
+            </div>
+        </div>
+    </div>
 
     <!-- Toast Container -->
     <div id="toast-container"
@@ -3483,6 +3572,10 @@
     <!-- CKEditor 5 (load trước services-upgrade) -->
     <script src="https://cdn.ckeditor.com/ckeditor5/39.0.1/classic/ckeditor.js"></script>
     <script type="module" src="services-upgrade.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+    <script>
+        emailjs.init('U6Z3JcGgYS3hChcrH');
+    </script>
     <script type="module" src="quote-upgrade.js"></script>
     <script type="module" src="cb-backend.js"></script>
     <script type="module" src="cb-module-patch.js"></script>
