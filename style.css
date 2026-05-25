@@ -1596,3 +1596,10 @@ body {
     display: flex;
   }
 }
+
+.kanban-slides-track {
+  display: flex;
+  height: 100%;
+  width: 100%;
+  transition: transform .35s cubic-bezier(.4, 0, .2, 1);
+}
