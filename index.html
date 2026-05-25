@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>QUOC TUNG CRM</title>
+    <title>Neo Wave CRM</title>
     <link rel="shortcut icon" href="crm (1).png" type="image/x-icon">
 
     <!-- Fonts & Icons -->
@@ -416,7 +416,7 @@
                     <div
                         class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-white font-bold text-xl mr-3 shadow-lg shadow-primary/30">
                         T</div>
-                    <span class="font-bold text-lg tracking-tight">Q.Tung CRM</span>
+                    <span class="font-bold text-lg tracking-tight">Neo Wave CRM</span>
                 </div>
                 <button onclick="toggleMobileMenu()"
                     class="lg:hidden text-gray-500 hover:text-red-500 w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 dark:bg-slate-800">
@@ -1111,6 +1111,9 @@
                                             class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold border border-indigo-200 dark:border-indigo-700 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-colors">
                                             <span class="material-symbols-outlined text-sm">contact_mail</span>
                                             Danh sách Email
+                                            <span
+                                                class="ml-1 px-1.5 py-0.5 text-[10px] font-bold bg-indigo-100 dark:bg-indigo-800 rounded-full"
+                                                id="email-contacts-count">0</span>
                                         </button>
                                         <button onclick="openModal('job-modal')"
                                             class="bg-primary text-white px-4 py-2 rounded-lg text-sm font-bold shadow-md hover:opacity-90 flex items-center justify-center gap-2">
@@ -1924,6 +1927,51 @@
                                                 oninput="cbAutoSave();cbUpdatePreview()">
                                         </div>
                                     </div>
+                                    <!-- ── Chữ ký hệ thống ── -->
+                                    <div
+                                        class="mt-4 rounded-xl border border-dashed border-indigo-200 dark:border-indigo-700/40 bg-indigo-50/40 dark:bg-indigo-900/10 p-3">
+                                        <label class="flex items-center gap-2.5 cursor-pointer select-none">
+                                            <input type="checkbox" id="cb-a-use-sys-sig"
+                                                class="w-4 h-4 rounded accent-indigo-500 cursor-pointer"
+                                                onchange="cbToggleSysSignature(); cbAutoSave(); cbUpdatePreview()">
+                                            <span
+                                                class="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
+                                                <span
+                                                    class="material-symbols-outlined text-indigo-400 text-[18px]">draw</span>
+                                                Sử dụng chữ ký ảnh đã cài đặt trong hệ thống
+                                            </span>
+                                        </label>
+
+                                        <!-- Preview chữ ký khi đã có -->
+                                        <div id="cb-sys-sig-preview-wrap"
+                                            class="hidden mt-3 flex flex-col items-center gap-1.5">
+                                            <div
+                                                class="bg-white dark:bg-slate-800 rounded-lg px-6 py-3 border border-gray-200 dark:border-slate-600 shadow-sm w-full flex flex-col items-center">
+                                                <img id="cb-sys-sig-preview-img" src="" alt="Chữ ký hệ thống"
+                                                    class="max-h-20 max-w-[180px] object-contain mb-2">
+                                                <div
+                                                    class="w-32 border-t border-gray-400 dark:border-gray-500 pt-1 text-center">
+                                                    <p id="cb-sys-sig-preview-name"
+                                                        class="text-xs text-gray-600 dark:text-gray-400 font-medium">
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <p class="text-[11px] text-indigo-400 italic text-center">
+                                                <span
+                                                    class="material-symbols-outlined text-[12px] align-middle">check_circle</span>
+                                                Chữ ký này sẽ tự động xuất hiện trong hợp đồng
+                                            </p>
+                                        </div>
+
+                                        <!-- Cảnh báo chưa cài đặt chữ ký -->
+                                        <div id="cb-sys-sig-empty-warn"
+                                            class="hidden mt-2 flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 rounded-lg px-3 py-2">
+                                            <span class="material-symbols-outlined text-[15px] shrink-0">warning</span>
+                                            <span>Chưa có chữ ký trong hệ thống. Vào <strong>Cài đặt → Chữ ký</strong>
+                                                để cài đặt trước.</span>
+                                        </div>
+                                    </div>
+
                                     <button onclick="cbFillSideA()"
                                         class="mt-4 flex items-center gap-2 text-xs font-semibold text-indigo-500 hover:text-indigo-700 transition-colors">
                                         <span class="material-symbols-outlined text-[16px]">auto_fix_high</span> Điền
@@ -3428,6 +3476,7 @@
             </div>
         </div>
     </div>
+
     <!-- Modal: Email Contacts Management -->
     <div id="email-contacts-modal"
         class="fixed inset-0 z-[120] flex items-center justify-center bg-black/60 backdrop-blur-sm hidden opacity-0 transition-opacity p-4">
@@ -3582,15 +3631,18 @@
     </script>
     <script src="cb-module.js"></script>
     <script type="module" src="app.js"></script>
+
     <!-- CKEditor 5 (load trước services-upgrade) -->
     <script src="https://cdn.ckeditor.com/ckeditor5/39.0.1/classic/ckeditor.js"></script>
     <script type="module" src="services-upgrade.js"></script>
+
     <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
     <script>
         emailjs.init('U6Z3JcGgYS3hChcrH');
     </script>
     <script type="module" src="quote-upgrade.js"></script>
     <script type="module" src="cb-backend.js"></script>
+    <script type="module" src="cb-preview-upgrade.js"></script>
     <script type="module" src="cb-module-patch.js"></script>
     <script type="module" src="cb-autocode.js"></script>
 </body>
