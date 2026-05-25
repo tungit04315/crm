@@ -18,6 +18,14 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 const storage = getStorage(app);
+// ── STEP STATUS CONSTANTS ──────────────────────────────────────
+const STEP_STATUS = {
+    pending: { label: 'Chờ xử lý', icon: '⏳', color: 'text-gray-600', border: 'border-gray-200 dark:border-slate-700', bg: 'bg-white dark:bg-slate-800' },
+    doing: { label: 'Đang xử lý', icon: '🚀', color: 'text-blue-600', border: 'border-blue-300 dark:border-blue-700', bg: 'bg-blue-50/60 dark:bg-blue-900/10' },
+    done: { label: 'Hoàn thành', icon: '✅', color: 'text-green-600', border: 'border-green-300 dark:border-green-700', bg: 'bg-green-50/60 dark:bg-green-900/10' },
+    paused: { label: 'Tạm dừng', icon: '⏸️', color: 'text-amber-600', border: 'border-amber-300 dark:border-amber-700', bg: 'bg-amber-50/60 dark:bg-amber-900/10' },
+    cancelled: { label: 'Đã hủy', icon: '🚫', color: 'text-red-500', border: 'border-red-200 dark:border-red-800', bg: 'bg-red-50/40 dark:bg-red-900/10' },
+};
 
 /*
 ========================================================
@@ -346,12 +354,41 @@ function initAppLogic() {
     // New Listeners for Workflow Module
     unsubscribes.push(onSnapshot(query(getCollectionPath('workflows')), snap => { workflowsData = snap.docs.map(d => ({ id: d.id, ...d.data() })); renderWorkflows(); updateJobWorkflowSelect(); updateKanbanWorkflowSelect(); }));
     //unsubscribes.push(onSnapshot(query(getCollectionPath('jobs')), snap => { jobsData = snap.docs.map(d => ({ id: d.id, ...d.data() })); renderJobsTable(); renderJobsKanban(); updateDashboardStats(); renderJobReports(); }));
-    unsubscribes.push(onSnapshot(query(getCollectionPath('jobs')), snap => { jobsData = snap.docs.map(d => ({ id: d.id, ...d.data() })); renderJobsTable(); renderJobsKanban(); updateDashboardStats(); renderJobReports(); if (myChart) initChart(); }));
+    //unsubscribes.push(onSnapshot(query(getCollectionPath('jobs')), snap => { jobsData = snap.docs.map(d => ({ id: d.id, ...d.data() })); renderJobsTable(); renderJobsKanban(); updateDashboardStats(); renderJobReports(); if (myChart) initChart(); }));
+
+    unsubscribes.push(onSnapshot(query(getCollectionPath('jobs')), snap => {
+        jobsData = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        renderJobsTable(); renderJobsKanban(); updateDashboardStats(); renderJobReports();
+        if (myChart) initChart();
+
+        // Sync modal đang mở nếu job đó vừa được cập nhật
+        if (currentEditingJobId) {
+            const modal = document.getElementById('job-detail-modal');
+            if (modal && !modal.classList.contains('hidden')) {
+                const freshJob = jobsData.find(j => j.id === currentEditingJobId);
+                if (freshJob) {
+                    const statusIcon = { pending: '⏳', doing: '🚀', done: '✅' };
+                    const sortedSteps = (freshJob.steps || []).slice().sort((a, b) => a.order - b.order);
+                    _updateJobProgress(sortedSteps);
+                    const stepSelect = document.getElementById('jd-step-select');
+                    if (stepSelect) {
+                        const currentVal = stepSelect.value;
+                        stepSelect.innerHTML = sortedSteps.map((s, i) =>
+                            `<option value="${s.id}" ${s.id === currentVal ? 'selected' : ''}>${statusIcon[s.status] || '⏳'} Bước ${i + 1}: ${s.name}</option>`
+                        ).join('');
+                    }
+                }
+            }
+        }
+    }));
 
     // ── Email Contacts Realtime Listener ──────────────────────
     unsubscribes.push(onSnapshot(query(getCollectionPath('email_contacts')), snap => {
         window.emailContactsData = snap.docs.map(d => ({ id: d.id, ...d.data() }));
         if (typeof window.renderEmailContactsList === 'function') renderEmailContactsList();
+        // BUG FIX: cập nhật badge số lượng email trên nút "Danh sách Email"
+        const badge = document.getElementById('email-contacts-count');
+        if (badge) badge.textContent = window.emailContactsData.length;
     }));
 
     initProjectsModule();
@@ -940,9 +977,15 @@ window.addWorkflowStepInput = (val = '') => {
     const container = document.getElementById('workflow-steps-container');
     const div = document.createElement('div');
     div.className = "flex gap-2 items-center wf-step-item bg-white dark:bg-slate-900 p-2 rounded border border-gray-200 dark:border-slate-700";
+    // FIX Bug6: escape HTML để tên bước chứa ký tự đặc biệt không vỡ attribute
+    const safeVal = String(val)
+        .replace(/&/g, '&amp;')
+        .replace(/"/g, '&quot;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
     div.innerHTML = `
                 <span class="material-symbols-outlined text-gray-400 cursor-move" title="Sắp xếp">drag_indicator</span>
-                <input type="text" value="${val}" required class="wf-step-input flex-1 px-3 py-1.5 bg-transparent border-none text-sm outline-none focus:ring-0" placeholder="Tên bước...">
+                <input type="text" value="${safeVal}" required class="wf-step-input flex-1 px-3 py-1.5 bg-transparent border-none text-sm outline-none focus:ring-0" placeholder="Tên bước...">
                 <button type="button" onclick="this.parentElement.remove()" class="text-red-400 hover:text-red-600 p-1"><span class="material-symbols-outlined text-sm">delete</span></button>
             `;
     container.appendChild(div);
@@ -958,8 +1001,13 @@ document.getElementById('workflow-form').addEventListener('submit', async (e) =>
     const stepInputs = document.querySelectorAll('.wf-step-input');
     if (stepInputs.length === 0) return showToast('Cần ít nhất 1 bước', 'error');
 
+    // FIX Bug1: khi edit workflow, giữ nguyên ID cũ theo index để Jobs đang chạy
+    // không bị mất liên kết. Chỉ tạo ID mới cho bước thực sự được thêm mới.
+    const existingSteps = id
+        ? (workflowsData.find(w => w.id === id)?.steps || [])
+        : [];
     const steps = Array.from(stepInputs).map((input, idx) => ({
-        id: 'step_' + new Date().getTime() + '_' + idx,
+        id: existingSteps[idx]?.id || ('step_' + Date.now() + '_' + idx),
         name: input.value.trim(),
         order: idx + 1
     }));
@@ -1059,6 +1107,7 @@ document.getElementById('job-form').addEventListener('submit', async (e) => {
 });
 
 // -> Render Job List Table
+// -> Render Job List Table
 window.renderJobsTable = () => {
     const txt = document.getElementById('search-job-list').value.toLowerCase();
     const st = document.getElementById('filter-job-status').value;
@@ -1075,9 +1124,23 @@ window.renderJobsTable = () => {
     tbody.innerHTML = filtered.map(job => {
         const cus = customersData.find(c => c.id === job.customerId);
         const wf = workflowsData.find(w => w.id === job.workflowId);
+
+        // ── Patch 6: tính đủ các trạng thái ──
         const doneSteps = job.steps ? job.steps.filter(s => s.status === 'done').length : 0;
-        const totalSteps = job.steps ? job.steps.length : 1;
+        const activeSteps = job.steps ? job.steps.filter(s => s.status !== 'cancelled').length : 1;
+        const hasPaused = job.steps?.some(s => s.status === 'paused');
+        const hasCancelled = job.steps?.some(s => s.status === 'cancelled');
         const isDone = job.status === 'done';
+
+        const badgeClass = isDone ? 'bg-green-100 text-green-700'
+            : hasPaused ? 'bg-amber-100 text-amber-700'
+                : hasCancelled ? 'bg-red-100 text-red-600'
+                    : 'bg-orange-100 text-orange-700';
+
+        const statusLabel = isDone ? 'Hoàn thành'
+            : hasPaused ? 'Tạm dừng'
+                : hasCancelled ? 'Có bước hủy'
+                    : 'Đang làm';
 
         return `
                 <tr class="hover:bg-gray-50/50 dark:hover:bg-slate-800/30 border-b border-gray-100 dark:border-slate-800/50 transition-colors cursor-pointer" onclick="openJobDetail('${job.id}')">
@@ -1085,8 +1148,8 @@ window.renderJobsTable = () => {
                     <td class="py-3 text-sm">${cus ? cus.name : 'N/A'}</td>
                     <td class="py-3 text-xs text-gray-500">${wf ? wf.name : 'N/A'}</td>
                     <td class="py-3 text-center">
-                        <div class="inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-[11px] font-bold ${isDone ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}">
-                            ${isDone ? 'Hoàn thành' : 'Đang làm'} (${doneSteps}/${totalSteps})
+                        <div class="inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-[11px] font-bold ${badgeClass}">
+                            ${statusLabel} (${doneSteps}/${activeSteps})
                         </div>
                     </td>
                     <td class="py-3 text-xs text-gray-500">${formatDateStr(job.createdAt)}</td>
@@ -1125,21 +1188,41 @@ window.renderJobsKanban = () => {
     _kanbanCols.forEach(c => { _kanbanJobMap[c.id] = []; _kanbanColCounts[c.id] = 0; });
 
     const relevantJobs = jobsData.filter(j => j.workflowId === wfId);
+
     relevantJobs.forEach(job => {
         let currentStepId = 'col_done';
         if (job.status !== 'done') {
-            const activeStep = (job.steps || []).sort((a, b) => a.order - b.order).find(s => s.status !== 'done');
+            const sortedJobSteps = (job.steps || []).slice().sort((a, b) => a.order - b.order);
+            const activeStep = sortedJobSteps.find(s => s.status === 'doing')
+                || sortedJobSteps.find(s => s.status === 'paused')
+                || sortedJobSteps.find(s => s.status === 'pending');
             if (activeStep) currentStepId = activeStep.id;
         }
         if (!_kanbanJobMap[currentStepId]) currentStepId = _kanbanCols[0].id;
         _kanbanColCounts[currentStepId]++;
+
         const cus = customersData.find(c => c.id === job.customerId);
         const activeStepObj = (job.steps || []).find(s => s.id === currentStepId);
+
+        // Người phụ trách
         const assigneeStr = activeStepObj?.assignee
-            ? `<div class="mt-2 text-[10px] bg-blue-50 dark:bg-blue-900/30 text-blue-600 px-2 py-1 rounded-full inline-flex items-center gap-1">
-                <span class="material-symbols-outlined text-[10px]">person</span>${activeStepObj.assignee}</div>`
+            ? `<div class="text-[11px] bg-blue-50 dark:bg-blue-900/30 text-blue-600 px-2 py-1 rounded-full inline-flex items-center gap-1">
+            <span class="material-symbols-outlined text-[11px]">person</span>${activeStepObj.assignee}</div>`
             : '';
-        _kanbanJobMap[currentStepId].push({ job, cus, assigneeStr });
+
+        // ── Badge trạng thái bước hiện tại ──
+        const stepStatus = job.status === 'done' ? 'done' : (activeStepObj?.status || 'pending');
+        const statusCfg = {
+            pending: { icon: '⏳', label: 'Chờ xử lý', cls: 'bg-gray-100  text-gray-500  dark:bg-slate-700 dark:text-slate-400' },
+            doing: { icon: '🚀', label: 'Đang xử lý', cls: 'bg-blue-50   text-blue-600  dark:bg-blue-900/30 dark:text-blue-400' },
+            done: { icon: '✅', label: 'Hoàn thành', cls: 'bg-green-50  text-green-600 dark:bg-green-900/30 dark:text-green-400' },
+            paused: { icon: '⏸️', label: 'Tạm dừng', cls: 'bg-amber-50  text-amber-600 dark:bg-amber-900/30 dark:text-amber-400' },
+            cancelled: { icon: '🚫', label: 'Đã hủy', cls: 'bg-red-50    text-red-500   dark:bg-red-900/30 dark:text-red-400' },
+        };
+        const sc = statusCfg[stepStatus] || statusCfg.pending;
+        const statusBadge = `<span class="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full ${sc.cls}">${sc.icon} ${sc.label}</span>`;
+
+        _kanbanJobMap[currentStepId].push({ job, cus, assigneeStr, statusBadge });
     });
 
     // Clamp slide index
@@ -1151,21 +1234,30 @@ window.renderJobsKanban = () => {
         <button class="kanban-dot ${i === _kanbanSlideIdx ? 'active' : ''}" onclick="kanbanGoSlide(${i})" title="${col.name}"></button>`).join('');
 
     const slidesHtml = _kanbanCols.map((col, i) => {
-        const cards = _kanbanJobMap[col.id].map(({ job, cus, assigneeStr }) => `
-            <div class="kanban-card" draggable="true" ondragstart="dragStartKanban(event)"
-                 data-job-id="${job.id}" onclick="openJobDetail('${job.id}')">
-                <div class="text-[10px] text-gray-400 mb-1.5 flex justify-between">
-                    <span class="font-mono">#${job.id.slice(-5)}</span>
-                    <span>${formatDateStr(job.createdAt).split(' ')[0]}</span>
-                </div>
-                <h5 class="font-bold text-sm text-gray-800 dark:text-gray-200 leading-snug mb-1">${job.name}</h5>
-                <p class="text-xs text-primary font-medium truncate">
-                    <span class="material-symbols-outlined text-[12px] align-middle">business</span> ${cus ? cus.name : 'Unknown'}
-                </p>
-                ${assigneeStr}
-            </div>`).join('') || `<div class="text-center text-gray-400 dark:text-gray-600 py-10 text-sm">
-                <span class="material-symbols-outlined text-3xl block mb-2">inbox</span>Không có job nào</div>`;
+        const cards = _kanbanJobMap[col.id].map(({ job, cus, assigneeStr, statusBadge }) => `
+    <div class="kanban-card" draggable="true" ondragstart="dragStartKanban(event)"
+         data-job-id="${job.id}" onclick="openJobDetail('${job.id}')">
 
+        <div class="flex items-center justify-between mb-1.5">
+            <span class="text-[10px] text-gray-400 font-mono">#${job.id.slice(-5)}</span>
+            <div class="flex items-center gap-1.5">
+                ${statusBadge}
+                <span class="text-[10px] text-gray-400">${formatDateStr(job.createdAt).split(' ')[0]}</span>
+            </div>
+        </div>
+
+        <h5 class="font-bold text-sm text-gray-800 dark:text-gray-200 leading-snug mb-1">${job.name}</h5>
+
+        <p class="text-xs text-primary font-medium truncate">
+            <span class="material-symbols-outlined text-[12px] align-middle">business</span> ${cus ? cus.name : 'Unknown'}
+        </p>
+
+        ${assigneeStr ? `<div class="mt-2">${assigneeStr}</div>` : ''}
+
+    </div>`).join('') || `<div class="text-center text-gray-400 dark:text-gray-600 py-10 text-sm">
+            <span class="material-symbols-outlined text-3xl block mb-2">inbox</span>Không có job nào</div>`;
+
+        // ← return bắt buộc khi dùng {} body
         return `<div class="kanban-slide ${i === _kanbanSlideIdx ? 'active' : ''}"
                      data-col-id="${col.id}"
                      ondragover="allowDrop(event)" ondrop="dropKanban(event)">
@@ -1226,14 +1318,63 @@ window.renderJobsKanban = () => {
     _bindKanbanSwipe();
 };
 
+// FIX Bug4: cập nhật DOM trực tiếp, KHÔNG rebuild toàn bộ kanban → loại bỏ flicker
 window.kanbanGoSlide = (idx) => {
     if (idx < 0 || idx >= _kanbanCols.length) return;
     _kanbanSlideIdx = idx;
-    // Update track position
+
+    // 1. Animate track (CSS transition .35s đã có sẵn trong stylesheet)
     const track = document.getElementById('kanban-slides-track');
     if (track) track.style.transform = `translateX(-${idx * 100}%)`;
-    // Re-render nav header only (full re-render causes flicker)
-    window.renderJobsKanban();
+
+    const totalCols = _kanbanCols.length;
+    const curCol = _kanbanCols[idx];
+    const prevCol = _kanbanCols[idx - 1];
+    const nextCol = _kanbanCols[idx + 1];
+    const curCount = _kanbanColCounts[curCol.id] || 0;
+
+    // 2. Progress bar
+    const fill = document.querySelector('.kanban-progress-fill');
+    if (fill) fill.style.width = `${((idx + 1) / totalCols) * 100}%`;
+
+    // 3. Step info text
+    const stepNum = document.querySelector('.kanban-step-num');
+    const stepName = document.querySelector('.kanban-step-name');
+    const stepCount = document.querySelector('.kanban-step-count');
+    if (stepNum) stepNum.textContent = `${idx + 1}/${totalCols}`;
+    if (stepName) stepName.textContent = curCol.name;
+    if (stepCount) stepCount.textContent = `${curCount} job`;
+
+    // 4. Adjacent labels
+    const sub = document.querySelector('.kanban-step-sub');
+    if (sub) sub.innerHTML =
+        (prevCol ? `<span class="kanban-adjacent prev">← ${prevCol.name}</span>` : '') +
+        (nextCol ? `<span class="kanban-adjacent next">${nextCol.name} →</span>` : '');
+
+    // 5. Prev / Next buttons
+    const [btnPrev, btnNext] = document.querySelectorAll('.kanban-nav-btn');
+    if (btnPrev) {
+        btnPrev.disabled = idx === 0;
+        btnPrev.classList.toggle('opacity-30', idx === 0);
+        btnPrev.classList.toggle('cursor-not-allowed', idx === 0);
+        btnPrev.setAttribute('onclick', `kanbanGoSlide(${idx - 1})`);
+    }
+    if (btnNext) {
+        btnNext.disabled = idx === totalCols - 1;
+        btnNext.classList.toggle('opacity-30', idx === totalCols - 1);
+        btnNext.classList.toggle('cursor-not-allowed', idx === totalCols - 1);
+        btnNext.setAttribute('onclick', `kanbanGoSlide(${idx + 1})`);
+    }
+
+    // 6. Dots
+    document.querySelectorAll('.kanban-dot').forEach((dot, i) => {
+        dot.classList.toggle('active', i === idx);
+    });
+
+    // 7. Active slide class (cho styling drag-over)
+    document.querySelectorAll('.kanban-slide').forEach((slide, i) => {
+        slide.classList.toggle('active', i === idx);
+    });
 };
 
 // Swipe gesture binding
@@ -1269,6 +1410,9 @@ window.dragStartKanban = (ev) => { ev.dataTransfer.setData("jobId", ev.currentTa
 window.dropKanban = async (ev) => {
     ev.preventDefault();
     document.querySelectorAll('.kanban-slide').forEach(el => el.classList.remove('drag-over'));
+
+    // BUG FIX: đọc jobId từ dataTransfer (dragStartKanban đã set vào đây)
+    const jobId = ev.dataTransfer.getData("jobId");
 
     const slide = ev.currentTarget.closest ? ev.currentTarget.closest('.kanban-slide') : ev.currentTarget;
     const targetStepId = slide ? slide.dataset.colId : ev.currentTarget.dataset.colId;
@@ -1333,7 +1477,10 @@ window.openJobDetail = (jobId) => {
     ).join('');
 
     // Tự động chọn bước đầu tiên chưa hoàn thành, hoặc bước 1
-    const activeStep = steps.find(s => s.status !== 'done') || steps[0];
+    // FIX ②: ưu tiên bước đang 'doing' → rồi mới đến 'pending' → cuối cùng bước 1
+    const activeStep = steps.find(s => s.status === 'doing')
+        || steps.find(s => s.status === 'pending')
+        || steps[0];
     if (activeStep) {
         stepSelect.value = activeStep.id;
         currentEditingStepId = activeStep.id;
@@ -1341,13 +1488,27 @@ window.openJobDetail = (jobId) => {
     }
 
     openModal('job-detail-modal');
+
+    // ── Ẩn toàn bộ block dropdown "BƯỚC CÔNG VIỆC" ──
+    const stepSelectorBlock = stepSelect?.closest('div[class*="border"]') || stepSelect?.parentElement?.parentElement;
+    if (stepSelectorBlock) stepSelectorBlock.style.display = 'none';
 };
 
 // Cập nhật progress bar (dùng chung)
 function _updateJobProgress(steps) {
-    const doneCount = steps.filter(s => s.status === 'done').length;
-    const pct = steps.length === 0 ? 0 : Math.round((doneCount / steps.length) * 100);
-    document.getElementById('jd-progress-text').innerText = `${pct}% (${doneCount}/${steps.length})`;
+    const activeSteps = steps.filter(s => s.status !== 'cancelled'); // bỏ qua bước đã hủy
+    const doneCount = activeSteps.filter(s => s.status === 'done').length;
+    const total = activeSteps.length;
+    const pct = total === 0 ? 0 : Math.round((doneCount / total) * 100);
+
+    const pausedCount = steps.filter(s => s.status === 'paused').length;
+    const cancelledCount = steps.filter(s => s.status === 'cancelled').length;
+
+    let extra = '';
+    if (pausedCount) extra += ` · ⏸ ${pausedCount} tạm dừng`;
+    if (cancelledCount) extra += ` · 🚫 ${cancelledCount} đã hủy`;
+
+    document.getElementById('jd-progress-text').innerText = `${pct}% (${doneCount}/${total})${extra}`;
     document.getElementById('jd-progress-bar').style.width = `${pct}%`;
 }
 
@@ -1358,6 +1519,18 @@ function _renderStepForm(job, stepId) {
     if (!s) return;
     currentEditingStepId = stepId;
 
+    const stepIndex = steps.findIndex(st => st.id === stepId);
+
+    // ── Badge trạng thái hiển thị ngoài card ──
+    const statusCfg = {
+        pending: { icon: '⏳', label: 'Chờ xử lý', cls: 'bg-gray-100  text-gray-600  dark:bg-slate-700  dark:text-slate-300' },
+        doing: { icon: '🚀', label: 'Đang xử lý', cls: 'bg-blue-100  text-blue-700  dark:bg-blue-900/40 dark:text-blue-300' },
+        done: { icon: '✅', label: 'Hoàn thành', cls: 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300' },
+        paused: { icon: '⏸️', label: 'Tạm dừng', cls: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300' },
+        cancelled: { icon: '🚫', label: 'Đã hủy', cls: 'bg-red-100   text-red-600   dark:bg-red-900/40  dark:text-red-300' },
+    };
+    const sc = statusCfg[s.status] || statusCfg.pending;
+
     const _emailOpts = (window.emailContactsData || [])
         .map(c => `<option value="${c.email}" ${(s.assigneeEmail || '') === c.email ? 'selected' : ''}>
             ${c.name ? c.name + ' — ' : ''}${c.email}${c.role ? ' (' + c.role + ')' : ''}
@@ -1365,14 +1538,6 @@ function _renderStepForm(job, stepId) {
 
     let deadlineVal = s.deadline || '';
     if (deadlineVal && deadlineVal.length === 10) deadlineVal += 'T09:00';
-
-    const borderColor = s.status === 'done' ? 'border-green-300 dark:border-green-700'
-        : s.status === 'doing' ? 'border-blue-300 dark:border-blue-700'
-            : 'border-gray-200 dark:border-slate-700';
-
-    const bgColor = s.status === 'done' ? 'bg-green-50/60 dark:bg-green-900/10'
-        : s.status === 'doing' ? 'bg-blue-50/60 dark:bg-blue-900/10'
-            : 'bg-white dark:bg-slate-800';
 
     const PRESETS = [
         { label: '5 phút', min: 5 }, { label: '15 phút', min: 15 },
@@ -1382,19 +1547,35 @@ function _renderStepForm(job, stepId) {
     ];
 
     document.getElementById('jd-steps-container').innerHTML = `
-    <div class="border rounded-xl p-4 lg:p-5 transition-colors ${bgColor} ${borderColor}">
 
-        <!-- Trạng thái bước -->
+    <!-- Badge trạng thái + tên bước — ngoài card, không có màu nền -->
+    <div class="flex items-center justify-between mb-3">
+        <span class="text-sm font-semibold text-gray-700 dark:text-gray-300">
+            Bước ${stepIndex + 1}: ${s.name}
+        </span>
+        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold ${sc.cls}">
+            ${sc.icon} ${sc.label}
+        </span>
+    </div>
+
+    <!-- Card form — nền trắng thuần, không đổi màu theo trạng thái -->
+    <div class="border border-gray-200 dark:border-slate-700 rounded-xl p-4 lg:p-5 bg-white dark:bg-slate-800">
+
+        <!-- Dropdown chọn trạng thái -->
         <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-3 mb-5 pb-4 border-b border-gray-100 dark:border-slate-700">
             <span class="text-sm font-semibold text-gray-500">Trạng thái bước này</span>
             <select onchange="updateSingleStepStatus('${s.id}', this.value)"
                 class="px-3 py-2 bg-white dark:bg-slate-900 border rounded-xl text-sm font-bold outline-none focus:ring-2 transition-all
                 ${s.status === 'done' ? 'text-green-600 border-green-300 focus:ring-green-200' :
-            s.status === 'doing' ? 'text-blue-600 border-blue-300 focus:ring-blue-200' :
-                'text-gray-600 border-gray-200 focus:ring-gray-200'}">
-                <option value="pending" ${s.status === 'pending' ? 'selected' : ''}>⏳ Chờ xử lý</option>
-                <option value="doing"   ${s.status === 'doing' ? 'selected' : ''}>🚀 Đang làm</option>
-                <option value="done"    ${s.status === 'done' ? 'selected' : ''}>✅ Hoàn thành</option>
+            s.status === 'doing' ? 'text-blue-600  border-blue-300  focus:ring-blue-200' :
+                s.status === 'paused' ? 'text-amber-600 border-amber-300 focus:ring-amber-200' :
+                    s.status === 'cancelled' ? 'text-red-500   border-red-300   focus:ring-red-200' :
+                        'text-gray-600  border-gray-200  focus:ring-gray-200'}">
+                <option value="pending"   ${s.status === 'pending' ? 'selected' : ''}>⏳ Chờ xử lý</option>
+                <option value="doing"     ${s.status === 'doing' ? 'selected' : ''}>🚀 Đang xử lý</option>
+                <option value="done"      ${s.status === 'done' ? 'selected' : ''}>✅ Hoàn thành</option>
+                <option value="paused"    ${s.status === 'paused' ? 'selected' : ''}>⏸️ Tạm dừng</option>
+                <option value="cancelled" ${s.status === 'cancelled' ? 'selected' : ''}>🚫 Đã hủy</option>
             </select>
         </div>
 
@@ -1404,18 +1585,18 @@ function _renderStepForm(job, stepId) {
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                     <label class="block text-xs font-semibold text-gray-500 mb-1">Người phụ trách</label>
-                    <input type="text" id="js_ass_${s.id}" value="${s.assignee || ''}"
+                    <input id="js_ass_${s.id}" type="text" value="${s.assignee || ''}"
                         onblur="saveStepInfo('${s.id}')"
                         placeholder="Tên nhân viên..."
                         class="w-full px-3 py-2.5 bg-transparent border border-gray-200 dark:border-slate-600 rounded-xl text-sm outline-none focus:border-primary transition-colors">
                 </div>
                 <div>
-                    <label class="block text-xs font-semibold text-gray-500 mb-1 flex items-center gap-1">
-                        <span class="material-symbols-outlined text-[13px] text-indigo-400">mail</span>
+                    <label class="block text-xs font-semibold text-gray-500 mb-1">
+                        <span class="material-symbols-outlined text-[13px] align-middle">mail</span>
                         Email nhận thông báo
                     </label>
-                    <select id="js_email_${s.id}"
-                        class="w-full px-3 py-2.5 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-600 rounded-xl text-sm outline-none focus:border-primary transition-colors">
+                    <select id="js_email_${s.id}" onchange="saveStepInfo('${s.id}')"
+                        class="w-full px-3 py-2.5 bg-transparent border border-gray-200 dark:border-slate-600 rounded-xl text-sm outline-none focus:border-primary transition-colors">
                         <option value="">— Chọn email —</option>
                         ${_emailOpts}
                     </select>
@@ -1425,23 +1606,21 @@ function _renderStepForm(job, stepId) {
             <!-- Deadline -->
             <div>
                 <label class="block text-xs font-semibold text-gray-500 mb-2">Hạn chót (Deadline)</label>
-                <div class="flex flex-wrap gap-1.5 mb-2">
+                <div class="flex flex-wrap gap-2 mb-2">
                     ${PRESETS.map(p => `
-                    <button type="button"
-                        data-preset-step="${s.id}" data-preset-min="${p.min}"
-                        onclick="setDeadlinePreset('${s.id}', ${p.min})"
-                        class="px-2.5 py-1 text-[11px] font-semibold rounded-lg border border-gray-200 dark:border-slate-600
-                               bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-gray-300
-                               hover:bg-indigo-500 hover:text-white hover:border-indigo-500 transition-all active:scale-95">
-                        ${p.label}
-                    </button>`).join('')}
+                        <button type="button" onclick="setDeadlinePreset('${s.id}', ${p.min})"
+                            class="px-3 py-1.5 text-xs font-semibold rounded-lg border border-gray-200 dark:border-slate-600
+                                   bg-gray-50 dark:bg-slate-700 text-gray-600 dark:text-slate-300
+                                   hover:border-primary hover:text-primary transition-colors active:scale-95">
+                            ${p.label}
+                        </button>`).join('')}
                 </div>
-                <input type="datetime-local" id="js_dead_${s.id}" value="${deadlineVal}"
-                    onblur="saveStepInfo('${s.id}')"
+                <input id="js_dead_${s.id}" type="datetime-local" value="${deadlineVal}"
+                    onchange="saveStepInfo('${s.id}')"
                     class="w-full px-3 py-2.5 bg-transparent border border-gray-200 dark:border-slate-600 rounded-xl text-sm outline-none focus:border-primary transition-colors">
             </div>
 
-            <!-- Ghi chú — rows="7" để viết thoải mái -->
+            <!-- Ghi chú -->
             <div>
                 <label class="block text-xs font-semibold text-gray-500 mb-1">Ghi chú nội bộ</label>
                 <textarea id="js_note_${s.id}" rows="7"
@@ -1465,41 +1644,75 @@ function _renderStepForm(job, stepId) {
 }
 
 // Người dùng chọn bước khác từ combobox
+// Thay toàn bộ hàm switchJobStep
 window.switchJobStep = () => {
+    if (currentEditingStepId) saveStepInfo(currentEditingStepId);
     const job = jobsData.find(j => j.id === currentEditingJobId);
     if (!job) return;
     const stepId = document.getElementById('jd-step-select').value;
+    const step = job.steps.find(s => s.id === stepId);
+
+    // ✦ FIX: bước đang mở mà đang pending → tự chuyển sang doing
+    if (step && step.status === 'pending') {
+        updateSingleStepStatus(stepId, 'doing');
+        return; // updateSingleStepStatus sẽ gọi _renderStepForm ở cuối
+    }
     _renderStepForm(job, stepId);
 };
 
+// Thay toàn bộ hàm updateSingleStepStatus
 window.updateSingleStepStatus = async (stepId, newStatus) => {
     const job = jobsData.find(j => j.id === currentEditingJobId);
     if (!job) return;
-    const updatedSteps = job.steps.map(s => s.id === stepId ? { ...s, status: newStatus } : s);
-    const allDone = updatedSteps.every(s => s.status === 'done');
+
+    const sortedSteps = job.steps.slice().sort((a, b) => a.order - b.order);
+    const targetIdx = sortedSteps.findIndex(s => s.id === stepId);
+
+    const updatedSteps = job.steps.map(s => {
+        const idx = sortedSteps.findIndex(ss => ss.id === s.id);
+
+        if (newStatus === 'done') {
+            if (idx < targetIdx) return { ...s, status: 'done' };
+            if (idx === targetIdx) return { ...s, status: 'done' };
+            // ✦ FIX: auto-advance bước kế tiếp chưa bị huỷ → doing
+            if (idx === targetIdx + 1 && s.status !== 'cancelled')
+                return { ...s, status: 'doing' };
+            // Các bước sau đó: nếu chưa xử lý thì về pending
+            return s.status === 'cancelled' ? s : { ...s, status: 'pending' };
+
+        } else if (newStatus === 'doing') {
+            if (idx < targetIdx) return { ...s, status: 'done' };
+            if (idx === targetIdx) return { ...s, status: 'doing' };
+            return s.status === 'cancelled' ? s : { ...s, status: 'pending' };
+
+        } else if (newStatus === 'paused' || newStatus === 'cancelled') {
+            if (idx === targetIdx) return { ...s, status: newStatus };
+            return s; // giữ nguyên các bước khác
+
+        } else { // pending
+            if (idx >= targetIdx) return s.status === 'cancelled' ? s : { ...s, status: 'pending' };
+            return s;
+        }
+    });
+
+    const activeSteps = updatedSteps.filter(s => s.status !== 'cancelled');
+    const allDone = activeSteps.length > 0 && activeSteps.every(s => s.status === 'done');
+    const jobStatus = allDone ? 'done' : 'doing';
 
     try {
         await updateDoc(doc(db, 'artifacts', app_id, 'public', 'data', 'jobs', job.id), {
-            steps: updatedSteps, status: allDone ? 'done' : 'doing'
+            steps: updatedSteps, status: jobStatus
         });
-
-        // Sync local cache — KHÔNG gọi lại openJobDetail
         job.steps = updatedSteps;
-        const sortedSteps = updatedSteps.slice().sort((a, b) => a.order - b.order);
+        const sorted = updatedSteps.slice().sort((a, b) => a.order - b.order);
+        _updateJobProgress(sorted);
 
-        // Cập nhật progress bar
-        _updateJobProgress(sortedSteps);
-
-        // Cập nhật icon trong combobox
-        const statusIcon = { pending: '⏳', doing: '🚀', done: '✅' };
         const stepSelect = document.getElementById('jd-step-select');
-        stepSelect.innerHTML = sortedSteps.map((s, i) =>
-            `<option value="${s.id}" ${s.id === stepId ? 'selected' : ''}>${statusIcon[s.status] || '⏳'} Bước ${i + 1}: ${s.name}</option>`
-        ).join('');
-
-        // Re-render form bước hiện tại (chỉ để đổi màu nền)
+        stepSelect.innerHTML = sorted.map((s, i) => {
+            const ic = (STEP_STATUS[s.status] || STEP_STATUS.pending).icon;
+            return `<option value="${s.id}" ${s.id === stepId ? 'selected' : ''}>${ic} Bước ${i + 1}: ${s.name}</option>`;
+        }).join('');
         _renderStepForm(job, stepId);
-
     } catch (e) { showToast('Lỗi cập nhật trạng thái', 'error'); }
 };
 
@@ -1532,6 +1745,13 @@ window.renderJobReports = () => {
     document.getElementById('report-total-jobs').innerText = jobsData.length;
     document.getElementById('report-doing-jobs').innerText = jobsData.filter(j => j.status === 'doing').length;
     document.getElementById('report-done-jobs').innerText = jobsData.filter(j => j.status === 'done').length;
+
+    const pausedJobs = jobsData.filter(j => j.steps?.some(s => s.status === 'paused')).length;
+    const cancelledJobs = jobsData.filter(j => j.steps?.some(s => s.status === 'cancelled')).length;
+    if (document.getElementById('report-paused-jobs'))
+        document.getElementById('report-paused-jobs').innerText = pausedJobs;
+    if (document.getElementById('report-cancelled-jobs'))
+        document.getElementById('report-cancelled-jobs').innerText = cancelledJobs;
     if (document.getElementById('panel-job-report').classList.contains('hidden')) return; // Only draw charts if visible
     updateJobReportCharts();
 };
@@ -1564,7 +1784,7 @@ function updateJobReportCharts() {
     jobWfChartInst = new Chart(document.getElementById('jobWorkflowChart'), {
         type: 'bar',
         data: { labels: wfLabels, datasets: [{ label: 'Số lượng Job', data: wfData, backgroundColor: getComputedStyle(document.documentElement).getPropertyValue('--color-primary').trim() }] },
-        options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { color: textColor } }, x: { ticks: { color: textColor, display: false } } }, plugins: { legend: { display: false } } }
+        options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { color: textColor, precision: 0 } }, x: { ticks: { color: textColor, display: false } } }, plugins: { legend: { display: false } } }
     });
 }
 
@@ -1977,7 +2197,8 @@ function renderHistory() {
     if (badge) badge.textContent = `${filtered.length} tài liệu`;
 
     const paged = getPageSlice(filtered, 'history', HISTORY_PER_PAGE);
-    const globalOffset = (PG.history || 1 - 1) * HISTORY_PER_PAGE;
+    // FIX Bug2: dùng dấu ngoặc rõ ràng để tránh JS parse sai operator precedence
+    const globalOffset = ((PG.history || 1) - 1) * HISTORY_PER_PAGE;
 
     // ── Desktop Table ──
     const tbody = document.getElementById('history-list');
@@ -2991,15 +3212,19 @@ function loadAvatarInSettings(avatarUrl, username) {
     const DEADLINE_SERVICE_ID = 'hnta mtvn ywyd bxzs';
     const DEADLINE_TEMPLATE_ID = 'template_wli5rfd';
 
-    // Cache in-memory để tránh đọc Firestore mỗi giây (sync khi markSent)
+    // Cache in-memory với TTL 5 phút để tránh đọc Firestore mỗi giây
     let _sentCache = null;
+    let _sentCacheTime = 0;
+    const _CACHE_TTL = 5 * 60 * 1000; // 5 phút
 
     async function _getSentLog() {
-        if (_sentCache) return _sentCache;
+        const now = Date.now();
+        if (_sentCache && (now - _sentCacheTime) < _CACHE_TTL) return _sentCache;
         try {
             const snap = await getDoc(doc(db, 'artifacts', app_id, 'public', 'data', 'deadline_sent_log', 'log'));
             _sentCache = snap.exists() ? (snap.data().entries || {}) : {};
         } catch { _sentCache = {}; }
+        _sentCacheTime = Date.now();
         return _sentCache;
     }
 
