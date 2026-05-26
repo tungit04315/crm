@@ -1126,7 +1126,17 @@ window.renderJobsTable = () => {
     const tbody = document.getElementById('jobs-list-tbody');
 
     const filtered = jobsData.filter(j => {
-        const matchTxt = j.name.toLowerCase().includes(txt);
+        const cus = customersData.find(c => c.id === j.customerId);
+        const cusName = cus ? cus.name.toLowerCase() : '';
+        const stepsText = (j.steps || []).map(s =>
+            [s.name, s.assignee, s.assigneeEmail, s.note].filter(Boolean).join(' ')
+        ).join(' ').toLowerCase();
+
+        const matchTxt = !txt
+            || j.name.toLowerCase().includes(txt)
+            || cusName.includes(txt)
+            || stepsText.includes(txt);
+
         const matchSt = !st || j.status === st;
         return matchTxt && matchSt;
     });
@@ -1270,6 +1280,52 @@ let _kanbanJobMap = {};       // {colId: [{job, cus, assigneeStr}]}
 let _kanbanColCounts = {};
 let _kanbanSlideIdx = 0;      // current slide index
 
+// ── Kanban filter state ───────────────────────────────────────────────────────
+let _kanbanFilters = { assignee: '', stepStatus: '', deadline: '' };
+
+window.applyKanbanFilter = () => {
+    _kanbanFilters.assignee = document.getElementById('kf-assignee')?.value || '';
+    _kanbanFilters.stepStatus = document.getElementById('kf-step-status')?.value || '';
+    _kanbanFilters.deadline = document.getElementById('kf-deadline')?.value || '';
+
+    // Hiện/ẩn nút "Xóa lọc"
+    const hasFilter = _kanbanFilters.assignee || _kanbanFilters.stepStatus || _kanbanFilters.deadline;
+    const clearBtn = document.getElementById('kf-clear-btn');
+    if (clearBtn) { clearBtn.classList.toggle('hidden', !hasFilter); clearBtn.classList.toggle('flex', !!hasFilter); }
+
+    renderJobsKanban();
+};
+
+window.clearKanbanFilters = () => {
+    _kanbanFilters = { assignee: '', stepStatus: '', deadline: '' };
+    ['kf-assignee', 'kf-step-status', 'kf-deadline'].forEach(id => {
+        const el = document.getElementById(id); if (el) el.value = '';
+    });
+    const clearBtn = document.getElementById('kf-clear-btn');
+    if (clearBtn) { clearBtn.classList.add('hidden'); clearBtn.classList.remove('flex'); }
+    const badge = document.getElementById('kf-result-badge');
+    if (badge) badge.classList.add('hidden');
+    renderJobsKanban();
+};
+
+// Tự động cập nhật danh sách người phụ trách từ dữ liệu jobs hiện tại
+function _updateKanbanAssigneeOptions(wfId) {
+    const select = document.getElementById('kf-assignee');
+    if (!select) return;
+    const current = select.value;
+
+    const assignees = new Set();
+    jobsData
+        .filter(j => j.workflowId === wfId)
+        .forEach(j => (j.steps || []).forEach(s => { if (s.assignee && s.assignee.trim()) assignees.add(s.assignee.trim()); }));
+
+    select.innerHTML = '<option value="">👤 Tất cả người phụ trách</option>'
+        + [...assignees].sort().map(a =>
+            `<option value="${a}" ${a === current ? 'selected' : ''}>👤 ${a}</option>`
+        ).join('');
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
 window.renderJobsKanban = () => {
     const wfId = document.getElementById('kanban-workflow-select').value;
     const container = document.getElementById('kanban-board');
@@ -1288,132 +1344,215 @@ window.renderJobsKanban = () => {
     _kanbanColCounts = {};
     _kanbanCols.forEach(c => { _kanbanJobMap[c.id] = []; _kanbanColCounts[c.id] = 0; });
 
+    // ── Lọc jobs theo workflow ──
     const relevantJobs = jobsData.filter(j => j.workflowId === wfId);
 
-    relevantJobs.forEach(job => {
-        let currentStepId = 'col_done';
-        if (job.status !== 'done') {
-            const sortedJobSteps = (job.steps || []).slice().sort((a, b) => a.order - b.order);
-            const activeStep = sortedJobSteps.find(s => s.status === 'doing')
-                || sortedJobSteps.find(s => s.status === 'paused')
-                || sortedJobSteps.find(s => s.status === 'pending');
-            if (activeStep) currentStepId = activeStep.id;
+    // ── Cập nhật dropdown người phụ trách ──
+    _updateKanbanAssigneeOptions(wfId);
+
+    // ── Tính mốc thời gian cho filter deadline ──
+    const _now = new Date();
+    const _todayS = _now.toISOString().split('T')[0];
+    const _weekEnd = new Date(_now); _weekEnd.setDate(_weekEnd.getDate() + 7);
+
+    // ── Lọc theo các tiêu chí đang chọn ──
+    const filteredJobs = relevantJobs.filter(job => {
+        const sortedSteps = (job.steps || []).slice().sort((a, b) => a.order - b.order);
+        const activeStep = job.status === 'done'
+            ? sortedSteps[sortedSteps.length - 1]
+            : sortedSteps.find(s => s.status === 'doing')
+            || sortedSteps.find(s => s.status === 'paused')
+            || sortedSteps.find(s => s.status === 'pending');
+
+        if (_kanbanFilters.assignee) {
+            if ((activeStep?.assignee || '').trim() !== _kanbanFilters.assignee) return false;
         }
-        if (!_kanbanJobMap[currentStepId]) currentStepId = _kanbanCols[0].id;
-        _kanbanColCounts[currentStepId]++;
-
-        const cus = customersData.find(c => c.id === job.customerId);
-        const activeStepObj = (job.steps || []).find(s => s.id === currentStepId);
-
-        // Người phụ trách
-        const assigneeStr = activeStepObj?.assignee
-            ? `<div class="text-[11px] bg-blue-50 dark:bg-blue-900/30 text-blue-600 px-2 py-1 rounded-full inline-flex items-center gap-1">
-            <span class="material-symbols-outlined text-[11px]">person</span>${activeStepObj.assignee}</div>`
-            : '';
-
-        // ── Badge trạng thái bước hiện tại ──
-        const stepStatus = job.status === 'done' ? 'done' : (activeStepObj?.status || 'pending');
-        const statusCfg = {
-            pending: { icon: '⏳', label: 'Chờ xử lý', cls: 'bg-gray-100  text-gray-500  dark:bg-slate-700 dark:text-slate-400' },
-            doing: { icon: '🚀', label: 'Đang xử lý', cls: 'bg-blue-50   text-blue-600  dark:bg-blue-900/30 dark:text-blue-400' },
-            done: { icon: '✅', label: 'Hoàn thành', cls: 'bg-green-50  text-green-600 dark:bg-green-900/30 dark:text-green-400' },
-            paused: { icon: '⏸️', label: 'Tạm dừng', cls: 'bg-amber-50  text-amber-600 dark:bg-amber-900/30 dark:text-amber-400' },
-            cancelled: { icon: '🚫', label: 'Đã hủy', cls: 'bg-red-50    text-red-500   dark:bg-red-900/30 dark:text-red-400' },
-        };
-        const sc = statusCfg[stepStatus] || statusCfg.pending;
-        const statusBadge = `<span class="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full ${sc.cls}">${sc.icon} ${sc.label}</span>`;
-
-        _kanbanJobMap[currentStepId].push({ job, cus, assigneeStr, statusBadge });
+        if (_kanbanFilters.stepStatus) {
+            const st = job.status === 'done' ? 'done' : (activeStep?.status || 'pending');
+            if (st !== _kanbanFilters.stepStatus) return false;
+        }
+        if (_kanbanFilters.deadline) {
+            const dl = activeStep?.deadline;
+            if (_kanbanFilters.deadline === 'no_deadline') {
+                if (dl && dl.trim()) return false;
+            } else {
+                if (!dl || !dl.trim()) return false;
+                const dlDate = new Date(dl);
+                const dlStr = dlDate.toISOString().split('T')[0];
+                if (_kanbanFilters.deadline === 'overdue' && dlDate >= _now) return false;
+                if (_kanbanFilters.deadline === 'today' && dlStr !== _todayS) return false;
+                if (_kanbanFilters.deadline === 'week' && (dlDate < _now || dlDate > _weekEnd)) return false;
+            }
+        }
+        return true;
     });
 
-    // Clamp slide index
+    // ── Cập nhật badge kết quả ──
+    const _kfBadge = document.getElementById('kf-result-badge');
+    const _hasFilter = _kanbanFilters.assignee || _kanbanFilters.stepStatus || _kanbanFilters.deadline;
+    if (_kfBadge) {
+        if (_hasFilter) {
+            _kfBadge.textContent = `${filteredJobs.length} / ${relevantJobs.length} job`;
+            _kfBadge.classList.remove('hidden');
+        } else {
+            _kfBadge.classList.add('hidden');
+        }
+    }
+
+    // ── Clamp slide index ──
     if (_kanbanSlideIdx >= _kanbanCols.length) _kanbanSlideIdx = 0;
 
-    // Build HTML
+    // ── Build HTML khung Kanban TRƯỚC ──
     const totalCols = _kanbanCols.length;
     const dotsHtml = _kanbanCols.map((col, i) => `
         <button class="kanban-dot ${i === _kanbanSlideIdx ? 'active' : ''}" onclick="kanbanGoSlide(${i})" title="${col.name}"></button>`).join('');
 
-    const slidesHtml = _kanbanCols.map((col, i) => {
-        const cards = _kanbanJobMap[col.id].map(({ job, cus, assigneeStr, statusBadge }) => `
-    <div class="kanban-card" draggable="true" ondragstart="dragStartKanban(event)"
-         data-job-id="${job.id}" onclick="openJobDetail('${job.id}')">
-
-        <div class="flex items-center justify-between mb-1.5">
-            <span class="text-[10px] text-gray-400 font-mono">#${job.id.slice(-5)}</span>
-            <div class="flex items-center gap-1.5">
-                ${statusBadge}
-                <span class="text-[10px] text-gray-400">${formatDateStr(job.createdAt).split(' ')[0]}</span>
-            </div>
-        </div>
-
-        <h5 class="font-bold text-sm text-gray-800 dark:text-gray-200 leading-snug mb-1">${job.name}</h5>
-
-        <p class="text-xs text-primary font-medium truncate">
-            <span class="material-symbols-outlined text-[12px] align-middle">business</span> ${cus ? cus.name : 'Unknown'}
-        </p>
-
-        ${assigneeStr ? `<div class="mt-2">${assigneeStr}</div>` : ''}
-
-    </div>`).join('') || `<div class="text-center text-gray-400 dark:text-gray-600 py-10 text-sm">
-            <span class="material-symbols-outlined text-3xl block mb-2">inbox</span>Không có job nào</div>`;
-
-        // ← return bắt buộc khi dùng {} body
-        return `<div class="kanban-slide ${i === _kanbanSlideIdx ? 'active' : ''}"
-                     data-col-id="${col.id}"
-                     ondragover="allowDrop(event)" ondrop="dropKanban(event)">
-            <div class="kanban-cards-container" id="cards-${col.id}">${cards}</div>
-        </div>`;
-    }).join('');
+    const slidesHtml = _kanbanCols.map((col, i) =>
+        `<div class="kanban-slide ${i === _kanbanSlideIdx ? 'active' : ''}"
+              data-col-id="${col.id}"
+              ondragover="allowDrop(event)" ondrop="dropKanban(event)">
+            <div class="kanban-cards-container" id="cards-${col.id}"></div>
+        </div>`
+    ).join('');
 
     const prevCol = _kanbanCols[_kanbanSlideIdx - 1];
     const nextCol = _kanbanCols[_kanbanSlideIdx + 1];
     const curCol = _kanbanCols[_kanbanSlideIdx];
-    const curCount = _kanbanColCounts[curCol.id] || 0;
 
     container.innerHTML = `
         <div class="kanban-slider-wrapper">
-            <!-- Navigation header -->
             <div class="kanban-slider-nav">
                 <button class="kanban-nav-btn ${_kanbanSlideIdx === 0 ? 'opacity-30 cursor-not-allowed' : ''}"
                         onclick="kanbanGoSlide(${_kanbanSlideIdx - 1})" ${_kanbanSlideIdx === 0 ? 'disabled' : ''}>
                     <span class="material-symbols-outlined">chevron_left</span>
                 </button>
-
                 <div class="kanban-step-info">
                     <div class="kanban-step-label">
                         <span class="kanban-step-num">${_kanbanSlideIdx + 1}/${totalCols}</span>
                         <span class="kanban-step-name">${curCol.name}</span>
-                        <span class="kanban-step-count">${curCount} job</span>
+                        <span class="kanban-step-count" id="kanban-cur-count">0 job</span>
                     </div>
                     <div class="kanban-step-sub">
                         ${prevCol ? `<span class="kanban-adjacent prev">← ${prevCol.name}</span>` : ''}
                         ${nextCol ? `<span class="kanban-adjacent next">${nextCol.name} →</span>` : ''}
                     </div>
                 </div>
-
                 <button class="kanban-nav-btn ${_kanbanSlideIdx === totalCols - 1 ? 'opacity-30 cursor-not-allowed' : ''}"
                         onclick="kanbanGoSlide(${_kanbanSlideIdx + 1})" ${_kanbanSlideIdx === totalCols - 1 ? 'disabled' : ''}>
                     <span class="material-symbols-outlined">chevron_right</span>
                 </button>
             </div>
-
-            <!-- Progress bar -->
             <div class="kanban-progress-bar">
                 <div class="kanban-progress-fill" style="width:${((_kanbanSlideIdx + 1) / totalCols) * 100}%"></div>
             </div>
-
-            <!-- Slides -->
             <div class="kanban-slides-viewport" id="kanban-slides-viewport">
                 <div class="kanban-slides-track" id="kanban-slides-track"
                      style="transform: translateX(-${_kanbanSlideIdx * 100}%)">
                     ${slidesHtml}
                 </div>
             </div>
-
-            <!-- Dots -->
             <div class="kanban-dots-row">${dotsHtml}</div>
         </div>`;
+
+    // ✅ RENDER CARDS SAU KHI DOM ĐÃ TỒN TẠI
+    filteredJobs.forEach(job => {
+        const sortedSteps = (job.steps || []).slice().sort((a, b) => a.order - b.order);
+
+        const activeStep = job.status === 'done'
+            ? sortedSteps[sortedSteps.length - 1]
+            : sortedSteps.find(s => s.status === 'doing')
+            || sortedSteps.find(s => s.status === 'paused')
+            || sortedSteps.find(s => s.status === 'pending');
+
+        // ✅ FIX ID: dùng "cards-{stepId}" thay vì "kanban-col-{wfId}-{stepId}"
+        const colId = job.status === 'done' ? 'col_done' : (activeStep?.id || '__unassigned__');
+        const colEl = document.getElementById(`cards-${colId}`);
+        if (!colEl) return;
+
+        // Đếm job cho từng cột
+        _kanbanColCounts[colId] = (_kanbanColCounts[colId] || 0) + 1;
+
+        const displayStatus = job.status === 'done' ? 'done' : (activeStep?.status || 'pending');
+        const si = STEP_STATUS[displayStatus] || STEP_STATUS.pending;
+        const customer = customersData.find(c => c.id === job.customerId);
+        const custName = customer?.name || '';
+        const totalSteps = sortedSteps.length;
+        const doneCount = sortedSteps.filter(s => s.status === 'done').length;
+        const pct = totalSteps > 0 ? Math.round((doneCount / totalSteps) * 100) : 0;
+
+        const dl = activeStep?.deadline;
+        let deadlineBadge = '';
+        if (dl && dl.trim()) {
+            const dlDate = new Date(dl);
+            const dlStr = dlDate.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' });
+            const isOverdue = dlDate < _now && displayStatus !== 'done';
+            const isToday = dlDate.toISOString().split('T')[0] === _todayS;
+            deadlineBadge = `
+                <span class="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full
+                    ${isOverdue
+                    ? 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400'
+                    : isToday
+                        ? 'bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400'
+                        : 'bg-gray-100 text-gray-500 dark:bg-slate-700 dark:text-slate-400'}">
+                    <span class="material-symbols-outlined text-[11px]">${isOverdue ? 'alarm_off' : 'schedule'}</span>
+                    ${dlStr}
+                </span>`;
+        }
+
+        const assignee = activeStep?.assignee;
+        const assigneeBadge = assignee
+            ? `<span class="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full
+                    bg-indigo-50 text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-400 max-w-[130px]">
+                    <span class="material-symbols-outlined text-[11px]">person</span>
+                    <span class="truncate">${assignee}</span>
+               </span>` : '';
+
+        const card = document.createElement('div');
+        card.className = [
+            'kanban-job-card relative rounded-xl border p-3',
+            'cursor-pointer transition-all hover:shadow-md hover:-translate-y-0.5 active:scale-[.98]',
+            si.border, si.bg
+        ].join(' ');
+        card.dataset.jobId = job.id;
+        card.innerHTML = `
+            <div class="flex items-start justify-between gap-2 mb-1.5">
+                <p class="font-semibold text-sm text-slate-800 dark:text-slate-100 leading-snug line-clamp-2 flex-1">${job.name}</p>
+                <span class="shrink-0 text-base leading-none">${si.icon}</span>
+            </div>
+            ${custName ? `<p class="flex items-center gap-1 text-[11px] text-gray-400 dark:text-slate-500 mb-2 truncate">
+                <span class="material-symbols-outlined text-[12px]">business</span>${custName}</p>` : ''}
+            <div class="flex flex-wrap items-center gap-1.5 mt-1">
+                <span class="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border ${si.border} ${si.color}">${si.label}</span>
+                ${deadlineBadge}${assigneeBadge}
+            </div>
+            ${totalSteps > 1 ? `
+            <div class="mt-2.5">
+                <div class="flex justify-between items-center mb-1">
+                    <span class="text-[10px] text-gray-400 dark:text-slate-500">Tiến độ</span>
+                    <span class="text-[10px] font-bold text-gray-500 dark:text-slate-400">${doneCount}/${totalSteps}</span>
+                </div>
+                <div class="w-full h-1.5 bg-gray-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                    <div class="h-full rounded-full bg-gradient-to-r from-indigo-400 to-indigo-600 transition-all duration-500"
+                         style="width:${pct}%"></div>
+                </div>
+            </div>` : ''}`;
+
+        card.addEventListener('click', () => window.openJobDetail?.(job.id));
+        colEl.appendChild(card);
+    });
+
+    // ── Cập nhật count cột hiện tại & empty state ──
+    _kanbanCols.forEach(col => {
+        const colEl = document.getElementById(`cards-${col.id}`);
+        if (!colEl) return;
+        if (colEl.children.length === 0) {
+            colEl.innerHTML = `<div class="text-center text-gray-400 dark:text-gray-600 py-10 text-sm">
+                <span class="material-symbols-outlined text-3xl block mb-2">inbox</span>Không có job nào</div>`;
+        }
+    });
+
+    const countBadge = document.getElementById('kanban-cur-count');
+    if (countBadge) countBadge.textContent = `${_kanbanColCounts[curCol.id] || 0} job`;
 
     // Bind swipe gestures
     _bindKanbanSwipe();
