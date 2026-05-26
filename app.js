@@ -357,7 +357,19 @@ function initAppLogic() {
     //unsubscribes.push(onSnapshot(query(getCollectionPath('jobs')), snap => { jobsData = snap.docs.map(d => ({ id: d.id, ...d.data() })); renderJobsTable(); renderJobsKanban(); updateDashboardStats(); renderJobReports(); if (myChart) initChart(); }));
 
     unsubscribes.push(onSnapshot(query(getCollectionPath('jobs')), snap => {
-        jobsData = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        // Helper: ép Firestore Timestamp hoặc Date/string về milliseconds
+        const _toMs = (v) => {
+            if (!v) return 0;
+            if (v.seconds) return v.seconds * 1000; // Firestore Timestamp
+            return new Date(v).getTime();
+        };
+        jobsData = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+            .sort((a, b) => {
+                // Ưu tiên updatedAt, fallback về createdAt
+                const tA = _toMs(a.updatedAt) || _toMs(a.createdAt);
+                const tB = _toMs(b.updatedAt) || _toMs(b.createdAt);
+                return tB - tA; // mới nhất lên đầu
+            });
         renderJobsTable(); renderJobsKanban(); updateDashboardStats(); renderJobReports();
         if (myChart) initChart();
 
@@ -1442,7 +1454,7 @@ window.dropKanban = async (ev) => {
     }
 
     try {
-        await updateDoc(doc(db, 'artifacts', app_id, 'public', 'data', 'jobs', jobId), { steps: updatedSteps, status: overallStatus });
+        await updateDoc(doc(db, 'artifacts', app_id, 'public', 'data', 'jobs', jobId), { steps: updatedSteps, status: overallStatus, updatedAt: new Date() });
         showToast('Đã cập nhật trạng thái Job');
     } catch (err) { showToast('Lỗi cập nhật: ' + err.message, 'error'); }
 };
@@ -1701,7 +1713,7 @@ window.updateSingleStepStatus = async (stepId, newStatus) => {
 
     try {
         await updateDoc(doc(db, 'artifacts', app_id, 'public', 'data', 'jobs', job.id), {
-            steps: updatedSteps, status: jobStatus
+            steps: updatedSteps, status: jobStatus, updatedAt: new Date()
         });
         job.steps = updatedSteps;
         const sorted = updatedSteps.slice().sort((a, b) => a.order - b.order);
@@ -1733,7 +1745,7 @@ window.saveStepInfo = async (stepId) => {
     //const oldStep = job.steps.find(s => s.id === stepId);
     //if (oldStep.assignee === ass && oldStep.deadline === dead && oldStep.note === note) return;
 
-    try { await updateDoc(doc(db, 'artifacts', app_id, 'public', 'data', 'jobs', job.id), { steps: updatedSteps }); } catch (e) { }
+    try { await updateDoc(doc(db, 'artifacts', app_id, 'public', 'data', 'jobs', job.id), { steps: updatedSteps, updatedAt: new Date() }); } catch (e) { }
 };
 
 // -> Reports & Stats
