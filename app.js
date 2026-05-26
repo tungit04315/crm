@@ -2527,7 +2527,7 @@ function updateDashboardStats() {
 // }
 
 let myChart = null;
-let chartTimeFilter = 'today'; // today | week | month | year
+let chartTimeFilter = 'year'; // today | week | month | year
 let chartActiveSeries = { leads: true, customers: true, jobs: true, history: true };
 
 window.setChartTimeFilter = (filter) => {
