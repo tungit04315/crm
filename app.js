@@ -1165,7 +1165,8 @@ window.renderJobsTable = () => {
                         </div>
                     </td>
                     <td class="py-3 text-xs text-gray-500">${formatDateStr(job.createdAt)}</td>
-                    <td class="py-3 text-right pr-2">
+                    <td class="py-3 text-right pr-2 whitespace-nowrap">
+                        <button class="p-2 lg:p-1 text-violet-400 hover:text-violet-600 bg-violet-50 lg:bg-transparent rounded mr-1" onclick="event.stopPropagation(); openCloneJobModal('${job.id}')" title="Nhân bản"><span class="material-symbols-outlined text-base lg:text-sm">content_copy</span></button>
                         <button class="p-2 lg:p-1 text-gray-400 hover:text-red-500 bg-gray-100 lg:bg-transparent rounded" onclick="event.stopPropagation(); deleteJob('${job.id}')" title="Xóa"><span class="material-symbols-outlined text-base lg:text-sm">delete</span></button>
                     </td>
                 </tr>
@@ -1175,6 +1176,94 @@ window.renderJobsTable = () => {
 
 window.deleteJob = async (id) => { if (confirm('Xoá công việc này?')) await deleteDoc(doc(db, 'artifacts', app_id, 'public', 'data', 'jobs', id)); };
 
+// ── CLONE JOB ────────────────────────────────────────────────────────────────
+window.openCloneJobModal = (jobId) => {
+    if (!jobId) return;
+    const job = jobsData.find(j => j.id === jobId);
+    if (!job) return;
+
+    const wf = workflowsData.find(w => w.id === job.workflowId);
+    const cus = customersData.find(c => c.id === job.customerId);
+
+    // Điền dữ liệu mặc định
+    document.getElementById('clone-source-job-id').value = jobId;
+    document.getElementById('clone-job-name').value = 'Copy - ' + job.name;
+    document.getElementById('clone-reset-steps').checked = true;
+
+    // Đổ danh sách khách hàng — chọn sẵn khách gốc
+    document.getElementById('clone-job-customer').innerHTML =
+        '<option value="">-- Chọn khách hàng --</option>' +
+        customersData.map(c =>
+            `<option value="${c.id}" ${c.id === job.customerId ? 'selected' : ''}>${c.name} (${c.phone})</option>`
+        ).join('');
+
+    // Thông tin job gốc
+    const doneCount = (job.steps || []).filter(s => s.status === 'done').length;
+    const totalCount = (job.steps || []).length;
+    document.getElementById('clone-source-info').innerHTML =
+        `<span class="font-semibold text-gray-600 dark:text-gray-300">📋 Job gốc:</span> ${job.name}<br>` +
+        `<span class="font-semibold text-gray-600 dark:text-gray-300">🔄 Workflow:</span> ${wf ? wf.name : 'N/A'} · ${totalCount} bước<br>` +
+        `<span class="font-semibold text-gray-600 dark:text-gray-300">📊 Tiến độ gốc:</span> ${doneCount}/${totalCount} bước đã hoàn thành`;
+
+    // Mở modal
+    const modal = document.getElementById('clone-job-modal');
+    const content = document.getElementById('clone-job-modal-content');
+    modal.classList.remove('hidden');
+    setTimeout(() => { modal.classList.remove('opacity-0'); content.classList.remove('scale-95'); }, 10);
+};
+
+window.executeCloneJob = async () => {
+    const sourceId = document.getElementById('clone-source-job-id').value;
+    const newName = document.getElementById('clone-job-name').value.trim();
+    const newCusId = document.getElementById('clone-job-customer').value;
+    const resetSteps = document.getElementById('clone-reset-steps').checked;
+
+    if (!newName) return showToast('Vui lòng nhập tên Job mới', 'error');
+    if (!newCusId) return showToast('Vui lòng chọn khách hàng', 'error');
+
+    const sourceJob = jobsData.find(j => j.id === sourceId);
+    if (!sourceJob) return showToast('Không tìm thấy Job gốc', 'error');
+
+    const btn = document.getElementById('clone-job-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="material-symbols-outlined text-sm animate-spin">refresh</span> Đang tạo...';
+
+    // Clone steps — reset hoặc giữ nguyên tiến độ tuỳ chọn
+    const clonedSteps = (sourceJob.steps || []).map(s => ({
+        ...s,
+        status: resetSteps ? 'pending' : s.status,
+        assignee: resetSteps ? '' : (s.assignee || ''),
+        assigneeEmail: resetSteps ? '' : (s.assigneeEmail || ''),
+        deadline: resetSteps ? '' : (s.deadline || ''),
+        note: resetSteps ? '' : (s.note || ''),
+    }));
+
+    const newJob = {
+        name: newName,
+        customerId: newCusId,
+        workflowId: sourceJob.workflowId,
+        serviceId: sourceJob.serviceId || '',
+        status: resetSteps ? 'doing' : sourceJob.status,
+        steps: clonedSteps,
+        clonedFrom: sourceId,          // lưu vết để biết clone từ job nào
+        createdAt: new Date(),
+        updatedAt: new Date(),
+    };
+
+    try {
+        await addDoc(getCollectionPath('jobs'), newJob);
+        showToast('✅ Nhân bản Job thành công!');
+        closeModal('clone-job-modal');
+        closeModal('job-detail-modal'); // đóng cả detail nếu đang mở
+        switchJobsTab('list');           // chuyển sang list để thấy job mới
+    } catch (err) {
+        showToast('Lỗi nhân bản: ' + err.message, 'error');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<span class="material-symbols-outlined text-sm">content_copy</span> Nhân bản';
+    }
+};
+// ─────────────────────────────────────────────────────────────────────────────
 // -> Kanban Board Logic — Slideshow / Carousel
 let _kanbanCols = [];         // [{id, name}]
 let _kanbanJobMap = {};       // {colId: [{job, cus, assigneeStr}]}
@@ -1467,6 +1556,7 @@ window.openJobDetail = (jobId) => {
     const job = jobsData.find(j => j.id === jobId);
     if (!job) return;
     currentEditingJobId = jobId;
+    window._currentJobDetailId = jobId;
 
     const cus = customersData.find(c => c.id === job.customerId);
     const wf = workflowsData.find(w => w.id === job.workflowId);
