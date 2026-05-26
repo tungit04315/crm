@@ -1120,6 +1120,55 @@
                                             <span class="material-symbols-outlined text-sm">add_task</span> Tạo Job Mới
                                         </button>
                                     </div>
+
+                                    <!-- Kanban Filter Bar -->
+                                    <div id="kanban-filter-bar"
+                                        class="px-4 py-2.5 border-b border-gray-200 dark:border-slate-700 bg-white/80 dark:bg-slate-800/50 shrink-0 flex flex-wrap items-center gap-2">
+                                        <span
+                                            class="text-xs font-bold text-gray-500 uppercase tracking-wide flex items-center gap-1 shrink-0">
+                                            <span class="material-symbols-outlined text-[14px]">filter_list</span>Lọc:
+                                        </span>
+
+                                        <!-- Người phụ trách -->
+                                        <select id="kf-assignee" onchange="applyKanbanFilter()"
+                                            class="px-2.5 py-1.5 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-600 rounded-lg text-xs outline-none focus:border-primary min-w-[140px]">
+                                            <option value="">👤 Tất cả người phụ trách</option>
+                                        </select>
+
+                                        <!-- Trạng thái bước -->
+                                        <select id="kf-step-status" onchange="applyKanbanFilter()"
+                                            class="px-2.5 py-1.5 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-600 rounded-lg text-xs outline-none focus:border-primary">
+                                            <option value="">🔄 Tất cả trạng thái</option>
+                                            <option value="pending">⏳ Chờ xử lý</option>
+                                            <option value="doing">🚀 Đang xử lý</option>
+                                            <option value="paused">⏸️ Tạm dừng</option>
+                                            <option value="cancelled">🚫 Đã hủy</option>
+                                            <option value="done">✅ Hoàn thành</option>
+                                        </select>
+
+                                        <!-- Deadline -->
+                                        <select id="kf-deadline" onchange="applyKanbanFilter()"
+                                            class="px-2.5 py-1.5 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-600 rounded-lg text-xs outline-none focus:border-primary">
+                                            <option value="">📅 Tất cả deadline</option>
+                                            <option value="overdue">🔴 Quá hạn</option>
+                                            <option value="today">🟡 Hôm nay</option>
+                                            <option value="week">🟢 Trong tuần này</option>
+                                            <option value="no_deadline">⬜ Chưa đặt deadline</option>
+                                        </select>
+
+                                        <!-- Nút xóa filter — ẩn khi không có filter -->
+                                        <button onclick="clearKanbanFilters()" id="kf-clear-btn"
+                                            class="hidden items-center gap-1 px-2.5 py-1.5 text-xs font-bold text-red-500 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors">
+                                            <span class="material-symbols-outlined text-[13px]">filter_list_off</span>
+                                            Xóa lọc
+                                        </button>
+
+                                        <!-- Badge: X/Y job -->
+                                        <span id="kf-result-badge"
+                                            class="hidden ml-auto text-[11px] font-bold px-2.5 py-1 bg-primary/10 text-primary rounded-full whitespace-nowrap">
+                                        </span>
+                                    </div>
+
                                     <!-- Kanban Board Container -->
                                     <div class="flex-1 overflow-hidden p-4">
                                         <div id="kanban-board" class="kanban-board">
@@ -1134,8 +1183,9 @@
                                     <div
                                         class="p-4 border-b border-gray-200 dark:border-slate-700 flex flex-col sm:flex-row justify-between gap-4 shrink-0">
                                         <div class="flex gap-2 w-full sm:w-auto">
-                                            <input type="text" id="search-job-list" placeholder="Tìm tên job..."
-                                                class="px-3 py-2 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg text-sm w-full sm:w-48 outline-none">
+                                            <input type="text" id="search-job-list"
+                                                placeholder="Tìm job, khách hàng, bước, người phụ trách..."
+                                                class="px-3 py-2 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg text-sm w-full sm:w-80 outline-none">
                                             <select id="filter-job-status"
                                                 class="px-3 py-2 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg text-sm outline-none text-gray-500">
                                                 <option value="">Tất cả trạng thái</option>
