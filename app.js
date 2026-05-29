@@ -1980,6 +1980,7 @@ window.saveStepInfo = async (stepId) => {
 // -> Reports & Stats
 let jobStatusChartInst = null;
 let jobWfChartInst = null;
+let jobProgressGroupChartInst = null;
 
 window.renderJobReports = () => {
     // Stats Panel
@@ -2027,6 +2028,116 @@ function updateJobReportCharts() {
         data: { labels: wfLabels, datasets: [{ label: 'Số lượng Job', data: wfData, backgroundColor: getComputedStyle(document.documentElement).getPropertyValue('--color-primary').trim() }] },
         options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { color: textColor, precision: 0 } }, x: { ticks: { color: textColor, display: false } } }, plugins: { legend: { display: false } } }
     });
+
+    _renderJobProgressGroupChart(isDark, textColor);
+}
+
+function _renderJobProgressGroupChart(isDark, textColor) {
+    // Tính số job đang làm / hoàn thành cho từng workflow
+    const wfMap = {};
+    workflowsData.forEach(w => {
+        wfMap[w.id] = { name: w.name, doing: 0, done: 0 };
+    });
+
+    jobsData.forEach(j => {
+        if (!wfMap[j.workflowId]) return;
+        if (j.status === 'done') wfMap[j.workflowId].done++;
+        else wfMap[j.workflowId].doing++;
+    });
+
+    // Chỉ giữ workflow có ít nhất 1 job
+    const entries = Object.values(wfMap).filter(e => e.doing + e.done > 0);
+    if (!entries.length) return;
+
+    const labels  = entries.map(e => e.name);
+    const doingData = entries.map(e => e.doing);
+    const doneData  = entries.map(e => e.done);
+
+    if (jobProgressGroupChartInst) jobProgressGroupChartInst.destroy();
+
+    jobProgressGroupChartInst = new Chart(
+        document.getElementById('jobProgressGroupChart'),
+        {
+            type: 'bar',
+            data: {
+                labels,
+                datasets: [
+                    {
+                        label: 'Đang thực hiện',
+                        data: doingData,
+                        backgroundColor: '#fb923c',      // orange-400
+                        borderColor: '#f97316',
+                        borderWidth: 1,
+                        borderRadius: 6,
+                        borderSkipped: false,
+                    },
+                    {
+                        label: 'Hoàn thành',
+                        data: doneData,
+                        backgroundColor: '#22c55e',      // green-500
+                        borderColor: '#16a34a',
+                        borderWidth: 1,
+                        borderRadius: 6,
+                        borderSkipped: false,
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    mode: 'index',          // hover cả 2 cột cùng lúc
+                    intersect: false
+                },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: isDark ? '#1e293b' : '#fff',
+                        borderColor: isDark ? '#334155' : '#e2e8f0',
+                        borderWidth: 1,
+                        titleColor: isDark ? '#f1f5f9' : '#1e293b',
+                        bodyColor: isDark ? '#94a3b8' : '#475569',
+                        padding: 12,
+                        callbacks: {
+                            title(items) {
+                                // Hiển thị tên workflow đầy đủ trong tiêu đề tooltip
+                                return '📋 ' + (items[0]?.label || '');
+                            },
+                            label(item) {
+                                const icon = item.datasetIndex === 0 ? '🚀' : '✅';
+                                return `  ${icon} ${item.dataset.label}: ${item.parsed.y} job`;
+                            },
+                            afterBody(items) {
+                                const total = items.reduce((s, i) => s + i.parsed.y, 0);
+                                return [`  ─────────────`, `  Tổng: ${total} job`];
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        ticks: {
+                            color: textColor,
+                            maxRotation: 30,
+                            font: { size: 11 }
+                        },
+                        grid: { display: false }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            color: textColor,
+                            precision: 0,
+                            stepSize: 1
+                        },
+                        grid: {
+                            color: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'
+                        }
+                    }
+                }
+            }
+        }
+    );
 }
 
 // --- WEB FEATURES LOGIC ---
