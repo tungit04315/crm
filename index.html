@@ -284,6 +284,197 @@
         .dark .kanban-dot.active {
             background: var(--color-primary, #6366f1);
         }
+
+        /* ===== MOBILE UX IMPROVEMENTS ===== */
+
+        /* -- Compact toolbar: single row -- */
+        #kanban-compact-toolbar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            border-bottom: 1px solid rgba(0, 0, 0, .07);
+            background: rgba(249, 250, 251, .7);
+            flex-shrink: 0;
+        }
+
+        .dark #kanban-compact-toolbar {
+            background: rgba(30, 41, 59, .5);
+            border-color: rgba(255, 255, 255, .08);
+        }
+
+        #kanban-workflow-select {
+            flex: 1;
+            min-width: 0;
+        }
+
+        #kf-toggle-btn.has-filters {
+            border-color: var(--color-primary, #6366f1) !important;
+            color: var(--color-primary, #6366f1) !important;
+            background: rgba(99, 102, 241, .06) !important;
+        }
+
+        .kf-active-dot {
+            position: absolute;
+            top: -3px;
+            right: -3px;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--color-primary, #6366f1);
+            border: 2px solid white;
+        }
+
+        .dark .kf-active-dot {
+            border-color: #1e293b;
+        }
+
+        /* -- Collapsible filter drawer -- */
+        #kanban-filter-drawer {
+            overflow: hidden;
+            max-height: 0;
+            transition: max-height .28s cubic-bezier(.4, 0, .2, 1), padding .28s;
+            background: rgba(255, 255, 255, .9);
+            border-bottom: 1px solid transparent;
+        }
+
+        .dark #kanban-filter-drawer {
+            background: rgba(30, 41, 59, .7);
+        }
+
+        #kanban-filter-drawer.drawer-open {
+            max-height: 180px;
+            border-color: rgba(0, 0, 0, .07);
+            padding: 10px 12px;
+        }
+
+        .dark #kanban-filter-drawer.drawer-open {
+            border-color: rgba(255, 255, 255, .08);
+        }
+
+        #kanban-filter-drawer .kf-inner {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+        }
+
+        /* -- Step tab pills in job detail modal -- */
+        #jd-step-tabs-bar {
+            display: flex;
+            gap: 6px;
+            overflow-x: auto;
+            scrollbar-width: none;
+            padding-bottom: 2px;
+        }
+
+        #jd-step-tabs-bar::-webkit-scrollbar {
+            display: none;
+        }
+
+        .step-tab-pill {
+            flex-shrink: 0;
+            padding: 5px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 700;
+            border: 1.5px solid #e2e8f0;
+            background: white;
+            color: #64748b;
+            cursor: pointer;
+            transition: all .15s;
+            white-space: nowrap;
+        }
+
+        .dark .step-tab-pill {
+            border-color: #334155;
+            background: #1e293b;
+            color: #94a3b8;
+        }
+
+        .step-tab-pill.active {
+            background: var(--color-primary, #6366f1);
+            border-color: var(--color-primary, #6366f1);
+            color: white;
+        }
+
+        .step-tab-pill.done-tab {
+            border-color: #86efac;
+            color: #16a34a;
+            background: #f0fdf4;
+        }
+
+        .dark .step-tab-pill.done-tab {
+            border-color: #166534;
+            background: rgba(22, 101, 52, .2);
+            color: #86efac;
+        }
+
+        .step-tab-pill.active.done-tab {
+            background: #16a34a;
+            border-color: #16a34a;
+            color: white;
+        }
+
+        /* -- Drag handle for bottom sheet -- */
+        #jd-drag-handle {
+            display: none;
+            width: 36px;
+            height: 4px;
+            background: #cbd5e1;
+            border-radius: 2px;
+            margin: 10px auto 4px;
+            flex-shrink: 0;
+        }
+
+        .dark #jd-drag-handle {
+            background: #475569;
+        }
+
+        /* -- Bottom sheet on mobile -- */
+        @media (max-width: 767px) {
+            #job-detail-modal {
+                align-items: flex-end !important;
+                padding: 0 !important;
+            }
+
+            #job-detail-modal-content {
+                border-radius: 20px 20px 0 0 !important;
+                max-height: 93dvh !important;
+                height: 93dvh !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                margin: 0 !important;
+                /* override modal-mobile-safe */
+                transform: none !important;
+            }
+
+            #jd-drag-handle {
+                display: block !important;
+            }
+
+            /* Compact kanban toolbar on mobile shows single row */
+            #kanban-toolbar-desktop {
+                display: none !important;
+            }
+        }
+
+        @media (min-width: 768px) {
+            #kanban-compact-toolbar {
+                display: none !important;
+            }
+
+            #kanban-filter-drawer {
+                max-height: none !important;
+                overflow: visible !important;
+                padding: 10px 16px !important;
+                border-color: rgba(0, 0, 0, .07) !important;
+            }
+
+            .dark #kanban-filter-drawer {
+                border-color: rgba(255, 255, 255, .08) !important;
+            }
+        }
     </style>
 
 <body class="bg-gray-50 text-gray-900 dark:bg-slate-900 dark:text-gray-100 h-screen w-screen flex overflow-hidden">
@@ -1102,23 +1293,45 @@
                                 <!-- Tab: Kanban -->
                                 <div id="panel-job-kanban"
                                     class="absolute inset-0 flex flex-col h-full animate-fade-in">
-                                    <div
+
+                                    <!-- ── MOBILE: compact single-row toolbar ── -->
+                                    <div id="kanban-compact-toolbar">
+                                        <select id="kanban-workflow-select" onchange="renderJobsKanban()"
+                                            class="px-2.5 py-1.5 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg text-xs font-semibold focus:ring-2 focus:ring-primary outline-none">
+                                            <!-- Rendered via JS -->
+                                        </select>
+                                        <button onclick="openModal('email-contacts-modal')" title="Danh sách Email"
+                                            class="relative flex-shrink-0 w-9 h-9 flex items-center justify-center rounded-lg border border-indigo-200 dark:border-indigo-700 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 transition-colors">
+                                            <span class="material-symbols-outlined text-[18px]">contact_mail</span>
+                                            <span id="email-contacts-count"
+                                                class="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 px-1 text-[9px] font-bold bg-indigo-500 text-white rounded-full flex items-center justify-center leading-none">0</span>
+                                        </button>
+                                        <button id="kf-toggle-btn" onclick="toggleKanbanFilter()" title="Bộ lọc"
+                                            class="relative flex-shrink-0 flex items-center gap-1 px-2.5 h-9 rounded-lg border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-xs font-bold text-gray-600 dark:text-gray-300 hover:border-primary hover:text-primary transition-all">
+                                            <span class="material-symbols-outlined text-[15px]">filter_list</span>
+                                            <span>Lọc</span>
+                                        </button>
+                                        <button onclick="openModal('job-modal')"
+                                            class="flex-shrink-0 bg-primary text-white h-9 px-3 rounded-lg text-xs font-bold shadow-md hover:opacity-90 flex items-center gap-1">
+                                            <span class="material-symbols-outlined text-[16px]">add_task</span>
+                                            <span>Tạo Job</span>
+                                        </button>
+                                    </div>
+
+                                    <!-- ── DESKTOP: original toolbar (hidden on mobile via CSS) ── -->
+                                    <div id="kanban-toolbar-desktop"
                                         class="p-4 border-b border-gray-200 dark:border-slate-700 flex flex-col sm:flex-row justify-between gap-4 shrink-0 bg-gray-50/50 dark:bg-slate-800/20">
                                         <div class="flex items-center gap-2">
                                             <span class="font-bold text-sm text-gray-600 dark:text-gray-300">Quy trình
                                                 hiển thị:</span>
                                             <select id="kanban-workflow-select" onchange="renderJobsKanban()"
                                                 class="px-3 py-2 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-primary outline-none">
-                                                <!-- Rendered via JS -->
                                             </select>
                                         </div>
                                         <button onclick="openModal('email-contacts-modal')"
                                             class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold border border-indigo-200 dark:border-indigo-700 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-colors">
                                             <span class="material-symbols-outlined text-sm">contact_mail</span>
                                             Danh sách Email
-                                            <span
-                                                class="ml-1 px-1.5 py-0.5 text-[10px] font-bold bg-indigo-100 dark:bg-indigo-800 rounded-full"
-                                                id="email-contacts-count">0</span>
                                         </button>
                                         <button onclick="openModal('job-modal')"
                                             class="bg-primary text-white px-4 py-2 rounded-lg text-sm font-bold shadow-md hover:opacity-90 flex items-center justify-center gap-2">
@@ -1126,53 +1339,43 @@
                                         </button>
                                     </div>
 
-                                    <!-- Kanban Filter Bar -->
-                                    <div id="kanban-filter-bar"
-                                        class="px-4 py-2.5 border-b border-gray-200 dark:border-slate-700 bg-white/80 dark:bg-slate-800/50 shrink-0 flex flex-wrap items-center gap-2">
-                                        <span
-                                            class="text-xs font-bold text-gray-500 uppercase tracking-wide flex items-center gap-1 shrink-0">
-                                            <span class="material-symbols-outlined text-[14px]">filter_list</span>Lọc:
-                                        </span>
-
-                                        <!-- Người phụ trách -->
-                                        <select id="kf-assignee" onchange="applyKanbanFilter()"
-                                            class="px-2.5 py-1.5 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-600 rounded-lg text-xs outline-none focus:border-primary min-w-[140px]">
-                                            <option value="">👤 Tất cả người phụ trách</option>
-                                        </select>
-
-                                        <!-- Trạng thái bước -->
-                                        <select id="kf-step-status" onchange="applyKanbanFilter()"
-                                            class="px-2.5 py-1.5 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-600 rounded-lg text-xs outline-none focus:border-primary">
-                                            <option value="">🔄 Tất cả trạng thái</option>
-                                            <option value="pending">⏳ Chờ xử lý</option>
-                                            <option value="doing">🚀 Đang xử lý</option>
-                                            <option value="paused">⏸️ Tạm dừng</option>
-                                            <option value="cancelled">🚫 Đã hủy</option>
-                                            <option value="done">✅ Hoàn thành</option>
-                                        </select>
-
-                                        <!-- Deadline -->
-                                        <select id="kf-deadline" onchange="applyKanbanFilter()"
-                                            class="px-2.5 py-1.5 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-600 rounded-lg text-xs outline-none focus:border-primary">
-                                            <option value="">📅 Tất cả deadline</option>
-                                            <option value="overdue">🔴 Quá hạn</option>
-                                            <option value="today">🟡 Hôm nay</option>
-                                            <option value="week">🟢 Trong tuần này</option>
-                                            <option value="no_deadline">⬜ Chưa đặt deadline</option>
-                                        </select>
-
-                                        <!-- Nút xóa filter — ẩn khi không có filter -->
-                                        <button onclick="clearKanbanFilters()" id="kf-clear-btn"
-                                            class="hidden items-center gap-1 px-2.5 py-1.5 text-xs font-bold text-red-500 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors">
-                                            <span class="material-symbols-outlined text-[13px]">filter_list_off</span>
-                                            Xóa lọc
-                                        </button>
-
-                                        <!-- Badge: X/Y job -->
-                                        <span id="kf-result-badge"
-                                            class="hidden ml-auto text-[11px] font-bold px-2.5 py-1 bg-primary/10 text-primary rounded-full whitespace-nowrap">
-                                        </span>
+                                    <!-- ── Collapsible Filter Drawer ── -->
+                                    <div id="kanban-filter-drawer" aria-label="Bộ lọc Kanban">
+                                        <div class="kf-inner">
+                                            <select id="kf-assignee" onchange="applyKanbanFilter()"
+                                                class="px-2.5 py-1.5 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-600 rounded-lg text-xs outline-none focus:border-primary min-w-[140px]">
+                                                <option value="">👤 Tất cả người phụ trách</option>
+                                            </select>
+                                            <select id="kf-step-status" onchange="applyKanbanFilter()"
+                                                class="px-2.5 py-1.5 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-600 rounded-lg text-xs outline-none focus:border-primary">
+                                                <option value="">🔄 Tất cả trạng thái</option>
+                                                <option value="pending">⏳ Chờ xử lý</option>
+                                                <option value="doing">🚀 Đang xử lý</option>
+                                                <option value="paused">⏸️ Tạm dừng</option>
+                                                <option value="cancelled">🚫 Đã hủy</option>
+                                                <option value="done">✅ Hoàn thành</option>
+                                            </select>
+                                            <select id="kf-deadline" onchange="applyKanbanFilter()"
+                                                class="px-2.5 py-1.5 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-600 rounded-lg text-xs outline-none focus:border-primary">
+                                                <option value="">📅 Tất cả deadline</option>
+                                                <option value="overdue">🔴 Quá hạn</option>
+                                                <option value="today">🟡 Hôm nay</option>
+                                                <option value="week">🟢 Trong tuần này</option>
+                                                <option value="no_deadline">⬜ Chưa đặt deadline</option>
+                                            </select>
+                                            <button onclick="clearKanbanFilters()" id="kf-clear-btn"
+                                                class="hidden items-center gap-1 px-2.5 py-1.5 text-xs font-bold text-red-500 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors">
+                                                <span
+                                                    class="material-symbols-outlined text-[13px]">filter_list_off</span>
+                                                Xóa lọc
+                                            </button>
+                                            <span id="kf-result-badge"
+                                                class="hidden ml-auto text-[11px] font-bold px-2.5 py-1 bg-primary/10 text-primary rounded-full whitespace-nowrap">
+                                            </span>
+                                        </div>
                                     </div>
+                                    <!-- Shim giữ ID kanban-filter-bar cho JS cũ -->
+                                    <div id="kanban-filter-bar" class="hidden"></div>
 
                                     <!-- Kanban Board Container -->
                                     <div class="flex-1 overflow-hidden p-4">
@@ -1278,6 +1481,7 @@
                                                     id="jobWorkflowChart"></canvas></div>
                                         </div>
                                     </div>
+
                                     <!-- ── BIỂU ĐỒ CỘT NHÓM: Đang làm / Hoàn thành theo Workflow ── -->
                                     <div class="bg-white dark:bg-slate-800 p-5 rounded-xl border border-gray-100 dark:border-slate-700 shadow-sm"
                                         style="margin-top: 25px;">
@@ -1299,6 +1503,7 @@
                                         </div>
                                     </div>
                                 </div>
+
                             </div>
                         </div>
                     </section>
@@ -3343,45 +3548,58 @@
         class="fixed inset-0 z-[120] flex items-center justify-center bg-black/60 backdrop-blur-sm hidden opacity-0 transition-opacity p-2 sm:p-4">
         <div class="bg-gray-50 dark:bg-slate-900 w-full max-w-4xl rounded-2xl shadow-2xl border border-gray-200 dark:border-slate-700 transform scale-95 transition-transform flex flex-col h-[90vh] modal-mobile-safe"
             id="job-detail-modal-content">
+
+            <!-- Drag handle (chỉ hiện trên mobile) -->
+            <div id="jd-drag-handle"></div>
+
+            <!-- Header -->
             <div
-                class="p-4 lg:p-5 border-b border-gray-200 dark:border-slate-800 flex justify-between items-center shrink-0 bg-white dark:bg-slate-900 rounded-t-2xl">
-                <div>
-                    <h3 class="font-bold text-lg lg:text-xl text-primary flex items-center gap-2"><span
-                            class="material-symbols-outlined">task</span> <span id="jd-name">Tên Job</span></h3>
-                    <p class="text-xs text-gray-500 mt-1">Khách hàng: <span id="jd-customer"
-                            class="font-semibold text-gray-700 dark:text-gray-300"></span> | Workflow: <span
-                            id="jd-workflow" class="font-semibold text-gray-700 dark:text-gray-300"></span></p>
+                class="px-4 py-3 lg:p-5 border-b border-gray-200 dark:border-slate-800 flex justify-between items-center shrink-0 bg-white dark:bg-slate-900 rounded-t-2xl">
+                <div class="min-w-0 pr-2">
+                    <h3 class="font-bold text-base lg:text-xl text-primary flex items-center gap-1.5 truncate">
+                        <span class="material-symbols-outlined text-[18px] flex-shrink-0">task</span>
+                        <span id="jd-name" class="truncate">Tên Job</span>
+                    </h3>
+                    <p class="text-xs text-gray-500 mt-0.5 truncate">
+                        <span id="jd-customer" class="font-semibold text-gray-700 dark:text-gray-300"></span>
+                        <span class="text-gray-300 dark:text-slate-600 mx-1">·</span>
+                        <span id="jd-workflow" class="font-semibold text-gray-700 dark:text-gray-300"></span>
+                    </p>
                 </div>
                 <button onclick="closeModal('job-detail-modal')"
-                    class="text-gray-400 hover:text-red-500 w-8 h-8 flex items-center justify-center bg-gray-100 dark:bg-slate-800 rounded-full lg:bg-transparent lg:dark:bg-transparent"><span
-                        class="material-symbols-outlined">close</span></button>
+                    class="flex-shrink-0 text-gray-400 hover:text-red-500 w-8 h-8 flex items-center justify-center bg-gray-100 dark:bg-slate-800 rounded-full transition-colors">
+                    <span class="material-symbols-outlined text-[18px]">close</span>
+                </button>
             </div>
 
-            <div class="flex-1 overflow-y-auto p-4 lg:p-6 space-y-4">
+            <!-- Body -->
+            <div class="flex-1 overflow-y-auto p-3 lg:p-6 space-y-3">
 
                 <!-- Tiến độ tổng quan -->
                 <div
-                    class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700">
-                    <div class="flex justify-between items-center mb-2">
-                        <span class="text-sm font-bold">Tiến độ hoàn thành:</span>
+                    class="bg-white dark:bg-slate-800 px-4 py-3 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700">
+                    <div class="flex justify-between items-center mb-1.5">
+                        <span class="text-xs font-bold text-gray-500 uppercase tracking-wide">Tiến độ hoàn thành</span>
                         <span class="text-sm font-bold text-primary" id="jd-progress-text">0%</span>
                     </div>
-                    <div class="w-full bg-gray-200 dark:bg-slate-700 rounded-full h-2.5">
-                        <div class="bg-primary h-2.5 rounded-full transition-all duration-500" id="jd-progress-bar"
+                    <div class="w-full bg-gray-200 dark:bg-slate-700 rounded-full h-2">
+                        <div class="bg-primary h-2 rounded-full transition-all duration-500" id="jd-progress-bar"
                             style="width: 0%"></div>
                     </div>
                 </div>
 
-                <!-- Combobox chọn bước workflow -->
+                <!-- Step tab pills (thay thế select trực quan trên mobile) -->
                 <div
-                    class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700">
-                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
-                        <span
-                            class="material-symbols-outlined text-[13px] align-middle text-primary">account_tree</span>
-                        Bước công việc (Workflow)
-                    </label>
-                    <select id="jd-step-select" onchange="switchJobStep()"
-                        class="w-full px-4 py-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-600 rounded-xl text-sm font-semibold outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer">
+                    class="bg-white dark:bg-slate-800 px-4 py-3 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700">
+                    <p
+                        class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2.5 flex items-center gap-1">
+                        <span class="material-symbols-outlined text-[13px] text-primary">account_tree</span>
+                        Bước công việc
+                    </p>
+                    <!-- Visual tab pills - populated by patch script -->
+                    <div id="jd-step-tabs-bar"></div>
+                    <!-- Original select: vẫn hoạt động, JS app đọc/ghi value tại đây -->
+                    <select id="jd-step-select" onchange="switchJobStep()" class="sr-only">
                         <!-- Populated by JS -->
                     </select>
                 </div>
@@ -3391,16 +3609,18 @@
 
             </div>
 
+            <!-- Footer -->
             <div
-                class="p-4 border-t border-gray-200 dark:border-slate-800 flex justify-between items-center gap-2 shrink-0 bg-white dark:bg-slate-900 rounded-b-2xl">
+                class="px-4 py-3 border-t border-gray-200 dark:border-slate-800 flex items-center gap-2 shrink-0 bg-white dark:bg-slate-900 rounded-b-2xl">
                 <button onclick="openCloneJobModal(window._currentJobDetailId)"
-                    class="flex items-center gap-2 px-4 py-3 lg:py-2.5 text-sm font-bold text-violet-600 bg-violet-50 dark:bg-violet-900/30 border border-violet-200 dark:border-violet-800 rounded-xl hover:bg-violet-100 dark:hover:bg-violet-900/50 transition-colors">
+                    class="flex items-center gap-2 px-3 py-2.5 text-sm font-bold text-violet-600 bg-violet-50 dark:bg-violet-900/30 border border-violet-200 dark:border-violet-800 rounded-xl hover:bg-violet-100 dark:hover:bg-violet-900/50 transition-colors flex-shrink-0">
                     <span class="material-symbols-outlined text-sm">content_copy</span>
                     <span class="hidden sm:inline">Nhân bản Job</span>
                 </button>
                 <button onclick="closeModal('job-detail-modal')"
-                    class="w-full sm:w-auto px-6 py-3 lg:py-2.5 text-sm font-bold bg-gray-200 dark:bg-slate-700 rounded-xl hover:bg-gray-300 dark:hover:bg-slate-600 transition-colors">Đóng
-                    Lại</button>
+                    class="flex-1 sm:flex-none sm:w-auto px-5 py-2.5 text-sm font-bold bg-gray-200 dark:bg-slate-700 rounded-xl hover:bg-gray-300 dark:hover:bg-slate-600 transition-colors text-center">
+                    Đóng
+                </button>
             </div>
         </div>
     </div>
@@ -3792,7 +4012,148 @@
     <script type="module" src="cb-preview-upgrade.js"></script>
     <script type="module" src="cb-module-patch.js"></script>
     <script type="module" src="cb-autocode.js"></script>
+
     <script type="module" src="viet-calendar.js"></script>
+
+    <!-- ========================================================
+         MOBILE UX PATCH — Collapsible Filter + Step Tab Pills
+         Không phụ thuộc vào app.js, an toàn override
+         ======================================================== -->
+    <script>
+        (function () {
+            'use strict';
+
+            /* ── 1. Collapsible Filter Drawer ── */
+            window.toggleKanbanFilter = function () {
+                var drawer = document.getElementById('kanban-filter-drawer');
+                var btn = document.getElementById('kf-toggle-btn');
+                if (!drawer) return;
+                drawer.classList.toggle('drawer-open');
+                if (btn) {
+                    btn.setAttribute('aria-expanded', drawer.classList.contains('drawer-open'));
+                }
+            };
+
+            // Patch clearKanbanFilters để cập nhật badge
+            var _origClear = window.clearKanbanFilters;
+            window.clearKanbanFilters = function () {
+                if (_origClear) _origClear();
+                setTimeout(updateFilterBadge, 50);
+            };
+
+            // Patch applyKanbanFilter để cập nhật badge
+            var _origApply = window.applyKanbanFilter;
+            window.applyKanbanFilter = function () {
+                if (_origApply) _origApply();
+                setTimeout(updateFilterBadge, 50);
+            };
+
+            function updateFilterBadge() {
+                var assignee = document.getElementById('kf-assignee');
+                var stepStatus = document.getElementById('kf-step-status');
+                var deadline = document.getElementById('kf-deadline');
+                var btn = document.getElementById('kf-toggle-btn');
+                if (!btn) return;
+
+                var count = 0;
+                if (assignee && assignee.value) count++;
+                if (stepStatus && stepStatus.value) count++;
+                if (deadline && deadline.value) count++;
+
+                // Xóa dot cũ
+                var oldDot = btn.querySelector('.kf-active-dot');
+                if (oldDot) oldDot.remove();
+
+                if (count > 0) {
+                    btn.classList.add('has-filters');
+                    var dot = document.createElement('span');
+                    dot.className = 'kf-active-dot';
+                    dot.title = count + ' bộ lọc đang bật';
+                    btn.appendChild(dot);
+                } else {
+                    btn.classList.remove('has-filters');
+                }
+            }
+
+            // Lắng nghe thay đổi filter selects để cập nhật badge realtime
+            ['kf-assignee', 'kf-step-status', 'kf-deadline'].forEach(function (id) {
+                var el = document.getElementById(id);
+                if (el) el.addEventListener('change', function () { setTimeout(updateFilterBadge, 30); });
+            });
+
+            /* ── 2. Step Tab Pills — đồng bộ với jd-step-select ── */
+            var stepSelect = document.getElementById('jd-step-select');
+            var tabsBar = document.getElementById('jd-step-tabs-bar');
+
+            if (stepSelect && tabsBar) {
+                function rebuildStepTabs() {
+                    tabsBar.innerHTML = '';
+                    var options = stepSelect.options;
+                    if (!options || options.length === 0) return;
+
+                    for (var i = 0; i < options.length; i++) {
+                        (function (idx) {
+                            var opt = options[idx];
+                            var btn = document.createElement('button');
+                            btn.type = 'button';
+                            btn.className = 'step-tab-pill' +
+                                (idx === stepSelect.selectedIndex ? ' active' : '') +
+                                (opt.dataset && opt.dataset.done === '1' ? ' done-tab' : '');
+                            btn.textContent = opt.text;
+                            btn.title = opt.text;
+                            btn.addEventListener('click', function () {
+                                stepSelect.selectedIndex = idx;
+                                // Trigger onchange gốc
+                                if (typeof window.switchJobStep === 'function') {
+                                    window.switchJobStep();
+                                } else {
+                                    stepSelect.dispatchEvent(new Event('change', { bubbles: true }));
+                                }
+                                rebuildStepTabs();
+                            });
+                            tabsBar.appendChild(btn);
+                        })(i);
+                    }
+
+                    // Scroll tab active vào giữa
+                    var activeTab = tabsBar.querySelector('.step-tab-pill.active');
+                    if (activeTab) {
+                        setTimeout(function () {
+                            activeTab.scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'smooth' });
+                        }, 60);
+                    }
+                }
+
+                // Watch khi JS app thêm <option> vào select
+                new MutationObserver(rebuildStepTabs).observe(stepSelect, { childList: true });
+
+                // Watch selectedIndex thay đổi từ JS app
+                stepSelect.addEventListener('change', function () {
+                    setTimeout(rebuildStepTabs, 20);
+                });
+
+                // Rebuild ngay lúc load (nếu options đã có)
+                rebuildStepTabs();
+            }
+
+            /* ── 3. Desktop toolbar: sync kanban-workflow-select ── */
+            // Trên desktop, select nằm trong #kanban-compact-toolbar nhưng toolbar bị ẩn
+            // → cần đảm bảo JS app vẫn đọc được đúng element
+            // Không cần làm gì thêm vì select ID không đổi.
+
+            /* ── 4. Auto-mở filter drawer trên desktop (luôn hiện) ── */
+            function syncDrawerWithViewport() {
+                var drawer = document.getElementById('kanban-filter-drawer');
+                if (!drawer) return;
+                if (window.innerWidth >= 768) {
+                    drawer.classList.add('drawer-open');
+                }
+            }
+            syncDrawerWithViewport();
+            window.addEventListener('resize', syncDrawerWithViewport);
+
+        })();
+    </script>
 </body>
 
 </html>
