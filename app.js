@@ -1073,11 +1073,19 @@ function updateJobWorkflowSelect() {
     document.getElementById('job-workflow').innerHTML = '<option value="">-- Chọn Workflow --</option>' + workflowsData.map(w => `<option value="${w.id}">${w.name}</option>`).join('');
 }
 function updateKanbanWorkflowSelect() {
-    const select = document.getElementById('kanban-workflow-select');
-    const current = select.value;
-    select.innerHTML = '<option value="">-- Chọn Quy trình để xem bảng --</option>' + workflowsData.map(w => `<option value="${w.id}">${w.name}</option>`).join('');
-    if (workflowsData.find(w => w.id === current)) select.value = current;
-    else if (workflowsData.length > 0) select.value = workflowsData[0].id;
+    const options = '<option value="">-- Chọn Quy trình để xem bảng --</option>' 
+        + workflowsData.map(w => `<option value="${w.id}">${w.name}</option>`).join('');
+    
+    // Sync cả 2 select (mobile + desktop)
+    ['kanban-workflow-select', 'kanban-workflow-select-desktop'].forEach(id => {
+        const select = document.getElementById(id);
+        if (!select) return;
+        const current = select.value;
+        select.innerHTML = options;
+        if (workflowsData.find(w => w.id === current)) select.value = current;
+        else if (workflowsData.length > 0) select.value = workflowsData[0].id;
+    });
+    
     renderJobsKanban();
 }
 
@@ -1327,7 +1335,9 @@ function _updateKanbanAssigneeOptions(wfId) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 window.renderJobsKanban = () => {
-    const wfId = document.getElementById('kanban-workflow-select').value;
+    const wfId = (document.getElementById('kanban-workflow-select-desktop')?.offsetParent 
+    ? document.getElementById('kanban-workflow-select-desktop') 
+    : document.getElementById('kanban-workflow-select'))?.value;
     const container = document.getElementById('kanban-board');
     if (!wfId) {
         container.innerHTML = `<div class="w-full text-center py-10 text-gray-500 flex flex-col items-center gap-2">
