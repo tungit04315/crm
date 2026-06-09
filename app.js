@@ -3609,6 +3609,7 @@ function loadAvatarInSettings(avatarUrl, username) {
     }
 
     async function checkDeadlines() {
+        return; //TẮT: tự động gửi mail quá hạn (đã có Apps Script đảm nhận)
         if (!jobsData || jobsData.length === 0) return; // chờ data load
         const now = new Date();
         for (const job of jobsData) {
