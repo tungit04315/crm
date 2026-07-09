@@ -287,7 +287,7 @@ window.toggleMobileMenu = () => {
     }
 };
 
-const views = ['dashboard', 'leads', 'customers', 'services', 'webfeatures', 'projects', 'jobs', 'quotes', 'history', 'settings', 'contract-builder']; // ADDED 'jobs'
+const views = ['dashboard', 'leads', 'customers', 'services', 'webfeatures', 'projects', 'jobs', 'quotes', 'contracts', 'history', 'settings', 'contract-builder']; // ADDED 'jobs', 'contracts'
 
 const originalNavigate = (target) => {
     views.forEach(v => {
@@ -302,7 +302,7 @@ const originalNavigate = (target) => {
     const tgtEl = document.getElementById(`view-${target}`);
     if (tgtEl) tgtEl.classList.remove('hidden');
 
-    const titles = { dashboard: 'Tổng quan', leads: 'Quản lý Lead', customers: 'Quản lý Khách hàng', services: 'Dịch vụ', webfeatures: 'Tính năng Website', projects: 'Quản lý Dự Án', jobs: 'Quy trình & Công việc', quotes: 'Báo giá & Hợp đồng', history: 'Lịch sử xuất', settings: 'Cài đặt hệ thống', 'contract-builder': 'Contract Builder' };
+    const titles = { dashboard: 'Tổng quan', leads: 'Quản lý Lead', customers: 'Quản lý Khách hàng', services: 'Dịch vụ', webfeatures: 'Tính năng Website', projects: 'Quản lý Dự Án', jobs: 'Quy trình & Công việc', quotes: 'Báo giá & Hợp đồng', contracts: 'Vòng đời Hợp đồng', history: 'Lịch sử xuất', settings: 'Cài đặt hệ thống', 'contract-builder': 'Contract Builder' };
     document.getElementById('page-title').innerText = titles[target] || 'CRM';
 
     if (window.innerWidth < 1024) {
@@ -1073,9 +1073,9 @@ function updateJobWorkflowSelect() {
     document.getElementById('job-workflow').innerHTML = '<option value="">-- Chọn Workflow --</option>' + workflowsData.map(w => `<option value="${w.id}">${w.name}</option>`).join('');
 }
 function updateKanbanWorkflowSelect() {
-    const options = '<option value="">-- Chọn Quy trình để xem bảng --</option>' 
+    const options = '<option value="">-- Chọn Quy trình để xem bảng --</option>'
         + workflowsData.map(w => `<option value="${w.id}">${w.name}</option>`).join('');
-    
+
     // Sync cả 2 select (mobile + desktop)
     ['kanban-workflow-select', 'kanban-workflow-select-desktop'].forEach(id => {
         const select = document.getElementById(id);
@@ -1085,7 +1085,7 @@ function updateKanbanWorkflowSelect() {
         if (workflowsData.find(w => w.id === current)) select.value = current;
         else if (workflowsData.length > 0) select.value = workflowsData[0].id;
     });
-    
+
     renderJobsKanban();
 }
 
@@ -1335,9 +1335,9 @@ function _updateKanbanAssigneeOptions(wfId) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 window.renderJobsKanban = () => {
-    const wfId = (document.getElementById('kanban-workflow-select-desktop')?.offsetParent 
-    ? document.getElementById('kanban-workflow-select-desktop') 
-    : document.getElementById('kanban-workflow-select'))?.value;
+    const wfId = (document.getElementById('kanban-workflow-select-desktop')?.offsetParent
+        ? document.getElementById('kanban-workflow-select-desktop')
+        : document.getElementById('kanban-workflow-select'))?.value;
     const container = document.getElementById('kanban-board');
     if (!wfId) {
         container.innerHTML = `<div class="w-full text-center py-10 text-gray-500 flex flex-col items-center gap-2">
@@ -2059,9 +2059,9 @@ function _renderJobProgressGroupChart(isDark, textColor) {
     const entries = Object.values(wfMap).filter(e => e.doing + e.done > 0);
     if (!entries.length) return;
 
-    const labels  = entries.map(e => e.name);
+    const labels = entries.map(e => e.name);
     const doingData = entries.map(e => e.doing);
-    const doneData  = entries.map(e => e.done);
+    const doneData = entries.map(e => e.done);
 
     if (jobProgressGroupChartInst) jobProgressGroupChartInst.destroy();
 
