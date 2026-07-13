@@ -1992,29 +1992,147 @@ let jobStatusChartInst = null;
 let jobWfChartInst = null;
 let jobProgressGroupChartInst = null;
 
-window.renderJobReports = () => {
-    // Stats Panel
-    document.getElementById('report-total-jobs').innerText = jobsData.length;
-    document.getElementById('report-doing-jobs').innerText = jobsData.filter(j => j.status === 'doing').length;
-    document.getElementById('report-done-jobs').innerText = jobsData.filter(j => j.status === 'done').length;
+// ── Trạng thái bộ lọc báo cáo (Workflow / Khách hàng / Thời gian) ──
+window.jobReportFilters = {
+    workflowIds: [],   // rỗng = tất cả
+    customerIds: [],   // rỗng = tất cả
+    timeType: 'all',   // 'all' | 'day' | 'month' | 'year'
+    timeValue: null    // 'YYYY-MM-DD' | 'YYYY-MM' | 'YYYY'
+};
 
-    const pausedJobs = jobsData.filter(j => j.steps?.some(s => s.status === 'paused')).length;
-    const cancelledJobs = jobsData.filter(j => j.steps?.some(s => s.status === 'cancelled')).length;
+window.toggleReportFilterDropdown = (type) => {
+    const dropdown = document.getElementById(`report-filter-${type}-dropdown`);
+    if (!dropdown) return;
+    const isHidden = dropdown.classList.contains('hidden');
+    document.querySelectorAll('[id^="report-filter-"][id$="-dropdown"]').forEach(d => d.classList.add('hidden'));
+    if (isHidden) dropdown.classList.remove('hidden');
+};
+
+// Đóng dropdown khi bấm ra ngoài
+document.addEventListener('click', (e) => {
+    if (!e.target.closest('#report-filter-workflow-wrap'))
+        document.getElementById('report-filter-workflow-dropdown')?.classList.add('hidden');
+    if (!e.target.closest('#report-filter-customer-wrap'))
+        document.getElementById('report-filter-customer-dropdown')?.classList.add('hidden');
+});
+
+function renderReportFilterOptions() {
+    const wfWrap = document.getElementById('report-filter-workflow-dropdown');
+    if (wfWrap) {
+        wfWrap.innerHTML = workflowsData.map(w => `
+            <label class="flex items-center gap-2 px-2 py-1.5 text-xs rounded hover:bg-gray-50 dark:hover:bg-slate-700 cursor-pointer">
+                <input type="checkbox" value="${w.id}" class="report-wf-checkbox" ${window.jobReportFilters.workflowIds.includes(w.id) ? 'checked' : ''} onchange="onReportFilterCheckboxChange('workflow')">
+                <span>${w.name}</span>
+            </label>`).join('') || `<p class="text-xs text-gray-400 px-2 py-1">Không có Workflow</p>`;
+    }
+    const cusWrap = document.getElementById('report-filter-customer-dropdown');
+    if (cusWrap) {
+        cusWrap.innerHTML = customersData.map(c => `
+            <label class="flex items-center gap-2 px-2 py-1.5 text-xs rounded hover:bg-gray-50 dark:hover:bg-slate-700 cursor-pointer">
+                <input type="checkbox" value="${c.id}" class="report-cus-checkbox" ${window.jobReportFilters.customerIds.includes(c.id) ? 'checked' : ''} onchange="onReportFilterCheckboxChange('customer')">
+                <span>${c.name}</span>
+            </label>`).join('') || `<p class="text-xs text-gray-400 px-2 py-1">Không có Khách hàng</p>`;
+    }
+}
+
+window.onReportFilterCheckboxChange = (type) => {
+    const cls = type === 'workflow' ? '.report-wf-checkbox' : '.report-cus-checkbox';
+    const selected = Array.from(document.querySelectorAll(cls + ':checked')).map(cb => cb.value);
+    if (type === 'workflow') window.jobReportFilters.workflowIds = selected;
+    else window.jobReportFilters.customerIds = selected;
+    updateReportFilterLabels();
+};
+
+function updateReportFilterLabels() {
+    const wfLabel = document.getElementById('report-filter-workflow-label');
+    if (wfLabel) {
+        const n = window.jobReportFilters.workflowIds.length;
+        wfLabel.innerText = n === 0 ? 'Tất cả Workflow' : `${n} Workflow đã chọn`;
+    }
+    const cusLabel = document.getElementById('report-filter-customer-label');
+    if (cusLabel) {
+        const n = window.jobReportFilters.customerIds.length;
+        cusLabel.innerText = n === 0 ? 'Tất cả Khách hàng' : `${n} Khách hàng đã chọn`;
+    }
+}
+
+window.onReportTimeTypeChange = () => {
+    const type = document.getElementById('report-filter-time-type').value;
+    const wrap = document.getElementById('report-filter-time-value-wrap');
+    const input = document.getElementById('report-filter-time-value');
+    const label = document.getElementById('report-filter-time-value-label');
+    if (type === 'all') { wrap.classList.add('hidden'); return; }
+    wrap.classList.remove('hidden');
+    if (type === 'day') { input.type = 'date'; label.innerText = 'Chọn ngày'; }
+    else if (type === 'month') { input.type = 'month'; label.innerText = 'Chọn tháng'; }
+    else if (type === 'year') { input.type = 'number'; input.placeholder = 'VD: 2026'; label.innerText = 'Chọn năm'; }
+    input.value = '';
+};
+
+window.applyJobReportFilters = () => {
+    window.jobReportFilters.timeType = document.getElementById('report-filter-time-type').value;
+    window.jobReportFilters.timeValue = document.getElementById('report-filter-time-value').value || null;
+    document.getElementById('report-filter-workflow-dropdown')?.classList.add('hidden');
+    document.getElementById('report-filter-customer-dropdown')?.classList.add('hidden');
+    renderJobReports();
+};
+
+window.resetJobReportFilters = () => {
+    window.jobReportFilters = { workflowIds: [], customerIds: [], timeType: 'all', timeValue: null };
+    const timeTypeEl = document.getElementById('report-filter-time-type');
+    if (timeTypeEl) timeTypeEl.value = 'all';
+    document.getElementById('report-filter-time-value-wrap')?.classList.add('hidden');
+    document.querySelectorAll('.report-wf-checkbox, .report-cus-checkbox').forEach(cb => cb.checked = false);
+    updateReportFilterLabels();
+    renderJobReports();
+};
+
+// Áp dụng tất cả bộ lọc (kết hợp AND giữa các nhóm, OR trong cùng 1 nhóm) lên jobsData
+function getFilteredReportJobs() {
+    const f = window.jobReportFilters;
+    return jobsData.filter(j => {
+        if (f.workflowIds.length && !f.workflowIds.includes(j.workflowId)) return false;
+        if (f.customerIds.length && !f.customerIds.includes(j.customerId)) return false;
+        if (f.timeType && f.timeType !== 'all' && f.timeValue) {
+            const iso = getISODate(j.createdAt); // 'YYYY-MM-DD'
+            if (!iso) return false;
+            if (f.timeType === 'day' && iso !== f.timeValue) return false;
+            if (f.timeType === 'month' && iso.slice(0, 7) !== f.timeValue) return false;
+            if (f.timeType === 'year' && iso.slice(0, 4) !== String(f.timeValue)) return false;
+        }
+        return true;
+    });
+}
+
+window.renderJobReports = () => {
+    renderReportFilterOptions();
+    updateReportFilterLabels();
+
+    const filteredJobs = getFilteredReportJobs();
+
+    // Stats Panel
+    document.getElementById('report-total-jobs').innerText = filteredJobs.length;
+    document.getElementById('report-doing-jobs').innerText = filteredJobs.filter(j => j.status === 'doing').length;
+    document.getElementById('report-done-jobs').innerText = filteredJobs.filter(j => j.status === 'done').length;
+
+    const pausedJobs = filteredJobs.filter(j => j.steps?.some(s => s.status === 'paused')).length;
+    const cancelledJobs = filteredJobs.filter(j => j.steps?.some(s => s.status === 'cancelled')).length;
     if (document.getElementById('report-paused-jobs'))
         document.getElementById('report-paused-jobs').innerText = pausedJobs;
     if (document.getElementById('report-cancelled-jobs'))
         document.getElementById('report-cancelled-jobs').innerText = cancelledJobs;
     if (document.getElementById('panel-job-report').classList.contains('hidden')) return; // Only draw charts if visible
-    updateJobReportCharts();
+    updateJobReportCharts(filteredJobs);
 };
 
-function updateJobReportCharts() {
+function updateJobReportCharts(jobsList) {
+    jobsList = jobsList || getFilteredReportJobs();
     const isDark = document.documentElement.classList.contains('dark');
     const textColor = isDark ? '#cbd5e1' : '#64748b';
 
     // Chart 1: Status Donut
-    const doing = jobsData.filter(j => j.status === 'doing').length;
-    const done = jobsData.filter(j => j.status === 'done').length;
+    const doing = jobsList.filter(j => j.status === 'doing').length;
+    const done = jobsList.filter(j => j.status === 'done').length;
     if (jobStatusChartInst) jobStatusChartInst.destroy();
     jobStatusChartInst = new Chart(document.getElementById('jobStatusChart'), {
         type: 'doughnut',
@@ -2025,7 +2143,7 @@ function updateJobReportCharts() {
     // Chart 2: By Workflow
     const wfCounts = {};
     workflowsData.forEach(w => wfCounts[w.name] = 0);
-    jobsData.forEach(j => {
+    jobsList.forEach(j => {
         const wf = workflowsData.find(w => w.id === j.workflowId);
         if (wf) wfCounts[wf.name]++;
     });
@@ -2039,17 +2157,18 @@ function updateJobReportCharts() {
         options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { color: textColor, precision: 0 } }, x: { ticks: { color: textColor, display: false } } }, plugins: { legend: { display: false } } }
     });
 
-    _renderJobProgressGroupChart(isDark, textColor);
+    _renderJobProgressGroupChart(isDark, textColor, jobsList);
 }
 
-function _renderJobProgressGroupChart(isDark, textColor) {
+function _renderJobProgressGroupChart(isDark, textColor, jobsList) {
+    jobsList = jobsList || jobsData;
     // Tính số job đang làm / hoàn thành cho từng workflow
     const wfMap = {};
     workflowsData.forEach(w => {
         wfMap[w.id] = { name: w.name, doing: 0, done: 0 };
     });
 
-    jobsData.forEach(j => {
+    jobsList.forEach(j => {
         if (!wfMap[j.workflowId]) return;
         if (j.status === 'done') wfMap[j.workflowId].done++;
         else wfMap[j.workflowId].doing++;
