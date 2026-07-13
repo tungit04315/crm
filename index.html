@@ -1447,6 +1447,71 @@
                                 <!-- Tab: Reports -->
                                 <div id="panel-job-report"
                                     class="absolute inset-0 flex flex-col h-full animate-fade-in hidden overflow-y-auto p-4">
+
+                                    <!-- ── BỘ LỌC BÁO CÁO (Workflow / Khách hàng / Thời gian) ── -->
+                                    <div
+                                        class="bg-white dark:bg-slate-800 p-4 rounded-xl border border-gray-100 dark:border-slate-700 shadow-sm mb-6">
+                                        <div class="flex flex-wrap items-end gap-3">
+                                            <!-- Workflow (multi-select) -->
+                                            <div class="relative" id="report-filter-workflow-wrap">
+                                                <label
+                                                    class="block text-xs font-medium text-gray-500 mb-1">Workflow</label>
+                                                <button type="button" onclick="toggleReportFilterDropdown('workflow')"
+                                                    class="flex items-center justify-between gap-2 min-w-[170px] px-3 py-2 text-xs rounded-lg border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-700 hover:border-primary">
+                                                    <span id="report-filter-workflow-label">Tất cả Workflow</span>
+                                                    <span class="material-symbols-outlined text-sm">expand_more</span>
+                                                </button>
+                                                <div id="report-filter-workflow-dropdown"
+                                                    class="hidden absolute z-20 mt-1 w-64 max-h-64 overflow-y-auto bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-600 rounded-lg shadow-lg p-2">
+                                                </div>
+                                            </div>
+
+                                            <!-- Khách hàng (multi-select) -->
+                                            <div class="relative" id="report-filter-customer-wrap">
+                                                <label class="block text-xs font-medium text-gray-500 mb-1">Khách
+                                                    hàng</label>
+                                                <button type="button" onclick="toggleReportFilterDropdown('customer')"
+                                                    class="flex items-center justify-between gap-2 min-w-[170px] px-3 py-2 text-xs rounded-lg border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-700 hover:border-primary">
+                                                    <span id="report-filter-customer-label">Tất cả Khách hàng</span>
+                                                    <span class="material-symbols-outlined text-sm">expand_more</span>
+                                                </button>
+                                                <div id="report-filter-customer-dropdown"
+                                                    class="hidden absolute z-20 mt-1 w-64 max-h-64 overflow-y-auto bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-600 rounded-lg shadow-lg p-2">
+                                                </div>
+                                            </div>
+
+                                            <!-- Loại thời gian -->
+                                            <div>
+                                                <label class="block text-xs font-medium text-gray-500 mb-1">Loại thời
+                                                    gian</label>
+                                                <select id="report-filter-time-type" onchange="onReportTimeTypeChange()"
+                                                    class="px-3 py-2 text-xs rounded-lg border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-700">
+                                                    <option value="all">Tất cả</option>
+                                                    <option value="day">Theo Ngày</option>
+                                                    <option value="month">Theo Tháng</option>
+                                                    <option value="year">Theo Năm</option>
+                                                </select>
+                                            </div>
+
+                                            <!-- Giá trị thời gian (đổi kiểu input theo loại) -->
+                                            <div id="report-filter-time-value-wrap" class="hidden">
+                                                <label class="block text-xs font-medium text-gray-500 mb-1"
+                                                    id="report-filter-time-value-label">Chọn ngày</label>
+                                                <input type="date" id="report-filter-time-value"
+                                                    class="px-3 py-2 text-xs rounded-lg border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-700" />
+                                            </div>
+
+                                            <div class="flex gap-2 ml-auto">
+                                                <button onclick="applyJobReportFilters()"
+                                                    class="bg-primary text-white px-4 py-2 rounded-lg text-xs font-bold shadow-md hover:opacity-90">Áp
+                                                    dụng</button>
+                                                <button onclick="resetJobReportFilters()"
+                                                    class="px-4 py-2 rounded-lg text-xs font-bold border border-gray-200 dark:border-slate-600 hover:bg-gray-50 dark:hover:bg-slate-700">Xóa
+                                                    lọc</button>
+                                            </div>
+                                        </div>
+                                    </div>
+
                                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
                                         <div
                                             class="bg-white dark:bg-slate-800 p-4 rounded-xl border border-gray-100 dark:border-slate-700 shadow-sm">
