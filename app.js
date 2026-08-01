@@ -478,6 +478,10 @@ window.openModal = (id, data = null) => {
         document.getElementById('job-name').value = '';
         document.getElementById('job-customer').value = '';
         document.getElementById('job-workflow').value = '';
+        document.getElementById('job-quantity').value = '1';
+        document.getElementById('job-naming-style').value = 'plain';
+        window._resetJobBulkProgressUI();
+        window._updateJobNamingPreview();
     }
 };
 
@@ -1089,16 +1093,81 @@ function updateKanbanWorkflowSelect() {
     renderJobsKanban();
 }
 
+// ── BULK JOB CREATE: đặt tên tăng dần + hiệu ứng progress ────────────────────
+window._formatJobIndex = (i, total, style) => {
+    if (style === 'padded') {
+        const width = String(total).length; // số chữ số của tổng, VD 10 -> 2 chữ số, 100 -> 3
+        return String(i).padStart(Math.max(width, 2), '0');
+    }
+    return String(i);
+};
+
+window._buildJobNames = (baseName, quantity, style) => {
+    if (quantity <= 1) return [baseName];
+    const names = [];
+    for (let i = 1; i <= quantity; i++) {
+        names.push(`${baseName} ${window._formatJobIndex(i, quantity, style)}`);
+    }
+    return names;
+};
+
+window._updateJobNamingPreview = () => {
+    const baseName = document.getElementById('job-name').value.trim() || 'Tên Job';
+    const qty = parseInt(document.getElementById('job-quantity').value, 10) || 1;
+    const style = document.getElementById('job-naming-style').value;
+    const wrap = document.getElementById('job-naming-style-wrap');
+    const preview = document.getElementById('job-naming-preview');
+
+    if (qty > 1) {
+        wrap.classList.remove('hidden');
+        const names = window._buildJobNames(baseName, qty, style);
+        const firstLast = names.length > 2
+            ? `${names[0]}  →  ${names[names.length - 1]}  (${qty} job)`
+            : names.join('  →  ');
+        preview.innerText = `Xem trước: ${firstLast}`;
+        preview.classList.remove('hidden');
+    } else {
+        wrap.classList.add('hidden');
+        preview.classList.add('hidden');
+    }
+};
+['job-name', 'job-quantity', 'job-naming-style'].forEach(id => {
+    document.getElementById(id)?.addEventListener('input', window._updateJobNamingPreview);
+});
+
+window._resetJobBulkProgressUI = () => {
+    const box = document.getElementById('job-bulk-progress');
+    box.classList.add('hidden');
+    document.getElementById('job-bulk-progress-bar').style.width = '0%';
+    document.getElementById('job-bulk-progress-percent').innerText = '0%';
+    document.getElementById('job-bulk-progress-label').innerText = 'Đang tạo job 0/0...';
+    document.getElementById('job-bulk-progress-list').innerHTML = '';
+};
+
+window._setJobFormBusy = (busy) => {
+    // Khóa các input khi đang tạo hàng loạt để tránh đụng dữ liệu giữa chừng
+    ['job-name', 'job-customer', 'job-workflow', 'job-quantity', 'job-naming-style'].forEach(id => {
+        document.getElementById(id).disabled = busy;
+    });
+    document.getElementById('job-form-submit-btn').disabled = busy;
+    document.getElementById('job-form-submit-btn').classList.toggle('opacity-50', busy);
+    document.querySelector('#job-form-actions button[type="button"]').disabled = busy;
+};
+
 document.getElementById('job-form').addEventListener('submit', async (e) => {
     e.preventDefault();
-    const name = document.getElementById('job-name').value.trim();
+    const baseName = document.getElementById('job-name').value.trim();
     const customerId = document.getElementById('job-customer').value;
     const workflowId = document.getElementById('job-workflow').value;
+    const quantity = Math.min(50, Math.max(1, parseInt(document.getElementById('job-quantity').value, 10) || 1));
+    const namingStyle = document.getElementById('job-naming-style').value;
 
     const wf = workflowsData.find(w => w.id === workflowId);
     if (!wf || !wf.steps || wf.steps.length === 0) return showToast('Workflow này bị lỗi hoặc không có bước nào', 'error');
 
-    const jobSteps = wf.steps.map(s => ({
+    const jobNames = window._buildJobNames(baseName, quantity, namingStyle);
+
+    const buildJobSteps = () => wf.steps.map(s => ({
         id: s.id,
         name: s.name,
         order: s.order,
@@ -1108,22 +1177,87 @@ document.getElementById('job-form').addEventListener('submit', async (e) => {
         note: ''
     }));
 
-    const data = {
-        name,
-        customerId,
-        workflowId,
-        serviceId: wf.serviceId,
-        status: 'doing', // overall status: doing / done
-        steps: jobSteps,
-        createdAt: new Date()
-    };
+    // ── Trường hợp tạo 1 job: giữ nguyên hành vi cũ, không hiện progress ──
+    if (quantity === 1) {
+        const data = {
+            name: jobNames[0],
+            customerId,
+            workflowId,
+            serviceId: wf.serviceId,
+            status: 'doing',
+            steps: buildJobSteps(),
+            createdAt: new Date()
+        };
+        try {
+            await addDoc(getCollectionPath('jobs'), data);
+            showToast('Tạo Job thành công!');
+            closeModal('job-modal');
+            switchJobsTab('kanban');
+        } catch (err) { showToast('Lỗi: ' + err.message, 'error'); }
+        return;
+    }
 
-    try {
-        await addDoc(getCollectionPath('jobs'), data);
-        showToast('Tạo Job thành công!');
+    // ── Trường hợp tạo hàng loạt: chạy tuần tự + hiệu ứng progress tăng dần ──
+    const progressBox = document.getElementById('job-bulk-progress');
+    const progressBar = document.getElementById('job-bulk-progress-bar');
+    const progressPercent = document.getElementById('job-bulk-progress-percent');
+    const progressLabel = document.getElementById('job-bulk-progress-label');
+    const progressList = document.getElementById('job-bulk-progress-list');
+
+    window._resetJobBulkProgressUI();
+    progressBox.classList.remove('hidden');
+    window._setJobFormBusy(true);
+
+    let successCount = 0;
+    const errors = [];
+
+    for (let i = 0; i < jobNames.length; i++) {
+        const jobName = jobNames[i];
+        progressLabel.innerText = `Đang tạo job ${i + 1}/${quantity}: "${jobName}"`;
+
+        const data = {
+            name: jobName,
+            customerId,
+            workflowId,
+            serviceId: wf.serviceId,
+            status: 'doing',
+            steps: buildJobSteps(),
+            createdAt: new Date()
+        };
+
+        try {
+            await addDoc(getCollectionPath('jobs'), data);
+            successCount++;
+            const row = document.createElement('div');
+            row.className = 'text-[11px] flex items-center gap-1.5 text-green-600 dark:text-green-400';
+            row.innerHTML = `<span class="material-symbols-outlined text-sm">check_circle</span><span class="truncate">${jobName}</span>`;
+            progressList.appendChild(row);
+        } catch (err) {
+            errors.push(jobName);
+            const row = document.createElement('div');
+            row.className = 'text-[11px] flex items-center gap-1.5 text-red-500';
+            row.innerHTML = `<span class="material-symbols-outlined text-sm">error</span><span class="truncate">${jobName} — lỗi</span>`;
+            progressList.appendChild(row);
+        }
+
+        const percent = Math.round(((i + 1) / quantity) * 100);
+        progressBar.style.width = percent + '%';
+        progressPercent.innerText = percent + '%';
+        progressList.scrollTop = progressList.scrollHeight;
+    }
+
+    window._setJobFormBusy(false);
+
+    if (errors.length === 0) {
+        showToast(`Đã tạo thành công ${successCount}/${quantity} job!`);
+    } else {
+        showToast(`Hoàn tất: ${successCount}/${quantity} job thành công, ${errors.length} lỗi.`, 'error');
+    }
+
+    setTimeout(() => {
         closeModal('job-modal');
         switchJobsTab('kanban');
-    } catch (err) { showToast('Lỗi: ' + err.message, 'error'); }
+    }, errors.length === 0 ? 600 : 1500);
 });
 
 // -> Render Job List Table
