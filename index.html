@@ -3597,10 +3597,41 @@
                         trình mẫu.</p>
                 </div>
 
-                <div class="pt-2 flex flex-col sm:flex-row justify-end gap-2 mt-4 shrink-0">
+                <div class="border-t border-gray-200 dark:border-slate-700 pt-3">
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-500 mb-1">Số lượng Job *</label>
+                            <input type="number" id="job-quantity" min="1" max="50" value="1"
+                                class="w-full px-3 py-3 lg:py-2 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg text-sm outline-none focus:border-primary">
+                        </div>
+                        <div id="job-naming-style-wrap" class="hidden">
+                            <label class="block text-xs font-semibold text-gray-500 mb-1">Kiểu đánh số</label>
+                            <select id="job-naming-style"
+                                class="w-full px-3 py-3 lg:py-2 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg text-sm outline-none focus:border-primary">
+                                <option value="plain">1, 2, 3...</option>
+                                <option value="padded">01, 02, 03...</option>
+                            </select>
+                        </div>
+                    </div>
+                    <p id="job-naming-preview" class="text-[11px] text-gray-500 mt-2 italic hidden"></p>
+                </div>
+
+                <!-- Progress UI khi tạo hàng loạt -->
+                <div id="job-bulk-progress" class="hidden border border-primary/30 bg-primary/5 rounded-lg p-3">
+                    <div class="flex justify-between items-center mb-1.5">
+                        <span class="text-xs font-semibold text-primary" id="job-bulk-progress-label">Đang tạo job 0/0...</span>
+                        <span class="text-xs font-bold text-primary" id="job-bulk-progress-percent">0%</span>
+                    </div>
+                    <div class="w-full h-2 bg-gray-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                        <div id="job-bulk-progress-bar" class="h-full bg-primary rounded-full transition-all duration-300" style="width:0%"></div>
+                    </div>
+                    <div id="job-bulk-progress-list" class="mt-2 max-h-32 overflow-y-auto space-y-1"></div>
+                </div>
+
+                <div id="job-form-actions" class="pt-2 flex flex-col sm:flex-row justify-end gap-2 mt-4 shrink-0">
                     <button type="button" onclick="closeModal('job-modal')"
                         class="w-full sm:w-auto px-4 py-3 lg:py-2 text-sm font-medium bg-gray-100 dark:bg-slate-800 rounded-lg hover:bg-gray-200 dark:hover:bg-slate-700">Hủy</button>
-                    <button type="submit"
+                    <button type="submit" id="job-form-submit-btn"
                         class="w-full sm:w-auto px-4 py-3 lg:py-2 text-sm font-bold text-white bg-primary rounded-lg shadow-md hover:opacity-90 order-first sm:order-last">Lưu
                         Job</button>
                 </div>
