@@ -403,6 +403,9 @@ function injectDashboardBlock() {
 /* ================================================================
    FIRESTORE
    ================================================================ */
+// ⚠️ Collection "contracts" là DÀNH RIÊNG cho module Vòng đời Hợp đồng (CRUD add/edit/delete ở đây).
+// Contract Builder (cb-backend.js) đã được tách sang collection "cb_contracts" — KHÔNG dùng chung
+// collection "contracts" cho bất kỳ tính năng nào khác để tránh đụng độ schema/status.
 function startContractsListener() {
     return onSnapshot(query(getCollectionPath('contracts')), snap => {
         contractsData = snap.docs.map(d => ({ id: d.id, ...d.data() }));
