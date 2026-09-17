@@ -572,10 +572,17 @@ function getPageSlice(arr, key, perPage) {
 // ==============================================
 const LEADS_PER_PAGE = 6;
 
+// Sắp xếp theo thời gian tạo (mới nhất / cũ nhất) — dùng chung cho Leads & Khách hàng
+function sortByCreatedAt(arr, order = 'newest') {
+    const toMs = (ts) => ts?.seconds ? ts.seconds * 1000 : new Date(ts || 0).getTime();
+    return [...arr].sort((a, b) => order === 'oldest' ? toMs(a.createdAt) - toMs(b.createdAt) : toMs(b.createdAt) - toMs(a.createdAt));
+}
+
 window.renderLeads = () => {
     const txt = document.getElementById('search-lead').value.toLowerCase();
     const dt = document.getElementById('filter-lead-date').value;
     const tp = document.getElementById('filter-lead-type').value;
+    const sortOrder = document.getElementById('sort-lead')?.value || 'newest'; // MỚI
 
     const filtered = leadsData.filter(l => {
         const matchTxt = l.name.toLowerCase().includes(txt) || l.phone.includes(txt);
@@ -583,12 +590,12 @@ window.renderLeads = () => {
         const matchTp = !tp || l.type === tp;
         return matchTxt && matchDt && matchTp;
     });
+    const sorted = sortByCreatedAt(filtered, sortOrder); // MỚI
 
-    // Reset page khi filter thay đổi (chỉ khi gọi từ input event)
     const badge = document.getElementById('lead-count-badge');
-    if (badge) badge.textContent = `${filtered.length} leads`;
+    if (badge) badge.textContent = `${sorted.length} leads`; // filtered -> sorted
 
-    const paged = getPageSlice(filtered, 'leads', LEADS_PER_PAGE);
+    const paged = getPageSlice(sorted, 'leads', LEADS_PER_PAGE);
 
     // ── Desktop Table ──
     const tbody = document.getElementById('leads-list');
@@ -647,7 +654,7 @@ window.renderLeads = () => {
         document.getElementById('leads-page-info'), LEADS_PER_PAGE);
 };
 
-['search-lead', 'filter-lead-date', 'filter-lead-type'].forEach(id => {
+['search-lead', 'filter-lead-date', 'filter-lead-type', 'sort-lead'].forEach(id => {
     document.getElementById(id)?.addEventListener('input', () => { PG.leads = 1; renderLeads(); });
 });
 
@@ -709,17 +716,19 @@ const CUSTOMERS_PER_PAGE = 6;
 window.renderCustomers = () => {
     const txt = document.getElementById('search-customer').value.toLowerCase();
     const dt = document.getElementById('filter-customer-date').value;
+    const sortOrder = document.getElementById('sort-customer')?.value || 'newest'; // MỚI
 
     const filtered = customersData.filter(c => {
         const matchTxt = c.name.toLowerCase().includes(txt) || (c.phone && c.phone.includes(txt));
         const matchDt = !dt || getISODate(c.createdAt) === dt;
         return matchTxt && matchDt;
     });
+    const sorted = sortByCreatedAt(filtered, sortOrder); // MỚI
 
     const badge = document.getElementById('customer-count-badge');
-    if (badge) badge.textContent = `${filtered.length} KH`;
+    if (badge) badge.textContent = `${sorted.length} KH`; // filtered -> sorted
 
-    const paged = getPageSlice(filtered, 'customers', CUSTOMERS_PER_PAGE);
+    const paged = getPageSlice(sorted, 'customers', CUSTOMERS_PER_PAGE); // filtered -> sorted
 
     // ── Desktop Table ──
     const tbody = document.getElementById('customers-list');
@@ -773,7 +782,7 @@ window.renderCustomers = () => {
         document.getElementById('customers-page-info'), CUSTOMERS_PER_PAGE);
 };
 
-['search-customer', 'filter-customer-date'].forEach(id => {
+['search-customer', 'filter-customer-date', 'sort-customer'].forEach(id => {
     document.getElementById(id)?.addEventListener('input', () => { PG.customers = 1; renderCustomers(); });
 });
 
