@@ -458,6 +458,19 @@ function injectStyles() {
     .ie-modal-box { background:#fff; width:100%; max-width:680px; max-height:85vh; border-radius:16px;
         display:flex; flex-direction:column; overflow:hidden; box-shadow:0 25px 50px -12px rgba(0,0,0,.35); }
     .dark .ie-modal-box { background:#0f172a; border:1px solid #1e293b; }
+    /* Dropdown gọn cho nhóm nút Excel (thay vì 3 nút rời rạc gây tràn hàng) */
+.ie-dropdown { position:relative; }
+.ie-dropdown-menu { position:absolute; top:calc(100% + 6px); left:0; z-index:30; background:#fff;
+    border:1px solid #e5e7eb; border-radius:10px; min-width:190px; padding:6px;
+    display:flex; flex-direction:column; gap:2px;
+    box-shadow:0 10px 25px -5px rgba(0,0,0,.12), 0 8px 10px -6px rgba(0,0,0,.08); }
+.dark .ie-dropdown-menu { background:#0f172a; border-color:#1e293b; }
+.ie-dropdown-menu.hidden { display:none !important; }
+.ie-dropdown-menu button { display:flex; align-items:center; gap:8px; padding:8px 10px; border-radius:8px;
+    font-size:13px; font-weight:600; color:#374151; text-align:left; width:100%; background:transparent; }
+.dark .ie-dropdown-menu button { color:#cbd5e1; }
+.ie-dropdown-menu button:hover { background:#f3f4f6; } .dark .ie-dropdown-menu button:hover { background:#1e293b; }
+.ie-dropdown-menu .material-symbols-outlined { font-size:16px; }
     `;
     document.head.appendChild(s);
 }
@@ -522,27 +535,42 @@ function injectModals() {
     });
 }
 
+// ── Dropdown Excel dùng chung (gộp Tải mẫu / Nhập / Xuất vào 1 nút) ──
+window.toggleIEDropdown = (id) => {
+    document.querySelectorAll('.ie-dropdown-menu').forEach(m => { if (m.id !== id) m.classList.add('hidden'); });
+    $(id)?.classList.toggle('hidden');
+};
+window.closeAllIEDropdowns = () => document.querySelectorAll('.ie-dropdown-menu').forEach(m => m.classList.add('hidden'));
+document.addEventListener('click', (e) => {
+    if (!e.target.closest('.ie-dropdown')) window.closeAllIEDropdowns();
+});
+
 function injectToolbarButtons() {
     // ── Leads toolbar ──
     const leadAddBtn = document.querySelector('#view-leads button[onclick*="lead-modal"]');
     if (leadAddBtn && !$('ie-leads-toolbar')) {
         const box = document.createElement('div');
         box.id = 'ie-leads-toolbar';
-        box.className = 'flex items-center gap-1.5 flex-wrap';
+        box.className = 'flex items-center gap-2 flex-wrap';
         box.innerHTML = `
             <button id="ie-bulk-convert-btn" class="ie-bulk-btn hidden">
                 <span class="material-symbols-outlined text-base">person_add</span>
                 Chuyển hàng loạt (<span class="ie-bulk-count">0</span>)
             </button>
-            <button class="ie-btn" onclick="downloadLeadTemplate()" title="Tải file mẫu">
-                <span class="material-symbols-outlined">download</span>
-            </button>
-            <button class="ie-btn" onclick="document.getElementById('ie-leads-file-input').click()">
-                <span class="material-symbols-outlined">upload_file</span> Nhập Excel
-            </button>
-            <button class="ie-btn" onclick="exportLeadsToExcel()">
-                <span class="material-symbols-outlined">file_download</span> Xuất Excel
-            </button>`;
+            <div class="ie-dropdown">
+                <button class="ie-btn" onclick="toggleIEDropdown('ie-leads-excel-menu')">
+                    <span class="material-symbols-outlined">table_view</span> Excel
+                    <span class="material-symbols-outlined text-base">expand_more</span>
+                </button>
+                <div id="ie-leads-excel-menu" class="ie-dropdown-menu hidden">
+                    <button onclick="downloadLeadTemplate(); closeAllIEDropdowns()">
+                        <span class="material-symbols-outlined">download</span> Tải file mẫu</button>
+                    <button onclick="document.getElementById('ie-leads-file-input').click(); closeAllIEDropdowns()">
+                        <span class="material-symbols-outlined">upload_file</span> Nhập Excel</button>
+                    <button onclick="exportLeadsToExcel(); closeAllIEDropdowns()">
+                        <span class="material-symbols-outlined">file_download</span> Xuất Excel</button>
+                </div>
+            </div>`;
         leadAddBtn.parentNode.insertBefore(box, leadAddBtn);
         $('ie-bulk-convert-btn').addEventListener('click', openBulkConvertModal);
     }
@@ -552,17 +580,22 @@ function injectToolbarButtons() {
     if (cusAddBtn && !$('ie-customers-toolbar')) {
         const box = document.createElement('div');
         box.id = 'ie-customers-toolbar';
-        box.className = 'flex items-center gap-1.5 flex-wrap';
+        box.className = 'flex items-center gap-2 flex-wrap';
         box.innerHTML = `
-            <button class="ie-btn" onclick="downloadCustomerTemplate()" title="Tải file mẫu">
-                <span class="material-symbols-outlined">download</span>
-            </button>
-            <button class="ie-btn" onclick="document.getElementById('ie-customers-file-input').click()">
-                <span class="material-symbols-outlined">upload_file</span> Nhập Excel
-            </button>
-            <button class="ie-btn" onclick="exportCustomersToExcel()">
-                <span class="material-symbols-outlined">file_download</span> Xuất Excel
-            </button>`;
+            <div class="ie-dropdown">
+                <button class="ie-btn" onclick="toggleIEDropdown('ie-customers-excel-menu')">
+                    <span class="material-symbols-outlined">table_view</span> Excel
+                    <span class="material-symbols-outlined text-base">expand_more</span>
+                </button>
+                <div id="ie-customers-excel-menu" class="ie-dropdown-menu hidden">
+                    <button onclick="downloadCustomerTemplate(); closeAllIEDropdowns()">
+                        <span class="material-symbols-outlined">download</span> Tải file mẫu</button>
+                    <button onclick="document.getElementById('ie-customers-file-input').click(); closeAllIEDropdowns()">
+                        <span class="material-symbols-outlined">upload_file</span> Nhập Excel</button>
+                    <button onclick="exportCustomersToExcel(); closeAllIEDropdowns()">
+                        <span class="material-symbols-outlined">file_download</span> Xuất Excel</button>
+                </div>
+            </div>`;
         cusAddBtn.parentNode.insertBefore(box, cusAddBtn);
     }
 }
