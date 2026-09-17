@@ -991,28 +991,39 @@
                         <div
                             class="glass rounded-2xl shadow-sm overflow-hidden flex flex-col h-[calc(100vh-120px)] lg:h-[calc(100vh-140px)]">
                             <!-- Header -->
+                            <!-- Header -->
                             <div
-                                class="p-3 sm:p-4 border-b border-gray-200 dark:border-slate-700 flex flex-col sm:flex-row justify-between sm:items-center bg-white/50 dark:bg-slate-800/50 gap-3">
-                                <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-                                    <input type="text" id="search-lead" placeholder="🔍 Tìm tên / SĐT lead..."
-                                        class="px-3 py-2 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg text-sm w-full sm:w-48 focus:ring-2 focus:ring-orange-500 outline-none">
-                                    <div class="flex gap-2">
-                                        <input type="date" id="filter-lead-date"
-                                            class="flex-1 sm:flex-none px-3 py-2 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg text-sm outline-none text-gray-500 min-w-0">
-                                        <select id="filter-lead-type"
-                                            class="flex-1 sm:flex-none px-3 py-2 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg text-sm outline-none text-gray-500 min-w-0">
-                                            <option value="">Tất cả</option>
-                                            <option value="Thường">Thường</option>
-                                            <option value="Tiềm năng">Tiềm năng</option>
-                                            <option value="VIP">VIP</option>
-                                        </select>
+                                class="p-3 sm:p-4 border-b border-gray-200 dark:border-slate-700 flex flex-col gap-3 bg-white/50 dark:bg-slate-800/50">
+                                <!-- Hàng 1: Tìm kiếm & Bộ lọc -->
+                                <div class="flex flex-col sm:flex-row sm:items-center gap-2">
+                                    <div class="relative flex-1 sm:max-w-[220px]">
+                                        <span
+                                            class="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-[18px] pointer-events-none">search</span>
+                                        <input type="text" id="search-lead" placeholder="Tìm tên / SĐT lead..."
+                                            class="w-full pl-9 pr-3 py-2 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg text-sm outline-none focus:ring-2 focus:ring-orange-500">
                                     </div>
-                                </div>
-                                <div class="flex items-center gap-2">
+                                    <input type="date" id="filter-lead-date"
+                                        class="px-3 py-2 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg text-sm outline-none text-gray-500 sm:w-[150px]">
+                                    <select id="filter-lead-type"
+                                        class="px-3 py-2 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg text-sm outline-none text-gray-500 sm:w-[130px] cursor-pointer">
+                                        <option value="">Tất cả loại</option>
+                                        <option value="Thường">Thường</option>
+                                        <option value="Tiềm năng">Tiềm năng</option>
+                                        <option value="VIP">VIP</option>
+                                    </select>
+                                    <select id="sort-lead"
+                                        class="px-3 py-2 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg text-sm outline-none text-gray-500 sm:w-[150px] cursor-pointer">
+                                        <option value="newest">🕐 Mới nhất</option>
+                                        <option value="oldest">🕓 Cũ nhất</option>
+                                    </select>
                                     <span id="lead-count-badge"
-                                        class="text-xs text-gray-500 hidden sm:block whitespace-nowrap"></span>
+                                        class="text-xs text-gray-500 whitespace-nowrap sm:ml-auto"></span>
+                                </div>
+
+                                <!-- Hàng 2: Thao tác (nút Import/Export sẽ được leads-customers-io.js tự chèn vào bên trái nút Thêm Lead) -->
+                                <div class="flex items-center justify-between gap-2 flex-wrap">
                                     <button onclick="openModal('lead-modal')"
-                                        class="bg-orange-500 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-md hover:bg-orange-600 flex items-center justify-center gap-2 w-full sm:w-auto">
+                                        class="bg-orange-500 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-md hover:bg-orange-600 flex items-center justify-center gap-2">
                                         <span class="material-symbols-outlined text-sm">add</span> Thêm Lead
                                     </button>
                                 </div>
@@ -1094,19 +1105,32 @@
                         <div
                             class="glass rounded-2xl shadow-sm overflow-hidden flex flex-col h-[calc(100vh-120px)] lg:h-[calc(100vh-140px)]">
                             <!-- Header -->
+                            <!-- Header -->
                             <div
-                                class="p-3 sm:p-4 border-b border-gray-200 dark:border-slate-700 flex flex-col sm:flex-row justify-between sm:items-center bg-white/50 dark:bg-slate-800/50 gap-3">
-                                <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-                                    <input type="text" id="search-customer" placeholder="🔍 Tìm tên, SĐT KH..."
-                                        class="px-3 py-2 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg text-sm w-full sm:w-64 focus:ring-2 focus:ring-primary outline-none">
+                                class="p-3 sm:p-4 border-b border-gray-200 dark:border-slate-700 flex flex-col gap-3 bg-white/50 dark:bg-slate-800/50">
+                                <!-- Hàng 1: Tìm kiếm & Bộ lọc -->
+                                <div class="flex flex-col sm:flex-row sm:items-center gap-2">
+                                    <div class="relative flex-1 sm:max-w-[240px]">
+                                        <span
+                                            class="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-[18px] pointer-events-none">search</span>
+                                        <input type="text" id="search-customer" placeholder="Tìm tên, SĐT KH..."
+                                            class="w-full pl-9 pr-3 py-2 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg text-sm outline-none focus:ring-2 focus:ring-primary">
+                                    </div>
                                     <input type="date" id="filter-customer-date" title="Lọc theo ngày thêm"
-                                        class="px-3 py-2 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg text-sm outline-none text-gray-500 w-full sm:w-auto">
-                                </div>
-                                <div class="flex items-center gap-2">
+                                        class="px-3 py-2 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg text-sm outline-none text-gray-500 sm:w-[150px]">
+                                    <select id="sort-customer"
+                                        class="px-3 py-2 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg text-sm outline-none text-gray-500 sm:w-[150px] cursor-pointer">
+                                        <option value="newest">🕐 Mới nhất</option>
+                                        <option value="oldest">🕓 Cũ nhất</option>
+                                    </select>
                                     <span id="customer-count-badge"
-                                        class="text-xs text-gray-500 hidden sm:block whitespace-nowrap"></span>
+                                        class="text-xs text-gray-500 whitespace-nowrap sm:ml-auto"></span>
+                                </div>
+
+                                <!-- Hàng 2: Thao tác (nút Import/Export sẽ được leads-customers-io.js tự chèn vào bên trái nút Thêm KH) -->
+                                <div class="flex items-center justify-between gap-2 flex-wrap">
                                     <button onclick="openModal('customer-modal')"
-                                        class="bg-primary text-white px-4 py-2 rounded-lg text-sm font-bold shadow-md hover:opacity-90 flex items-center justify-center gap-2 w-full sm:w-auto">
+                                        class="bg-primary text-white px-4 py-2 rounded-lg text-sm font-bold shadow-md hover:opacity-90 flex items-center justify-center gap-2">
                                         <span class="material-symbols-outlined text-sm">add</span> Thêm KH
                                     </button>
                                 </div>
@@ -3620,11 +3644,13 @@
                 <!-- Progress UI khi tạo hàng loạt -->
                 <div id="job-bulk-progress" class="hidden border border-primary/30 bg-primary/5 rounded-lg p-3">
                     <div class="flex justify-between items-center mb-1.5">
-                        <span class="text-xs font-semibold text-primary" id="job-bulk-progress-label">Đang tạo job 0/0...</span>
+                        <span class="text-xs font-semibold text-primary" id="job-bulk-progress-label">Đang tạo job
+                            0/0...</span>
                         <span class="text-xs font-bold text-primary" id="job-bulk-progress-percent">0%</span>
                     </div>
                     <div class="w-full h-2 bg-gray-200 dark:bg-slate-700 rounded-full overflow-hidden">
-                        <div id="job-bulk-progress-bar" class="h-full bg-primary rounded-full transition-all duration-300" style="width:0%"></div>
+                        <div id="job-bulk-progress-bar"
+                            class="h-full bg-primary rounded-full transition-all duration-300" style="width:0%"></div>
                     </div>
                     <div id="job-bulk-progress-list" class="mt-2 max-h-32 overflow-y-auto space-y-1"></div>
                 </div>
